@@ -23,6 +23,7 @@
 html[data-ku-redesign-state="booting"],
 html[data-ku-redesign-state="ready"] {
   background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%) !important;
+  overflow: hidden !important;
 }
 
 html[data-ku-redesign-state="booting"] body > *:not(#ku-redesign-root):not(script):not(style):not(link),
@@ -34,6 +35,8 @@ html[data-ku-redesign-state="ready"] body > *:not(#ku-redesign-root):not(script)
 html[data-ku-redesign-state="booting"] body,
 html[data-ku-redesign-state="ready"] body {
   background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%) !important;
+  overflow: hidden !important;
+  height: 100vh !important;
 }
 
 #ku-redesign-root {
@@ -41,7 +44,10 @@ html[data-ku-redesign-state="ready"] body {
   inset: 0;
   z-index: 2147483646;
   overflow: auto;
+  overscroll-behavior: contain;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
   color: var(--ku-text);
 }
 
@@ -88,7 +94,7 @@ html[data-ku-redesign-state="ready"] body {
 }
 
 .ku-brand-title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -120,6 +126,7 @@ html[data-ku-redesign-state="ready"] body {
   padding: 0 4px;
   border-bottom: 3px solid transparent;
   color: #42506c;
+  font-size: 16px;
   font-weight: 700;
   transition: color .2s ease, border-color .2s ease;
 }
@@ -168,7 +175,7 @@ html[data-ku-redesign-state="ready"] body {
 .ku-footer {
   text-align: center;
   color: #74819d;
-  font-size: 13px;
+  font-size: 14px;
   padding: 28px 0 6px;
 }
 
@@ -196,7 +203,7 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-card-title,
 .ku-section-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
 }
 
@@ -207,7 +214,7 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-page-subtitle {
   color: var(--ku-text-soft);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .ku-home-layout {
@@ -295,7 +302,7 @@ html[data-ku-redesign-state="ready"] body {
 }
 
 .ku-date-range {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
 }
 
@@ -352,7 +359,7 @@ html[data-ku-redesign-state="ready"] body {
 }
 
 .ku-period-time {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ku-text-soft);
 }
 
@@ -362,15 +369,15 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-class-card {
   width: 100%;
-  min-height: 68px;
-  padding: 8px 10px;
+  min-height: 84px;
+  padding: 10px 12px;
   border-radius: 12px;
   border: 1.5px solid #dbe5ff;
   background: #f8fbff;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 14px;
 }
 
 .ku-class-card.blue { border-color: #b8cdfd; background: #eef4ff; color: #2b5dd3; }
@@ -385,6 +392,7 @@ html[data-ku-redesign-state="ready"] body {
 }
 
 .ku-class-sub {
+  font-size: 13px;
   color: rgba(0,0,0,.62);
   line-height: 1.3;
 }
@@ -397,7 +405,7 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-panel-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(120px, auto);
   gap: 10px;
   align-items: start;
   padding: 12px 0;
@@ -433,7 +441,7 @@ html[data-ku-redesign-state="ready"] body {
   min-height: 28px;
   padding: 4px 10px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   border: 1px solid transparent;
   white-space: nowrap;
@@ -450,6 +458,8 @@ html[data-ku-redesign-state="ready"] body {
 .ku-title-link {
   font-weight: 800;
   color: #2455d5;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .ku-panel-title.danger { color: var(--ku-danger); }
@@ -461,7 +471,7 @@ html[data-ku-redesign-state="ready"] body {
   color: var(--ku-text-soft);
 }
 
-.ku-mini-meta { font-size: 12px; }
+.ku-mini-meta { font-size: 13px; }
 
 .ku-other-courses {
   padding: 16px 18px 18px;
@@ -478,6 +488,7 @@ html[data-ku-redesign-state="ready"] body {
 .ku-search {
   min-width: 260px;
   padding: 11px 14px;
+  font-size: 15px;
 }
 
 .ku-other-group {
@@ -665,6 +676,7 @@ html[data-ku-redesign-state="ready"] body {
   padding: 12px 14px;
   border-radius: 12px;
   color: #42506c;
+  font-size: 15px;
 }
 
 .ku-rightnav-link.active,
@@ -789,13 +801,13 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-notice-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(138px, auto);
   gap: 14px;
   align-items: start;
 }
 
 .ku-notice-title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 900;
   line-height: 1.45;
 }
@@ -805,6 +817,7 @@ html[data-ku-redesign-state="ready"] body {
   text-align: right;
   color: #4f5f80;
   font-weight: 700;
+  font-size: 14px;
 }
 
 .ku-deadline strong {
@@ -854,6 +867,7 @@ html[data-ku-redesign-state="ready"] body {
   padding: 24px 18px;
   text-align: center;
   color: var(--ku-text-soft);
+  font-size: 15px;
 }
 
 .ku-badge-dot {
@@ -902,6 +916,68 @@ html[data-ku-redesign-state="ready"] body {
   color: #8d9ab7;
 }
 
+.ku-panel-body,
+.ku-notice-row > div,
+.ku-panel-item > div,
+.ku-message-row > div,
+.ku-report-row > div,
+.ku-main-card,
+.ku-sidebar-card {
+  min-width: 0;
+}
+
+.ku-panel-body > *,
+.ku-notice-title,
+.ku-manual-copy {
+  overflow-wrap: anywhere;
+}
+
+.ku-class-card .ku-chip {
+  min-height: auto;
+  max-width: 100%;
+  white-space: normal;
+  align-items: flex-start;
+  line-height: 1.35;
+}
+
+.ku-manual-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ku-manual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.ku-manual-card {
+  padding-bottom: 18px;
+}
+
+.ku-manual-card-body {
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ku-manual-copy {
+  margin: 0;
+  color: #42506c;
+}
+
+.ku-manual-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ku-manual-link {
+  font-size: 16px;
+}
+
 .ku-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -928,7 +1004,8 @@ html[data-ku-redesign-state="ready"] body {
 @media (max-width: 1180px) {
   .ku-home-layout,
   .ku-sidebar-shell,
-  .ku-course-grid {
+  .ku-course-grid,
+  .ku-manual-grid {
     grid-template-columns: 1fr;
   }
 

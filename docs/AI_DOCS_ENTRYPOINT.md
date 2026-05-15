@@ -7,9 +7,11 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 1. `docs/ku-lms-design-code.md` — binding UI design code for all future AI/frontend work.
 2. `docs/ku-lms-extension-architecture.md` — current extension architecture, supported routes, takeover strategy, and design-system notes.
 3. `DESIGN.md` — repo-root design pointer to the canonical design contract.
-4. `.omx/plans/prd-ku-lms-redesign.md` — execution PRD for the current phase.
-5. `.omx/plans/test-spec-ku-lms-redesign.md` — verification requirements for the current phase.
-6. `.omx/artifacts/visual-ralph/ku-lms-redesign/reference-manifest.json` — approved visual reference mapping.
+4. `.omx/plans/prd-ku-lms-refactor-fixes.md` — current bug-fix / route-completion PRD for the active phase.
+5. `.omx/plans/test-spec-ku-lms-refactor-fixes.md` — current verification requirements for the active phase.
+6. `.omx/plans/prd-ku-lms-redesign.md` — original redesign PRD that established the takeover baseline.
+7. `.omx/plans/test-spec-ku-lms-redesign.md` — original redesign verification baseline.
+8. `.omx/artifacts/visual-ralph/ku-lms-redesign/reference-manifest.json` — approved visual reference mapping.
 
 ## Update rules
 - Add new stable implementation docs here when they become authoritative for future agents.
