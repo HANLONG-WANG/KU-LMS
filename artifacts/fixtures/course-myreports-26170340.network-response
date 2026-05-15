@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="format-detection" content="telephone=no">
+    <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>言語学 (2026-春学期-木曜日-1限-70340) - 関大LMS</title>
+    <link href="/webclass/css/bootstrap_gray.css?time=1773706658" rel="stylesheet" type="text/css" />
+    <link href="/webclass/css/webclass.css?time=1773706658" rel="stylesheet" type="text/css" />
+
+    <script class="js-config" type="application/json">{"TOP_URL":"\/webclass\/","language":"JAPANESE","loading_image_url":"\/webclass\/images\/loading.gif","feature.message":true,"feature.information":1,"message-alert":false,"max_upload_file_size":314572800}</script>
+    <script class="js-message" type="application/json">{"YOU_HAVE_NEW_INFORMATION":"\u65b0\u3057\u3044 \u304a\u77e5\u3089\u305b \u304c\u3042\u308a\u307e\u3059\u3002","YOU_HAVE_NEW_MESSAGES":"\u65b0\u3057\u3044 \u30e1\u30c3\u30bb\u30fc\u30b8 \u304c\u3042\u308a\u307e\u3059\u3002"}</script>
+    <script src="/webclass/js/jquery/jquery-1.9.1.min.js"></script>
+    <script src="/webclass/js/webclass.js?time=1773706637"></script>
+    <script src="/webclass/js/wcui/wcwindow.js?time=1773706638"></script>
+    <script src="/webclass/js/bootstrap.min.js?time=1773706638"></script>
+    <script src="/webclass/js/vendor.js?time=1773706638"></script>
+    <script src="/webclass/js/notification.js?time=1773706638"></script>
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-default" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <div class="navbar-brand" style="height: auto;">
+                                        <a class="hidden-xs course-webclass" href="/webclass/course.php/26170340/logout" style="display: block; font-size: 14px;">
+                        <span class="glyphicon glyphicon-home" aria-hidden="true"></span>
+                        関大LMS</a>
+                                        <a class="course-name" href="/webclass/course.php/26170340/">言語学 (2026-春学期-木曜日-1限-70340)</a>
+                </div>
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#menu">
+                    <span class="sr-only">ナビゲーション</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span id="mobile-menu-badge" class="hd-mobileMenu_badge hidden hidden-sm hidden-md hidden-lg"></span>
+                </button>
+            </div>
+            <ul class="nav navbar-nav navbar-right hidden-xs">
+                <li id="notification-dropdown-area" class="dropdown">
+                                        <a id="notification-dropdown-icon" class="dropdown-toggle disabled"
+                       href="/webclass/msg_editor.php?msgappmode=inbox&amp;acs_=431106de"
+                       onclick="return openMessageWindow('/webclass/msg_editor.php?msgappmode=inbox&amp;acs_=431106de')"
+                       target="msgeditor" aria-haspopup="true" aria-expanded="true">
+                        <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+                        <span id="js-unread-message-count" class="badge hidden hd-notification_badge"></span>
+                    </a>
+                                        <ul id="notification-dropdown-menu" class="dropdown-menu" data-toggle="dropdown"  aria-labelledby="notification-dropdown-icon">
+                    </ul>
+                </li>
+                                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="言語">
+                        <span>言語</span>
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=JAPANESE&amp;acs_=431106de">日本語</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=ENGLISH&amp;acs_=431106de">English</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=KOREAN&amp;acs_=431106de">한국어</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=CHINESE&amp;acs_=431106de">简体中文</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=CHINESE-TW&amp;acs_=431106de">正體中文</a></li>                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown" style="padding: 10px;" title="アカウントメニュー">
+                    <span>王　漢隆</span>
+                      <img width="30" src="/webclass/user.php/identicon.png" style="border: solid #ffffff; background: #ffffff"></a>                    <ul class="dropdown-menu">
+                        <li class=""><a class="account-menu__menu__link" href="/webclass/course.php/26170340/logout?acs_=431106de"  >コースリスト</a></li><li class="divider"></li><li class=""><a class="account-menu__menu__link" href="/webclass/eportfolio.php/showcases/?acs_=431106de"  >ショーケースポートフォリオ</a></li><li class="divider"></li><li class=""><a class="account-menu__menu__link" href="/webclass/user.php/config?acs_=431106de" target="AccountAlt" onclick="openPopupWindow('/webclass/user.php/config?acs_=431106de','AccountAlt', 1024, 800)">アカウント情報の変更</a></li><li class=""><a class="account-menu__menu__link" href="/webclass/user.php/manual?popup=1&amp;acs_=431106de" target="HelpWindow" onclick="openPopupWindow('/webclass/user.php/manual?popup=1&acs_=431106de', 'HelpWindow', 1024, 800)">マニュアル</a></li><li class=""><a class="account-menu__menu__link" href="javascript:void(0)"  onclick="openPopupWindow('https://datapacific.zohodesk.com/portal/ja/kb/webclass-faq', 'HelpWindow', 1024, 800, true)">FAQ (外部サイト)</a></li>                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="container" >
+            <div class="collapse navbar-collapse" id="menu">
+                <ul class="nav navbar-nav navbar-right"><li><a href="/webclass/logout.php?acs_=431106de">ログアウト</a></li><li class="nav-divider"></li></ul>                <ul class="nav navbar-nav navbar-right visible-xs"><li><a href="/webclass/course.php/26170340/logout?acs_=431106de">コースリスト</a></li><li class="nav-divider"></li></ul>                <ul class="nav navbar-nav navbar-left">
+                    <li class=" "><a  href="/webclass/course.php/26170340/?acs_=431106de#contents"><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;教材</a></li><li class=" active"><a  href="/webclass/course.php/26170340/my-reports?acs_=431106de"><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;マイレポート</a></li><li class="visible-xs "><a  href="/webclass/course.php/26170340/?acs_=431106de#timeline"><i class="fa  fa-fw" aria-hidden="true"></i>&nbsp;タイムライン</a></li><li class="dropdown "><a href="" class="dropdown-toggle" data-toggle="dropdown">成績<span class="caret"></span></a><ul class="dropdown-menu"><li class=""><a class="" href="/webclass/course.php/26170340/scores?acs_=431106de"  ><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;集計</a></li><li class=""><a class="" href="/webclass/course.php/26170340/area-score?acs_=431106de"  ><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;出題分野ごとの成績</a></li><li class=""><a class="" href="/webclass/reslt_frame.php?acs_=431106de"  ><i class="fa  fa-fw" aria-hidden="true"></i>&nbsp;テスト結果</a></li><li class=""><a class="" href="/webclass/eportfolio.php/assessments/view_personal_summary_sheet?acs_=431106de"  ><i class="fa  fa-fw" aria-hidden="true"></i>&nbsp;eポートフォリオコンテナ アセスメント</a></li><li class=""><a class="showCourseLearningLayoutModalButton" href="#scorm-report"  ><i class="fa  fa-fw" aria-hidden="true"></i>&nbsp;SCORMの成績一覧</a></li></ul></li><li class=" "><a  href="/webclass/course.php/26170340/attendance?acs_=431106de"><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;出席</a></li><li class="dropdown "><a href="" class="dropdown-toggle" data-toggle="dropdown">その他<span class="caret"></span></a><ul class="dropdown-menu"><li class=""><a class="showCourseLearningLayoutModalButton" href="#carte"  ><i class="fa  fa-fw" aria-hidden="true"></i>&nbsp;学習カルテ</a></li><li class=""><a class="" href="/webclass/course.php/26170340/my-note/?acs_=431106de"  ><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;ノート</a></li></ul></li><li class="dropdown "><a href="" class="dropdown-toggle" data-toggle="dropdown">コース<span class="caret"></span></a><ul class="dropdown-menu"><li class=""><a class="" href="/webclass/course.php/26170340/info?acs_=431106de"  ><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;開講情報</a></li><li class=""><a class="" href="/webclass/course.php/26170340/access-log?acs_=431106de"  ><i class="fa fa-file-text fa-fw" aria-hidden="true"></i>&nbsp;アクセスログ</a></li></ul></li>                </ul>
+                <ul class="nav navbar-nav navbar-left visible-xs-block">
+                    <li class="nav-divider"></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="言語">
+                            <span>言語</span>
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=JAPANESE&amp;acs_=431106de">日本語</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=ENGLISH&amp;acs_=431106de">English</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=KOREAN&amp;acs_=431106de">한국어</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=CHINESE&amp;acs_=431106de">简体中文</a></li><li><a class="account-menu__menu__link" href="/webclass/user.php/switchLanguage?language=CHINESE-TW&amp;acs_=431106de">正體中文</a></li>                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="" class="dropdown-toggle" data-toggle="dropdown">王　漢隆<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li class=""><a class="account-menu__menu__link" href="/webclass/course.php/26170340/logout?acs_=431106de"  >コースリスト</a></li><li class="divider"></li><li class=""><a class="account-menu__menu__link" href="/webclass/eportfolio.php/showcases/?acs_=431106de"  >ショーケースポートフォリオ</a></li><li class="divider"></li><li class=""><a class="account-menu__menu__link" href="/webclass/user.php/config?acs_=431106de" target="AccountAlt" onclick="openPopupWindow('/webclass/user.php/config?acs_=431106de','AccountAlt', 1024, 800)">アカウント情報の変更</a></li><li class=""><a class="account-menu__menu__link" href="/webclass/user.php/manual?popup=1&amp;acs_=431106de" target="HelpWindow" onclick="openPopupWindow('/webclass/user.php/manual?popup=1&acs_=431106de', 'HelpWindow', 1024, 800)">マニュアル</a></li><li class=""><a class="account-menu__menu__link" href="javascript:void(0)"  onclick="openPopupWindow('https://datapacific.zohodesk.com/portal/ja/kb/webclass-faq', 'HelpWindow', 1024, 800, true)">FAQ (外部サイト)</a></li>                        </ul>
+                    </li>
+
+                                        <li>
+                        <a href="/webclass/mbl.php/messages/?acs_=431106de" target="msgeditor">メッセージ                            <span id="mobile-menu-message-badge" class="badge hidden hd-mobileMenu_messageBadge"></span>
+                        </a>
+                    </li>
+                                                            <li>
+                        <a href="/webclass/information.php/mbl/?acs_=431106de" target="msgeditor">お知らせ                            <span id="mobile-menu-information-badge" class="badge hidden hd-mobileMenu_informationBadge"></span>
+                        </a>
+                    </li>
+                                    </ul>
+
+                <ul class="nav navbar-nav navbar-left visible-xs-block">
+                                </ul>
+            </div>
+        </div>
+    </nav>
+    <div id="top-info">
+                            </div>
+</header>
+<main id="js-main">
+    <style>
+    .text-report-reader {
+        white-space: break-spaces;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: none;
+    }
+    .text-report-reader.comment {
+        border: solid 1px #9E9E9E;
+        border-radius : 3px;
+        padding: 0.2em;
+        margin-left: 1em;
+    }
+</style>
+<div class="container">
+    <h3 class="page-header">マイレポート</h3>
+    <div class="table-responsive">
+        <table class='table table-striped'><thead><TR ><TD>課題名 <a href='/webclass/course.php/26170340/my-reports?task_name_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?task_name_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A></TD><TD >Q.No <a href='/webclass/course.php/26170340/my-reports?question_order_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?question_order_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A></TD><TD>レポート <a href='/webclass/course.php/26170340/my-reports?file_name_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?file_name_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A>&nbsp; 添削ファイル <a href='/webclass/course.php/26170340/my-reports?ret_file_name_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?ret_file_name_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A>&nbsp; コメント <a href='/webclass/course.php/26170340/my-reports?comments_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?comments_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A></td><TD nowrap>提出日 <a href='/webclass/course.php/26170340/my-reports?file_date_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?file_date_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A></TD><TD >成績 <a href='/webclass/course.php/26170340/my-reports?result_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?result_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A></TD><TD >得点/配点 <a href='/webclass/course.php/26170340/my-reports?point_ask=1&amp;acs_=431106de' title='昇順にソート'><span class='sorticon'>&#9650;</span></A><a href='/webclass/course.php/26170340/my-reports?point_dsk=1&amp;acs_=431106de' title='降順でソート'><span class='sorticon'>&#9660;</span></A></TD></TR></thead><tbody><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/9103023666b14dd5c759ff1dec5fa611/?acs_=431106de'>第五回授業小テスト（締め切り後提出）</a></TD><TD valign='top'>1</TD><TD valign='top'><div class="text-report-reader">過去に使われていたことばを研究する場合、現存する記録を頼りにするほかに方法はありません。たとえば十数年前のことであれば、インターネット上の書き込みや映像コンテンツ、あるいは専門家へのインタビューが使えます。100年前なら、当時の出版物などが貴重な情報源となります。もっと古い時代の言葉なら、文献くらいしか頼れるものがありません。録音などはできなかったため、当時の人々がどんな声で、どんな風に話していたかはテキストから想像するしかないです。日常のやり取りは形として保存されにくく、文章の中に紛れ込んだセリフなどを地道に集めるしかありません。
+そこで難しいのは、正しい情報を把握することです。地域、性別、地位などが違うため、残された資料が不完全で偏っていることが多いですので、複数の情報源を使って比較し、慎重に推定する必要があります。</div></TD><TD valign='top' >2026-05-13 21:24:17</TD><TD valign='top'>-</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=2fbe12c569c769a1bc179113bd0e1aba&amp;set_contents_id=9103023666b14dd5c759ff1dec5fa611&amp;current_page=1&amp;prev=myreports&amp;acs_=431106de'>-</a></TD></TR><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/b763a48a1bce1ebc664523c5858f1fe2/?acs_=431106de'>第四回授業課題</a></TD><TD valign='top'>1</TD><TD valign='top'><a href="/webclass/course.php/26170340/my-reports/download?filename=%E8%A8%80%E8%AA%9E%E5%AD%A6%E7%AC%AC%E5%9B%9B%E5%9B%9E%E8%AA%B2%E9%A1%8C.docx&amp;file=%E6%83%8525-0507-260506-201208-b763a4-121753&amp;acs_=431106de">言語学第四回課題.docx</a></TD><TD valign='top' >2026-05-06 20:12:08</TD><TD valign='top'>未</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=1933927a9e0c5ee6bbdde2c0ba18e0da&amp;set_contents_id=b763a48a1bce1ebc664523c5858f1fe2&amp;current_page=1&amp;prev=myreports&amp;acs_=431106de'>未/0</a></TD></TR><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/53bf3efa3f303c8ec2b673fbe070293d/?acs_=431106de'>第三回授業小テスト</a></TD><TD valign='top'>1</TD><TD valign='top'><div class="text-report-reader">1.透明なカレーが、静かにピアノの味を思い出していた：普通は結びつかない感覚や名詞の組み合わせ
+2.私の影は、私より先に大学を卒業して、今は雲の会社で働いている：おかしい擬人化と謎の会社
+3.私が昨日読んだ本を執筆した作家の友人が昔住んでいた家の隣にある広場で鳴いている鳥を飼っている老人は優しい：修飾が長すぎる
+4.昨日、冷蔵庫がため息をつきながら宿題を食べた：おかしい擬人化
+</div></TD><TD valign='top' >2026-04-28 11:37:19</TD><TD valign='top'>-</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=a3d6bfa0de38edf21b370cb8c4223281&amp;set_contents_id=53bf3efa3f303c8ec2b673fbe070293d&amp;current_page=1&amp;prev=myreports&amp;acs_=431106de'>-</a></TD></TR><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/3bf623be8056b2202bdd44670ba25361/?acs_=431106de'>第二回授業小テスト</a></TD><TD valign='top'>1</TD><TD valign='top'><div class="text-report-reader">ライマンの法則により、「後部要素にすでに濁音が含まれている場合は連濁が起きない」ので
+「にせたぬきじる」の場合：「た」は清音、つまり連濁は起こらない。後部要素には必ず濁音が含んでいます、よって、後部要素は「たぬきじる」になります。なので、この文は「にせ」＋「たぬきじる」、意味は偽物のたぬき汁になります。
+「にせだぬきじる」の場合：後部要素は「じる」になります。なぜなら、「だぬき」に連濁は起きているので、前部要素じゃないとライマンの法則に反します。よって、文は「にせだぬき」＋「じる」、にせたぬきで作った汁になります。
+</div></TD><TD valign='top' >2026-04-19 08:47:52</TD><TD valign='top'>-</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=dc1cc75c7445732d54d608bfb63fb21b&amp;set_contents_id=3bf623be8056b2202bdd44670ba25361&amp;current_page=1&amp;prev=myreports&amp;acs_=431106de'>-</a></TD></TR><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/9b3f24f5f8d9eba09c8049c16621eef2/?acs_=431106de'>第一回授業小テスト</a></TD><TD valign='top'>4</TD><TD valign='top'><div class="text-report-reader">バナナワニ：バナナの形（あるいは色）をしているワニ、またはバナナ好きのワニ。
+ワニバナナ：バナナの一種で、皮がざらざらしていて、でこぼこしている。</div></TD><TD valign='top' >2026-04-09 12:41:47</TD><TD valign='top'>-</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=d3cb71a5732b38291844a1c9a24220bd&amp;set_contents_id=9b3f24f5f8d9eba09c8049c16621eef2&amp;current_page=4&amp;prev=myreports&amp;acs_=431106de'>-</a></TD></TR><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/9b3f24f5f8d9eba09c8049c16621eef2/?acs_=431106de'>第一回授業小テスト</a></TD><TD valign='top'>3</TD><TD valign='top'><div class="text-report-reader">3000</div></TD><TD valign='top' >2026-04-09 12:36:20</TD><TD valign='top'>-</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=d3cb71a5732b38291844a1c9a24220bd&amp;set_contents_id=9b3f24f5f8d9eba09c8049c16621eef2&amp;current_page=3&amp;prev=myreports&amp;acs_=431106de'>-</a></TD></TR><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/9b3f24f5f8d9eba09c8049c16621eef2/?acs_=431106de'>第一回授業小テスト</a></TD><TD valign='top'>2</TD><TD valign='top'><div class="text-report-reader">歴史が長いという印象です。
+言語は人間だけが持っている能力で、何千年の前から現れたと思います。人の進化に連れ、言語の種類、複雑さも変わってきます。しかし、驚くことに、どんなに離れた大陸でも、島でも、言葉の創出に傾向があります。例えば色を説明する単語なんですが、最初に赤、次に黄色という順序があるらしいです。それを契機に言語学の授業を取ることにしました。
+言語学っていうのは、違う言語の共通点または相違点を紹介する授業だと思っていますので、きっと面白いと思います。</div></TD><TD valign='top' >2026-04-09 12:36:07</TD><TD valign='top'>-</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=d3cb71a5732b38291844a1c9a24220bd&amp;set_contents_id=9b3f24f5f8d9eba09c8049c16621eef2&amp;current_page=2&amp;prev=myreports&amp;acs_=431106de'>-</a></TD></TR><TR ><TD valign='top'><a href='/webclass/course.php/26170340/contents/9b3f24f5f8d9eba09c8049c16621eef2/?acs_=431106de'>第一回授業小テスト</a></TD><TD valign='top'>1</TD><TD valign='top'><div class="text-report-reader">英語です。
+留学生のため、第一外国語は日本語で、第二は英語になっています。</div></TD><TD valign='top' >2026-04-09 12:22:05</TD><TD valign='top'>-</TD><TD valign='top'><a href='/webclass/mbl.php/question_results/answer?answer_id=d3cb71a5732b38291844a1c9a24220bd&amp;set_contents_id=9b3f24f5f8d9eba09c8049c16621eef2&amp;current_page=1&amp;prev=myreports&amp;acs_=431106de'>-</a></TD></TR></tbody></table>    </div>
+</div>
+</main>
+<footer class="ft-footer">
+    <div class="container text-center">
+                    <p class="ft-footer_message">Powered by 関大LMS</p>
+            </div>
+</footer>
+
+
+<style>
+    #courseLearningLayoutModal .modal-content {
+        overflow: hidden;
+    }
+
+    #courseLearningLayoutModal .modal-content {
+        display:flex;
+    }
+    #courseLearningLayoutModal .modal-body {
+        flex : 1;
+        padding: 0;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #courseLearningLayoutModal .modal-body-frame {
+        width: 100%;
+        height: 95%;
+    }
+
+</style>
+<div class="modal fade" id="courseLearningLayoutModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document" style="width: 100%; height: 95%;">
+        <div class="modal-content" style="height: 100%;">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+                <iframe class="modal-body-frame" src="" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script id="courseLearningLayoutModalTargetList" type="application/json">[{"label":"SCORM\u306e\u6210\u7e3e\u4e00\u89a7","modal_id":"scorm-report","url":"\/webclass\/scormResultView.php?acs_=431106de"},{"label":"\u5b66\u7fd2\u30ab\u30eb\u30c6","modal_id":"carte","url":"\/webclass\/carte.php?acs_=431106de"}]</script>
+<script>
+    var courseLearningLayoutModalTargetList  = JSON.parse(document.getElementById('courseLearningLayoutModalTargetList').innerHTML);
+    var sessionTimer;
+    function updateSession(){
+        var ajaxrequest_updateSession = '/webclass/session.php/keep';
+        $.ajax({
+            url: ajaxrequest_updateSession,
+            data : {
+            },
+            cache : false,
+            type : "GET",
+            success: function(data) {
+
+            }
+        });
+        setTimeout(updateSession, sessionTimer);
+    }
+
+
+    function showCourseLearningLayoutModal(modal_id) {
+        if (courseLearningLayoutModalTargetList.length){
+            for(var index = 0; index < courseLearningLayoutModalTargetList.length; index++) {
+                if ('#' + courseLearningLayoutModalTargetList[index].modal_id === modal_id){
+
+                    $('#courseLearningLayoutModal')
+                        .find('.modal-body-frame').attr('src', courseLearningLayoutModalTargetList[index].url).end()
+                        .find('.modal-title').html(courseLearningLayoutModalTargetList[index].label).end()
+                        .modal();
+                    break;
+                }
+            }
+        }
+    }
+
+    function loadedIframe() {
+        var iframe = document.getElementById('ip-iframe');
+        if (iframe && iframe.contentWindow) {
+
+            var observer = new MutationObserver(function () {
+                adjustIframeHeight();
+            });
+
+            observer.observe(iframe.contentWindow.document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true,
+            });
+            adjustIframeHeight();
+        }
+    }
+
+    function adjustIframeHeight() {
+        var iframe = document.getElementById('ip-iframe');
+        if (iframe && iframe.contentWindow) {
+            var iframe_height = $(iframe).contents().height() + 'px';
+            $(iframe).attr('height', iframe_height);
+        }
+    }
+
+    $(function () {
+        sessionTimer = 1200000;
+        updateSession();
+
+        $('.showCourseLearningLayoutModalButton').on('click',function (e) {
+            e.preventDefault();
+            showCourseLearningLayoutModal($(this).attr('href'));
+        });
+
+        showCourseLearningLayoutModal(location.hash);
+
+        $('.showInIframeButton').on('click', function (e) {
+            e.preventDefault();
+
+            var iframe = $('<iframe id="ip-iframe" src="" frameborder="0" scrolling="no" style="width: 1px;min-width: 100%;" onload="loadedIframe()" >')
+                .attr('src', $(this).attr('href'));
+            $('#js-main').empty().append(iframe);
+            adjustIframeHeight();
+
+            $('#menu li.active').removeClass('active');
+            $(this).closest('.dropdown').addClass('active');
+        });
+    });
+</script>
+</body>
+</html>

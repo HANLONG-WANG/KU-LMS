@@ -1,0 +1,1 @@
+{"searchRequest":{"filters":{"msgbox":"inbox","unread":true},"order":"date_desc","range":{"limit":10,"page":1}},"responseData":{"totalRecords":0,"totalPages":0,"records":[]}}

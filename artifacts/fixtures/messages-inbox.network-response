@@ -1,0 +1,215 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+
+<link type="text/css" href="/webclass/css/basestyle.css" rel="stylesheet" />
+<link type="text/css" href="/webclass/css/popup_personaltools.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="/webclass/css/transitional.css?time=1773706658" />
+<link rel="stylesheet" type="text/css" href="/webclass/css/message.css?time=%2Fopt%2Fwebclass%2Flms%2Fwebclass%2Fcss%2Fmessage.css" />
+<style type="text/css">
+a{ text-decoration: underline; color: #1365b5;} th {
+	background-color: #4682b4 !important;
+}
+
+.bgc_main {
+    background-color: #4682b4 !important;
+    color: #fff;
+}
+</style>
+
+
+<style type="text/css">
+th {
+	font-weight : normal;
+}
+table.editinfo {
+	margin : 1em 0;
+	width : auto;
+	border-collapse : collapse;
+}
+table.editinfo caption{
+	margin-top : 1em;
+}
+table.editinfo th {
+	padding : 0.5em 0.5em;
+	width : 10em;
+	text-align : right;
+	border-style : solid;
+	border-width : 1px;
+	border-color : #ffffff;
+}
+table.editinfo td {
+	padding : 0.4em;
+	background-color : #ffffff;
+	border-style : solid;
+	border-width : 1px;
+	border-color : #ffffff;
+}
+table.editinfo td.attention {
+	font-size : 12pt;
+	text-align : center;
+}
+
+table.editinfo input {
+	width : 20em;
+}
+
+table.editinfo tr.opsection input {
+	width : auto;
+	padding : 0.2em 0.5em;
+}
+
+table.editinfo tr.opsection td{
+	background-color : #e1e1e1;
+	border-color : #ffffff;
+
+	padding : 1em;
+	text-align : center;
+}
+
+
+.msg .header_compose td {
+	padding: 0.3em 0.3em 0.3em 1em;
+}
+
+.msg .actions input {
+	font-size: 1.1em;
+	margin-right: 1em;
+}
+
+</style>
+
+<title>メッセージ - 関大LMS</title>
+
+<script type="text/javascript">
+var urlStore = '';
+function changeUser() {
+    if (urlStore !== '') {
+        document.condition.action = urlStore;
+    }
+	document.condition.submit();
+}
+function searchbyname() {
+	document.condition.searchmode.value = "searchbyname";
+	changeUser();
+}
+
+function changePage(jumpto) {
+    if (urlStore !== '') {
+        document.condition.action = urlStore;
+    }
+    document.condition.pagejumpto.value = jumpto;
+	document.condition.submit();
+}
+
+function isMessageSelected() {
+	var num_checkbox = document.condition.num_cboxes.value;
+	for(i=0; i<num_checkbox; i++){
+		if(document.condition.elements[ "id[" + i + "]"].checked) {
+			return true;
+		}
+	}
+	return false;
+}
+function openMsgDownload(openurl) {
+	if(!isMessageSelected()) {
+		alert('メッセージを選択してください');
+		return false;
+	}
+
+    if (urlStore === '') {
+        urlStore = document.condition.action;
+    }
+	document.condition.target="";
+	document.condition.action=openurl;
+}
+
+function deleteMessage(openurl) {
+    if (urlStore === '') {
+        urlStore = document.condition.action;
+    }
+	document.condition.target="";
+	document.condition.action=openurl;
+}
+
+function returnMessage(openurl) {
+    if (urlStore === '') {
+        urlStore = document.condition.action;
+    }
+	document.condition.target="";
+	document.condition.action=openurl;
+}
+
+	function filedownload(openurl) {
+		w = window.open(openurl, "download",
+				"toolbar=no,location=no,directories=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,width=320,height=250");
+		w.window.focus();
+	}
+
+	function idmanagerOpen(file_name) {
+		w = window.open(file_name, "idmanagerWindow", "toolbar=no, location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=650,height=400");
+		w.window.focus();
+	}
+
+	function sortMessageListTable(column) {
+		document.condition.msgtable_sortorder.value = column;
+		document.condition.submit();
+	}
+	function selectAllCheckRecipients(idname){
+		var num_checkbox;
+		var ischecked = document.condition.autochecker.checked;
+		num_checkbox = document.condition.num_cboxes.value;
+		for(i=0; i<num_checkbox; i++){
+			document.condition.elements[ idname + "[" + i + "]"].checked = ischecked;
+		}
+	}
+
+// -->
+</script>
+
+
+</head>
+<body>
+<a href="javascript:window.close();" class="uppernavi">&raquo; このウィンドウを閉じる</a>
+<h1 class="pkgtitle bgc_main">メッセージ</h1>
+<div class="navi">
+<dl>
+  <dt class="bgc_main">メッセージ</dt>
+    <dd  ><a href="/webclass/msg_editor.php?msgappmode=editmsg&amp;acs_=2472530e">&raquo; メッセージ作成</a></dd>
+    <dd class="active" ><a href="/webclass/msg_editor.php?msgappmode=inbox&amp;acs_=2472530e">&raquo; 受信箱</a></dd>
+    <dd  ><a href="/webclass/msg_editor.php?msgappmode=outbox&amp;acs_=2472530e">&raquo; 送信済箱</a></dd>
+    <dd  ><a href="/webclass/msg_editor.php?msgappmode=recyclebox&amp;acs_=2472530e">&raquo; ゴミ箱</a></dd>
+  <dt class="bgc_main">お知らせ</dt>
+    <dd><a href="/webclass/information.php/?acs_=2472530e">&raquo; 一覧</a></dd>
+</dl>
+</div>
+<div class="content">
+
+<div style="margin: 1em 0;">
+</div>
+<div style="margin: 1em 0;" class="msg">
+<h3>受信箱</h3><div></div><br><form method="POST" action="/webclass/msg_editor.php?msgappmode=inbox&amp;acs_=2472530e&amp;page=0" name="condition" enctype="multipart/form-data" autocomplete="off"><table ALIGN="center" BORDER=0 width=100%><tr><td><input type='submit' name='COMFIRM_SELECTED' value='削除' onClick="javascript:deleteMessage('/webclass/msg_editor.php?msgappmode=inbox&acs_=2472530e&page=0&sort=date_desc')"><input type='submit' name='UNSET_UNREADFLAG' value='既読にする' onClick="javascript:deleteMessage('/webclass/msg_editor.php?msgappmode=inbox&acs_=2472530e&page=0&sort=date_desc')">&nbsp;&nbsp;&nbsp;&nbsp;<input type='submit' name='downloadmsg' value='ダウンロード' onClick="return openMsgDownload('/webclass/msg_down.php?acs_=2472530e')">&nbsp;</TD><TD NOWRAP align="right"><input type="hidden" name="pagejumpto" value=""><font size=3>&lt;&lt;&nbsp;&nbsp;&lt;前へ</font><font size=3>&nbsp;&nbsp;&nbsp;<b>1</b>&nbsp;/1&nbsp;&nbsp;&nbsp;</font><font size=3>次へ&gt;&nbsp;&nbsp;&gt;&gt;</font></td></tr></table>						<TABLE id="MsgBox" border="0" width="100%" cellpadding="0"><TR><TD bgcolor="#EEEEEE">
+			<table id="MsgListTable" width="100%" cellspacing="1" cellpadding="3" style="table-layout: fixed;">
+			<thead>
+				<tr>
+				<th nowrap class="bgc_main" style="text-align:center;" width="25"><span class="size3"><input type="checkbox" name="autochecker" value="" onClick="return selectAllCheckRecipients('id')" ></span></th><th nowrap class="bgc_main" style="text-align:center;" ><span class="size3"><FONT COLOR=#FFFFFF>差出人</font><a href="javascript:sortMessageListTable('from')" title="昇順にソート"><span class="sorticon">&#9650;</span></a><a href="javascript:sortMessageListTable('from_desc')" title="降順でソート"><span class="sorticon">&#9660;</span></a></span></th><th nowrap class="bgc_main" style="text-align:center;" ><span class="size3"><FONT COLOR=#FFFFFF>ユーザID</font><a href="javascript:sortMessageListTable('from_id')" title="昇順にソート"><span class="sorticon">&#9650;</span></a><a href="javascript:sortMessageListTable('from_id_desc')" title="降順でソート"><span class="sorticon">&#9660;</span></a></span></th><th nowrap class="bgc_main" style="text-align:center;" ><span class="size3"><FONT COLOR=#FFFFFF>件名</font><a href="javascript:sortMessageListTable('subject')" title="昇順にソート"><span class="sorticon">&#9650;</span></a><a href="javascript:sortMessageListTable('subject_desc')" title="降順でソート"><span class="sorticon">&#9660;</span></a></span></th><th nowrap class="bgc_main" style="text-align:center;" ><span class="size3"><FONT COLOR=#FFFFFF>添付ファイル</font><a href="javascript:sortMessageListTable('attachment')" title="昇順にソート"><span class="sorticon">&#9650;</span></a><a href="javascript:sortMessageListTable('attachment_desc')" title="降順でソート"><span class="sorticon">&#9660;</span></a></span></th><th nowrap class="bgc_main" style="text-align:center;" width="105"><span class="size3"><FONT COLOR=#FFFFFF>日付</font><a href="javascript:sortMessageListTable('date')" title="昇順にソート"><span class="sorticon">&#9650;</span></a><a href="javascript:sortMessageListTable('date_desc')" title="降順でソート"><span class="sorticon">&#9660;</span></a></span></th>				</tr>
+			</thead>
+<tr class='odd'>
+<td style="text-align: center;"><input type="checkbox" name="id[0]" value="33fc7a54600b3920bf0bb04cadad55c4"></td>
+<td nowrap><span class=dimgray>王　漢隆 (情25-0507)</span></td>
+<td nowrap><span class=dimgray>情25-0507</span></td>
+<td nowrap><span class=dimgray><a href='/webclass/msg_viewer.php?uomsgid=33fc7a54600b3920bf0bb04cadad55c4&amp;acs_=2472530e' target='msgeditor'><font color="red"><font size="+1"><b> </b></font></font>レポートを受け取りました [言語学 (2026-春学期-木曜日-1限-70340) / 第四回授業課題 / 言語学第四回課題.docx / 24.42 KB]</a></span></td>
+<td nowrap><span class=dimgray>&nbsp;</span></td>
+<td style='text-align: center; padding: 0;' nowrap><span class=dimgray>26/05/06 20:12</span></td>
+</tr>			</table>
+			</TD></TR></TABLE>
+			<input type="hidden" name="msgtable_sortorder" value="date_desc">
+			<input type="hidden" name="num_cboxes" value="1">
+			
+</form></div>
+</div>
+</body>
+</html>
