@@ -1,6 +1,6 @@
 (() => {
-  if (window.__KU_LMS_REDESIGN__) return;
-  window.__KU_LMS_REDESIGN__ = true;
+  if (document.documentElement.dataset.kuRedesignBooted === 'true') return;
+  document.documentElement.dataset.kuRedesignBooted = 'true';
 
   const ROOT_ID = 'ku-redesign-root';
   const PERIOD_TIMES = {
@@ -32,6 +32,11 @@
     currentContext: null,
     currentRoute: null
   };
+
+  if (window.location.hostname === 'syllabus3.jm.kansai-u.ac.jp') {
+    initSyllabusAssist();
+    return;
+  }
 
   document.documentElement.dataset.kuRedesignState = 'booting';
   mountBootShell();
@@ -114,8 +119,8 @@
     const normalized = pathname.replace(/\/$/, '');
     if (normalized === '/webclass') return { supported: true, name: 'home' };
     if (normalized === '/webclass/index.php') return { supported: true, name: 'home' };
-    if (/\/webclass\/course\.php\/.+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
-    if (/\/webclass\/course\.php\/.+/.test(normalized)) return { supported: true, name: 'course-materials' };
+    if (/\/webclass\/course\.php\/[^/]+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
+    if (/\/webclass\/course\.php\/[^/]+$/.test(normalized)) return { supported: true, name: 'course-materials' };
     if (normalized === '/webclass/information.php' || normalized === '/webclass/information.php/mbl') return { supported: true, name: 'notifications' };
     if (normalized === '/webclass/msg_editor.php' && query.get('msgappmode') === 'inbox') return { supported: true, name: 'messages-inbox' };
     if (normalized === '/webclass/user.php/manual') return { supported: true, name: 'manual' };
@@ -192,39 +197,17 @@
     }
 
     try {
-      const dueCourses = uniqueBy(
-        view.schedule.entries.filter((entry) => entry.note.includes('締切')).map((entry) => ({
-          href: entry.href,
-          title: entry.title
-        })),
-        (entry) => entry.href
-      );
-      const upcoming = [];
-      let conflictDetected = false;
-      for (const course of dueCourses) {
-        try {
-          const courseDoc = await loadSupplementalDocument(course.href);
-          upcoming.push(...parseUpcomingFromCourse(courseDoc, course.href));
-        } catch (error) {
-          console.warn('[KU Redesign] failed to load course supplemental', course.href, error);
-          if (String(error?.message || error).includes('supplemental course conflict')) {
-            conflictDetected = true;
-            break;
-          }
-        }
-      }
       const now = new Date();
+      const fallbackUpcoming = parseUpcomingFromAnnouncements(nextView.announcements.items, view.schedule.entries, view.filters.year)
+        .sort((a, b) => {
+          if (a.dueDate?.getTime() !== b.dueDate?.getTime()) return a.dueDate - b.dueDate;
+          return a.title.localeCompare(b.title, 'ja');
+        });
       nextView.upcoming = {
         loading: false,
-        items: uniqueBy(upcoming, (item) => item.detailHref || `${item.courseHref}::${item.title}`)
-          .filter((item) => item.dueDate && item.dueDate >= now)
-          .sort((a, b) => {
-            if (a.hasUsage !== b.hasUsage) return Number(a.hasUsage) - Number(b.hasUsage);
-            if (a.dueDate?.getTime() !== b.dueDate?.getTime()) return a.dueDate - b.dueDate;
-            return (a.usageCount || 0) - (b.usageCount || 0);
-          })
+        items: fallbackUpcoming
           .slice(0, 5)
-          .map((item) => ({ ...item, daysLeft: Math.max(0, Math.ceil((item.dueDate - now) / 86400000)), conflictDetected }))
+          .map((item) => ({ ...item, daysLeft: Math.max(0, Math.ceil((item.dueDate - now) / 86400000)) }))
       };
     } catch (error) {
       console.warn('[KU Redesign] upcoming enrichment failed', error);
@@ -234,8 +217,9 @@
     rerender();
   }
 
-  function buildCourseMaterialsView(doc, context) {
+  async function buildCourseMaterialsView(doc, context) {
     const course = parseCourseDocument(doc);
+    course.timeline = await fetchCourseTimeline(course.course.courseId);
     return { course, currentTab: 'materials' };
   }
 
@@ -334,12 +318,14 @@
         if (!anchor) return;
         const fullText = anchor.textContent.replace(/\s+/g, ' ').trim();
         const dueFlag = cell.querySelector('.course-contents-info')?.textContent.trim() || '';
+        const rawHref = absoluteUrl(anchor.getAttribute('href'));
         entries.push({
           period,
           weekdayIndex: cellIndex,
           weekday: DAY_NAMES[cellIndex],
           title: fullText.replace(dueFlag, '').replace(/^»\s*/, '').trim(),
-          href: absoluteUrl(anchor.getAttribute('href')),
+          href: canonicalizeCourseMaterialsHref(rawHref),
+          supplementalHref: rawHref,
           note: dueFlag
         });
       });
@@ -366,7 +352,8 @@
           const anchor = box.querySelector('a[href]');
           if (!anchor) return;
           const meta = box.querySelector('.course-info')?.textContent.replace(/\s+/g, ' ').trim() || '';
-          group.items.push({ title: anchor.textContent.replace(/^»\s*/, '').trim(), href: absoluteUrl(anchor.getAttribute('href')), meta });
+          const rawHref = absoluteUrl(anchor.getAttribute('href'));
+          group.items.push({ title: anchor.textContent.replace(/^»\s*/, '').trim(), href: canonicalizeCourseMaterialsHref(rawHref), supplementalHref: rawHref, meta });
         });
       }
       if (group.items.length) groups.push(group);
@@ -378,13 +365,15 @@
     const brand = Array.from(doc.querySelectorAll('.navbar a, a')).find((a) => /\(\d{4}-/.test(a.textContent));
     const title = brand ? brand.textContent.trim() : (doc.title || '').replace(' - 関大LMS', '');
     const meta = deriveCourseMetaFromTitle(title);
+    const courseId = extractCourseId(brand?.getAttribute('href') || window.location.pathname);
     const links = {
-      materials: absoluteUrl(doc.querySelector('a[href*="#contents"], a[href*="/course.php/"]')?.getAttribute('href') || window.location.pathname),
+      materials: canonicalizeCourseMaterialsHref(doc.querySelector('a[href*="#contents"], a[href*="/course.php/"]')?.getAttribute('href') || window.location.pathname),
       myreports: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('マイレポート'))?.getAttribute('href') || ''),
       attendance: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('出席'))?.getAttribute('href') || ''),
-      manual: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('マニュアル'))?.getAttribute('href') || '')
+      manual: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('マニュアル'))?.getAttribute('href') || ''),
+      info: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('開講情報'))?.getAttribute('href') || (courseId ? `/webclass/course.php/${courseId}/info` : ''))
     };
-    return { title, meta, links };
+    return { title, meta, courseId, links };
   }
 
   function deriveCourseMetaFromTitle(title) {
@@ -403,76 +392,90 @@
   function parseCourseDocument(doc) {
     const course = parseCourseMeta(doc);
     const root = doc.querySelector('course-learning-index') || doc;
-    const sectionBlocks = Array.from(root.querySelectorAll('.cl-contentsList_folder')).map((folder) => {
+    const sectionBlocks = [];
+    Array.from(root.querySelectorAll('.cl-contentsList_folder')).forEach((folder) => {
       const title = folder.querySelector('.panel-title')?.textContent.trim() || '';
-      const items = Array.from(folder.querySelectorAll('.cl-contentsList_listGroupItem')).map((item) => {
-        const nameEl = item.querySelector('.cm-contentsList_contentName');
-        const linkEl = nameEl?.querySelector('a');
-        const detailLinks = Array.from(item.querySelectorAll('.cl-contentsList_contentDetail a'));
-        const availabilityLabel = Array.from(item.querySelectorAll('.cm-contentsList_contentDetailListItemLabel')).find((label) => label.textContent.includes('利用可能期間'));
-        const availabilityData = availabilityLabel?.nextElementSibling?.textContent.trim() || '';
-        return {
-          title: nameEl?.textContent.replace(/New/g, '').trim() || '項目',
-          isNew: !!item.querySelector('.cl-contentsList_new'),
-          type: item.querySelector('.cl-contentsList_categoryLabel')?.textContent.trim() || '',
-          availability: availabilityData,
-          href: absoluteUrl(linkEl?.getAttribute('href') || detailLinks[0]?.getAttribute('href') || ''),
-          detailHref: absoluteUrl(detailLinks[0]?.getAttribute('href') || ''),
-          historyHref: absoluteUrl(detailLinks[1]?.getAttribute('href') || ''),
-          usage: detailLinks[1]?.textContent.trim() || ''
-        };
-      });
-      return { title: title || 'General', items };
-    }).filter((section) => section.items.length);
-
-    const timeline = sectionBlocks.flatMap((section, sectionIndex) => section.items.slice(0, 2).map((item, itemIndex) => ({
-      title: item.title,
-      subtitle: item.type || section.title,
-      label: item.isNew ? 'New' : item.type,
-      recency: itemIndex === 0 && sectionIndex === 0 ? '最近' : `${sectionIndex + itemIndex + 1}件前`,
-      href: item.href
-    }))).slice(0, 5);
+      const normalizedTitle = title || 'General';
+      const items = Array.from(folder.querySelectorAll('.cl-contentsList_listGroupItem')).map((item) => extractCourseItem(item));
+      if (!items.length) return;
+      const existing = sectionBlocks.find((section) => section.title === normalizedTitle);
+      if (existing) {
+        existing.items.push(...items);
+      } else {
+        sectionBlocks.push({ title: normalizedTitle, items });
+      }
+    });
 
     const anchors = sectionBlocks.filter((section) => section.title).map((section) => ({
       title: section.title,
       target: slugify(section.title)
     }));
 
-    return { course, sections: sectionBlocks, timeline, anchors };
+    return { course, sections: sectionBlocks, timeline: { items: [], error: false }, anchors };
   }
 
   function parseUpcomingFromCourse(doc, courseHref = '') {
     const courseTitle = parseCourseMeta(doc).title;
     const items = [];
     Array.from(doc.querySelectorAll('.cl-contentsList_listGroupItem')).forEach((item) => {
-      const title = item.querySelector('.cm-contentsList_contentName')?.textContent.replace(/New/g, '').trim();
-      const type = item.querySelector('.cl-contentsList_categoryLabel')?.textContent.trim() || '';
-      const availability = Array.from(item.querySelectorAll('.cm-contentsList_contentDetailListItemLabel')).find((label) => label.textContent.includes('利用可能期間'));
-      const availabilityValue = availability?.nextElementSibling?.textContent.trim() || '';
-      if (!title || !availabilityValue) return;
-      const allLinks = Array.from(item.querySelectorAll('a[href]'));
-      const detailLinks = Array.from(item.querySelectorAll('.cl-contentsList_contentDetail a, .cl-contentsList_contentDetailListItem a, .cm-contentsList_contentDetailListItem a'));
-      const detailHref = absoluteUrl(detailLinks[0]?.getAttribute('href') || allLinks[0]?.getAttribute('href') || '');
-      const historyHref = absoluteUrl(allLinks.find((link) => /\/history/.test(link.getAttribute('href') || ''))?.getAttribute('href') || '');
-      const usageText = allLinks.find((link) => /利用回数/.test(link.textContent))?.textContent.trim() || '';
-      const usageCount = Number(usageText.match(/\d+/)?.[0] || 0);
-      const dueDate = parseAvailabilityEnd(availabilityValue);
+      const courseItem = extractCourseItem(item);
+      if (!courseItem.title || !courseItem.availability) return;
+      const dueDate = parseAvailabilityEnd(courseItem.availability);
       items.push({
-        title,
-        type,
-        availability: availabilityValue,
+        title: courseItem.title,
+        type: courseItem.type,
+        availability: courseItem.availability,
         dueDate,
-        href: courseHref || detailHref,
-        detailHref,
-        historyHref,
-        courseHref: courseHref || detailHref,
+        href: courseItem.detailHref || courseHref || courseItem.href,
+        detailHref: courseItem.detailHref,
+        historyHref: courseItem.historyHref,
+        courseHref: canonicalizeCourseMaterialsHref(courseHref || courseItem.href || courseItem.detailHref),
         courseTitle,
-        usageText,
-        usageCount,
-        hasUsage: usageCount > 0
+        usageText: courseItem.usage,
+        usageCount: courseItem.usageCount,
+        hasUsage: courseItem.usageCount > 0
       });
     });
     return items;
+  }
+
+  function extractCourseItem(item) {
+    const allLinks = Array.from(item.querySelectorAll('a[href]'));
+    const titleSource = item.querySelector('.cm-contentsList_contentName, .cl-contentsList_contentName, .cl-contentsList_contentInfo h4, .cl-contentsList_contentInfo');
+    const primaryTitleNode = item.querySelector('.cm-contentsList_contentName, .cl-contentsList_contentName, .cl-contentsList_contentInfo h4');
+    const titleCandidates = [
+      primaryTitleNode?.querySelector('a[href]')?.textContent || '',
+      extractPrimaryTitleText(primaryTitleNode),
+      extractPrimaryTitleText(titleSource),
+      ...Array.from(primaryTitleNode?.querySelectorAll('div, span') || []).map((node) => node.textContent || ''),
+      ...allLinks.map((link) => link.textContent || '')
+    ].map((text) => sanitizeCourseItemTitle(text)).filter(Boolean);
+    const rawTitle = titleCandidates[0] || '';
+    const availabilityLabel = Array.from(item.querySelectorAll('.cm-contentsList_contentDetailListItemLabel, .cl-contentsList_contentDetailListItemLabel')).find((label) => label.textContent.includes('利用可能期間'));
+    const availabilityData = availabilityLabel?.nextElementSibling?.textContent.replace(/\s+/g, ' ').trim() || '';
+    const detailLinks = Array.from(item.querySelectorAll('.cl-contentsList_contentDetail a, .cl-contentsList_contentDetailListItem a, .cm-contentsList_contentDetailListItem a'));
+    const primaryTitleLink = allLinks.find((link) => sanitizeCourseItemTitle(link.textContent || ''));
+    const detailHref = absoluteUrl(detailLinks.find((link) => /\/contents\//.test(link.getAttribute('href') || '') || /詳細/.test(link.textContent || ''))?.getAttribute('href') || primaryTitleLink?.getAttribute('href') || '');
+    const historyHref = absoluteUrl(allLinks.find((link) => /\/history(?:[/?]|$)/.test(link.getAttribute('href') || ''))?.getAttribute('href') || '');
+    const historyLabel = allLinks.find((link) => /利用回数|履歴/.test(link.textContent || ''))?.textContent.replace(/\s+/g, ' ').trim() || '';
+    const usage = /利用回数/.test(historyLabel) ? historyLabel : '';
+    const usageCount = Number(usage.match(/\d+/)?.[0] || 0);
+    const categoryType = item.querySelector('.cl-contentsList_categoryLabel')?.textContent.replace(/\s+/g, ' ').trim() || '';
+    const inferredType = inferMaterialType(rawTitle);
+    const type = /試験/.test(inferredType) ? inferredType : (categoryType || inferredType);
+    const href = absoluteUrl(detailHref || primaryTitleLink?.getAttribute('href') || '');
+    return {
+      title: rawTitle || '項目',
+      isNew: !!item.querySelector('.cl-contentsList_new') || /(^|\s)New(\s|$)/.test(titleSource?.textContent || ''),
+      type,
+      availability: availabilityData,
+      href,
+      detailHref,
+      historyHref,
+      historyLabel,
+      usage,
+      usageCount
+    };
   }
 
   function parseMyReports(doc) {
@@ -661,10 +664,11 @@
 
   function renderHome(view) {
     const filteredGroups = filterOtherCourses(view.otherCourses, state.homeSearch);
+    const deadlineTarget = view.upcoming.items[0]?.courseHref || state.currentContext.links.courses;
     const upcomingHtml = view.upcoming.loading
       ? `<div class="ku-loading"><div class="ku-spinner"></div><div>課題を集約中…</div></div>`
       : (view.upcoming.items.length ? renderPanelList(view.upcoming.items.map((item) => ({
-          badge: `<span class="ku-chip ${item.type.includes('レポート') ? 'orange' : item.type.includes('試験') ? 'red' : 'orange'}">${escapeHtml(item.type || '未提出')}</span>`,
+          badge: `<span class="ku-chip ${materialTypeTone(item.type)}">${escapeHtml(item.type || '未提出')}</span>`,
           title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
           subtitle: escapeHtml(`${item.courseTitle}${item.usageText ? ` · ${item.usageText}` : ' · 未利用'}`),
           trailing: `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>`
@@ -705,7 +709,7 @@
               </div>
               <div class="ku-weekbar-right"><button class="ku-button">${icon('calendar')} 週表示</button></div>
             </div>
-            ${renderSchedule(view.schedule, view.week)}
+            ${renderSchedule(view.schedule, view.week, view.filters.year)}
           </section>
           <section class="ku-card ku-other-courses">
             <div class="ku-other-courses-header">
@@ -715,19 +719,19 @@
             ${filteredGroups.map((group) => `
               <section class="ku-other-group">
                 <div class="ku-other-group-title">${escapeHtml(group.title)}</div>
-                ${group.items.map((item) => `<div class="ku-other-row"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div></div>`).join('')}
+                ${group.items.map((item) => `<div class="ku-other-row"><div class="ku-course-link-stack"><div class="ku-title-inline"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>${renderSyllabusChip({ title: item.title, href: item.href, year: view.filters.year })}</div><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div></div></div>`).join('')}
               </section>`).join('') || `<div class="ku-empty">一致するコースがありません。</div>`}
           </section>
         </div>
         <aside class="ku-side-stack">
-          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><a class="ku-panel-title" href="${escapeAttr(view.schedule.entries[0]?.href || state.currentContext.links.courses)}">すべて見る</a></div>${upcomingHtml}</section>
+          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><a class="ku-panel-title" href="${escapeAttr(deadlineTarget)}">すべて見る</a></div>${upcomingHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">最新のお知らせ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.notifications)}">すべて見る</a></div>${announcementsHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">メッセージ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.messages)}">すべて見る</a></div>${messagesHtml}</section>
         </aside>
       </div>`;
   }
 
-  function renderSchedule(schedule, week) {
+  function renderSchedule(schedule, week, year = '') {
     const cells = [];
     cells.push('<div class="ku-schedule-head"></div>');
     DAY_LABELS.forEach((label, index) => {
@@ -738,16 +742,16 @@
       cells.push(`<div class="ku-schedule-period"><div class="ku-period-title">${escapeHtml(period)}</div><div class="ku-period-time">${escapeHtml(time)}</div></div>`);
       DAY_NAMES.forEach((weekday, weekdayIndex) => {
         const entry = schedule.entries.find((item) => item.period === period && item.weekdayIndex === weekdayIndex);
-        cells.push(`<div class="ku-schedule-cell">${entry ? renderScheduleCard(entry) : ''}</div>`);
+        cells.push(`<div class="ku-schedule-cell">${entry ? renderScheduleCard(entry, year) : ''}</div>`);
       });
     });
     return `<div class="ku-schedule-grid">${cells.join('')}</div>`;
   }
 
-  function renderScheduleCard(entry) {
+  function renderScheduleCard(entry, year = '') {
     const palette = pickPalette(entry.title);
     const meta = entry.title.match(/(\d限-\d+)/)?.[1] || entry.weekday;
-    return `<a class="ku-card-link" href="${escapeAttr(entry.href)}"><div class="ku-class-card ${palette}"><div class="ku-class-title">${escapeHtml(shortenCourseTitle(entry.title))}</div><div class="ku-class-sub">${escapeHtml(meta)}</div>${entry.note ? `<div class="ku-chip red">${escapeHtml(entry.note)}</div>` : ''}</div></a>`;
+    return `<div class="ku-class-card ${palette}"><div class="ku-class-title-row"><a class="ku-card-link ku-class-title-link" href="${escapeAttr(entry.href)}">${escapeHtml(shortenCourseTitle(entry.title))}</a>${renderSyllabusChip({ title: entry.title, href: entry.href, year })}</div><div class="ku-class-sub">${escapeHtml(meta)}</div>${entry.note ? `<div class="ku-chip red">${escapeHtml(entry.note)}</div>` : ''}</div>`;
   }
 
   function renderCourseMaterials(view) {
@@ -757,14 +761,20 @@
       <div class="ku-course-grid">
         <aside class="ku-card ku-timeline-card">
           <div class="ku-card-title">タイムライン</div>
-          ${view.course.timeline.map((item) => `<div class="ku-timeline-item"><div class="ku-timeline-icon">${icon('note')}</div><div class="ku-panel-body"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a><span class="ku-mini-meta">${escapeHtml(item.subtitle)}</span><span class="ku-chip ${item.label === 'New' ? 'red' : 'neutral'}">${escapeHtml(item.label || '更新')}</span></div><div class="ku-mini-meta">${escapeHtml(item.recency)}</div></div>`).join('')}
-          <button class="ku-button" style="width:100%;margin-top:10px">さらに過去の記録を取得</button>
+          ${view.course.timeline.items.length ? view.course.timeline.items.map((item) => {
+            const token = materialTypeToken(item.subtitle, item.title);
+            const body = item.href ? `<a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>` : `<div>${escapeHtml(item.title)}</div>`;
+            return `<div class="ku-timeline-item"><div class="ku-timeline-icon ku-token-${token.key}">${icon(token.icon)}</div><div class="ku-panel-body">${body}<span class="ku-mini-meta">${escapeHtml(item.subtitle)}</span><span class="ku-chip ${item.label === 'New' ? 'red' : token.tone}">${escapeHtml(item.label || '更新')}</span></div><div class="ku-mini-meta">${escapeHtml(item.recency)}</div></div>`;
+          }).join('') : `<div class="ku-empty">${view.course.timeline.error ? 'タイムラインを取得できませんでした。' : '表示できる活動はありません。'}</div>`}
         </aside>
         <section class="ku-sidebar-layout">
           ${view.course.sections.map((section) => `
             <section class="ku-section-block" id="${slugify(section.title || 'general')}">
               <div class="ku-collapse-head"><span>${escapeHtml(section.title || 'General')}</span><span>${icon('chevron-up')}</span></div>
-              <div class="ku-section-items">${section.items.map((item) => `<div class="ku-section-item"><div class="ku-item-icon">${item.type.includes('資料') ? icon('file') : item.type.includes('アンケート') ? icon('list') : icon('note')}</div><div class="ku-section-item-meta"><a class="ku-title-link" href="${escapeAttr(item.href || item.detailHref)}">${item.isNew ? '<span class="ku-chip red">New</span> ' : ''}${escapeHtml(item.title)}</a><div class="ku-mini-meta">${escapeHtml(item.type)}</div>${item.availability ? `<div class="ku-mini-meta">利用可能期間 ${escapeHtml(item.availability)}</div>` : ''}</div><div class="ku-inline">${item.detailHref ? `<a class="ku-chip blue ku-chip-link" href="${escapeAttr(item.detailHref)}">詳細</a>` : ''}${item.usage ? `<a class="ku-chip neutral ku-chip-link" href="${escapeAttr(item.historyHref)}">${escapeHtml(item.usage)}</a>` : ''}</div></div>`).join('')}</div>
+              <div class="ku-section-items">${section.items.map((item) => {
+                const token = materialTypeToken(item.type, item.title);
+                return `<div class="ku-section-item"><div class="ku-item-icon ku-token-${token.key}">${icon(token.icon)}</div><div class="ku-section-item-meta"><a class="ku-title-link" href="${escapeAttr(item.href || item.detailHref)}">${item.isNew ? '<span class="ku-chip red">New</span> ' : ''}${escapeHtml(item.title)}</a><div class="ku-inline"><span class="ku-chip ${token.tone}">${escapeHtml(item.type || token.label)}</span></div>${item.availability ? `<div class="ku-mini-meta">利用可能期間 ${escapeHtml(item.availability)}</div>` : ''}</div><div class="ku-inline">${item.detailHref ? `<a class="ku-chip blue ku-chip-link" href="${escapeAttr(item.detailHref)}">詳細</a>` : ''}${item.historyHref ? `<a class="ku-chip neutral ku-chip-link" href="${escapeAttr(item.historyHref)}">${escapeHtml(item.historyLabel || '履歴')}</a>` : ''}</div></div>`;
+              }).join('')}</div>
             </section>`).join('')}
         </section>
         <aside class="ku-card ku-rightnav-card">
@@ -779,7 +789,7 @@
       <div class="ku-route-header">
         <section class="ku-card ku-route-header-card">
           <div class="ku-page-subtitle"><a class="ku-title-link" href="${escapeAttr(state.currentContext.links.courses)}">← コース一覧に戻る</a></div>
-          <h1 class="ku-page-title" style="margin-top:12px">${escapeHtml(course.title)}</h1>
+          <div class="ku-title-inline ku-title-inline-large" style="margin-top:12px"><h1 class="ku-page-title">${escapeHtml(course.title)}</h1>${renderSyllabusChip({ title: course.title, href: course.links.info || course.links.materials, year: course.meta.year })}</div>
           <div class="ku-hero-meta"><span>${icon('calendar')} ${escapeHtml(course.meta.year)}年 ${escapeHtml(course.meta.semester)}</span><span>${icon('clock')} ${escapeHtml(course.meta.weekdayPeriod)}</span><span>${icon('pin')} 教室: ${escapeHtml(course.meta.room || '—')}</span></div>
           <nav class="ku-subnav"><a class="ku-subnav-link ${currentTab === 'materials' ? 'active' : ''}" href="${escapeAttr(course.links.materials || '#')}">教材</a><a class="ku-subnav-link ${currentTab === 'myreports' ? 'active' : ''}" href="${escapeAttr(course.links.myreports || '#')}">マイレポート</a><a class="ku-subnav-link" href="${escapeAttr(course.links.attendance || '#')}">出席</a><a class="ku-subnav-link" href="${escapeAttr(course.links.materials || '#')}">その他</a><a class="ku-subnav-link" href="${escapeAttr(state.currentContext.links.courses)}">コース</a></nav>
         </section>
@@ -992,6 +1002,10 @@
       const target = document.getElementById(anchor.getAttribute('href').slice(1));
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }));
+    root.querySelectorAll('[data-syllabus-title]').forEach((anchor) => anchor.addEventListener('click', async (event) => {
+      event.preventDefault();
+      await handleSyllabusNavigation(anchor);
+    }));
   }
 
   function triggerNativeMessageAction(name, view) {
@@ -1057,6 +1071,9 @@
       if (/コース利用中に、別のコースへのアクセスがリクエストされました/.test(html)) {
         throw new Error(`supplemental course conflict: ${normalized}`);
       }
+      if (/window\.top\.location\.href="\/webclass\/login\.php"/.test(html)) {
+        throw new Error(`supplemental login redirect: ${normalized}`);
+      }
       const parsed = new DOMParser().parseFromString(html, 'text/html');
       state.supplementalCache.set(normalized, parsed);
       return cloneDocument(parsed);
@@ -1074,11 +1091,16 @@
   }
 
   function parseAvailabilityEnd(text) {
-    const parts = text.split('-').map((part) => part.trim());
-    const endText = parts[parts.length - 1];
-    const match = endText.match(/(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})/);
-    if (!match) return null;
-    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]));
+    const normalized = String(text || '')
+      .replace(/[～〜‐‑‒–—―]/g, '-')
+      .replace(/\u3000/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const matches = Array.from(normalized.matchAll(/(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s*\([^)]*\))?\s*(\d{1,2})?:(\d{2})?/g));
+    const last = matches[matches.length - 1];
+    if (!last) return null;
+    const [, year, month, day, hour = '23', minute = '59'] = last;
+    return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
   }
 
   function getWeekDays(baseDate, offset) {
@@ -1149,9 +1171,459 @@
     return palettes[total % palettes.length];
   }
 
+  function inferMaterialType(title) {
+    if (/LTI/.test(title)) return 'LTIツール';
+    if (/自習/.test(title)) return '自習';
+    if (/テスト|小テスト|試験/.test(title)) return '試験';
+    if (/レポート|課題|提出/.test(title)) return '課題';
+    if (/アンケート/.test(title)) return 'アンケート';
+    if (/資料|スライド|補足|動画/.test(title)) return '資料';
+    return '';
+  }
+
+  function materialTypeToken(type = '', title = '') {
+    const normalizedType = String(type || '').trim();
+    const normalizedTitle = String(title || '').trim();
+    if (/LTI/.test(normalizedType)) return { key: 'lti', icon: 'link', tone: 'purple', label: 'LTIツール' };
+    if (/自習/.test(normalizedType)) return { key: 'selfstudy', icon: 'book', tone: 'neutral', label: '自習' };
+    if (/試験|小テスト/.test(normalizedType)) return { key: 'exam', icon: 'badge-check', tone: 'red', label: '試験' };
+    if (/レポート|課題|提出/.test(normalizedType)) return { key: 'report', icon: 'clipboard', tone: 'orange', label: /課題/.test(normalizedType) ? '課題' : 'レポート' };
+    if (/アンケート/.test(normalizedType)) return { key: 'survey', icon: 'list', tone: 'green', label: 'アンケート' };
+    if (/資料/.test(normalizedType)) return { key: 'material', icon: 'file', tone: 'blue', label: '資料' };
+    if (/LTI/.test(normalizedTitle)) return { key: 'lti', icon: 'link', tone: 'purple', label: 'LTIツール' };
+    if (/自習/.test(normalizedTitle)) return { key: 'selfstudy', icon: 'book', tone: 'neutral', label: '自習' };
+    if (/試験|テスト|小テスト/.test(normalizedTitle)) return { key: 'exam', icon: 'badge-check', tone: 'red', label: '試験' };
+    if (/レポート|課題|提出/.test(normalizedTitle)) return { key: 'report', icon: 'clipboard', tone: 'orange', label: /課題/.test(normalizedTitle) ? '課題' : 'レポート' };
+    if (/アンケート/.test(normalizedTitle)) return { key: 'survey', icon: 'list', tone: 'green', label: 'アンケート' };
+    if (/資料|スライド|補足|動画/.test(normalizedTitle)) return { key: 'material', icon: 'file', tone: 'blue', label: '資料' };
+    return { key: 'generic', icon: 'note', tone: 'neutral', label: type || '教材' };
+  }
+
+  function materialTypeTone(type = '', title = '') {
+    return materialTypeToken(type, title).tone;
+  }
+
   function shortenCourseTitle(title) {
     return title.replace(/\(\d{4}-.+?\)/, '').replace(/\[\s*\d+\]/, '').trim();
   }
+
+  function sanitizeCourseItemTitle(text) {
+    const normalized = String(text || '').replace(/\s+/g, ' ').replace(/New/g, '').trim();
+    if (!normalized) return '';
+    if (/^(詳細|履歴|利用回数\s*\d+)$/.test(normalized)) return '';
+    return normalized;
+  }
+
+  function extractPrimaryTitleText(node) {
+    if (!node) return '';
+    const clone = node.cloneNode(true);
+    clone.querySelectorAll('.cl-contentsList_new, .cl-contentsList_categoryLabel, .cm-contentsList_contentDetailListItem, .cl-contentsList_contentDetailListItem').forEach((element) => element.remove());
+    return clone.textContent || '';
+  }
+
+  function extractCourseId(input = '') {
+    const value = String(input || '');
+    const match = value.match(/\/webclass\/course\.php\/([^/?#]+)/) || value.match(/^([^/?#]+)$/);
+    return match ? match[1] : '';
+  }
+
+  function deriveSyllabusCourseCode(input = '') {
+    const courseId = extractCourseId(input);
+    if (!/^\d{5,}$/.test(courseId)) return '';
+    return courseId.slice(-5);
+  }
+
+  function canonicalizeCourseMaterialsHref(href) {
+    const courseId = extractCourseId(href);
+    if (!courseId) return absoluteUrl(href);
+    const source = new URL(absoluteUrl(href), window.location.origin);
+    const normalized = new URL(`/webclass/course.php/${courseId}/`, window.location.origin);
+    normalized.search = source.search;
+    return normalized.toString();
+  }
+
+  async function fetchCourseTimeline(courseId = '') {
+    if (!courseId) return { items: [], error: false };
+    try {
+      const response = await fetch(absoluteUrl(`/webclass/course.php/${courseId}/api/timeline/messages?head=1&filter=false`), {
+        credentials: 'include'
+      });
+      const text = await response.text();
+      if (/window\.top\.location\.href="\/webclass\/login\.php"/.test(text)) {
+        return { items: [], error: true };
+      }
+      const data = JSON.parse(text);
+      const records = Array.isArray(data?.records) ? data.records : [];
+      return {
+        items: records.slice(0, 8).map((record) => mapTimelineRecord(record, courseId)).filter((item) => item.title),
+        error: false
+      };
+    } catch (error) {
+      console.warn('[KU Redesign] timeline fetch failed', courseId, error);
+      return { items: [], error: true };
+    }
+  }
+
+  function mapTimelineRecord(record, courseId) {
+    const linkedContents = Array.isArray(record?.message_info?.contents)
+      ? record.message_info.contents.filter((content) => content && content.type && content.type !== 'string' && content.type !== 'deleted')
+      : [];
+    const primaryContent = linkedContents[0] || null;
+    const contentTitle = primaryContent?.text || sanitizeCourseItemTitle(record?.message_info?.text || record?.message || '');
+    const contentType = mapTimelineContentType(primaryContent?.type || '');
+    return {
+      title: contentTitle || record?.realname || 'タイムライン',
+      subtitle: primaryContent ? (contentType || '教材更新') : (record?.realname || '投稿'),
+      label: primaryContent ? (contentType || '更新') : '投稿',
+      recency: formatTimelineTimestamp(record?.datetime),
+      href: primaryContent ? buildTimelineContentHref(primaryContent, courseId) : ''
+    };
+  }
+
+  function mapTimelineContentType(type = '') {
+    const normalized = String(type || '').trim();
+    if (/test|examine/.test(normalized)) return '試験';
+    if (/report/.test(normalized)) return '課題';
+    if (/enquete|clicker|anonymous_enquete/.test(normalized)) return 'アンケート';
+    if (/selfstudy/.test(normalized)) return '自習';
+    if (/text|scenario|wiki|scorm|bbs|qanda/.test(normalized)) return '資料';
+    if (/chat/.test(normalized)) return 'チャット';
+    if (/epcontainer/.test(normalized)) return 'LTIツール';
+    return '';
+  }
+
+  function buildTimelineContentHref(content, courseId) {
+    const contentId = content?.id ? encodeURIComponent(content.id) : '';
+    if (!contentId || !courseId) return '';
+    const type = String(content.type || '');
+    if (/epcontainer/.test(type)) return absoluteUrl(`/webclass/eportfolio.php/containers/view/${contentId}/`);
+    if (/scenario|bbs|wiki|scorm|selfstudy|examine|qanda|anonymous_enquete|enquete|test|clicker|chat|report|text/.test(type)) {
+      return absoluteUrl(`/webclass/course.php/${encodeURIComponent(courseId)}/contents/${contentId}/exec`);
+    }
+    return '';
+  }
+
+  function formatTimelineTimestamp(timestamp) {
+    const value = Number(timestamp || 0);
+    if (!value) return '—';
+    return formatDate(new Date(value * 1000));
+  }
+
+  function parseUpcomingFromAnnouncements(items, scheduleEntries, year = '') {
+    const currentYear = Number(year) || new Date().getFullYear();
+    return (items || []).map((item) => {
+      const matchedCourse = scheduleEntries.find((entry) => {
+        const shortTitle = shortenCourseTitle(entry.title);
+        return shortTitle && ((item.source || '').includes(shortTitle) || item.title.includes(shortTitle));
+      });
+      if (!matchedCourse) return null;
+      const dueDate = parseAnnouncementDueDate(item.title, currentYear);
+      if (!dueDate) return null;
+      return {
+        title: item.title,
+        type: inferMaterialType(item.title) || '課題',
+        availability: '',
+        dueDate,
+        href: item.href,
+        detailHref: item.href,
+        historyHref: '',
+        courseHref: matchedCourse.href,
+        courseTitle: shortenCourseTitle(matchedCourse.title),
+        usageText: '',
+        usageCount: 0,
+        hasUsage: false
+      };
+    }).filter(Boolean);
+  }
+
+  function parseAnnouncementDueDate(title, year) {
+    const compact = String(title || '').replace(/\s+/g, ' ').trim();
+    const match = compact.match(/(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):?(\d{2})?\s*[-–〜~]\s*(\d{1,2}):?(\d{2})/);
+    if (!match) return null;
+    const [, month, day, startHour, startMinute = '00', endHour, endMinute] = match;
+    return new Date(Number(year), Number(month) - 1, Number(day), Number(endHour), Number(endMinute));
+  }
+
+  function normalizeSyllabusQuery(title = '') {
+    return shortenCourseTitle(String(title || '')).replace(/^»\s*/, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function buildSyllabusFallbackHref(year = '') {
+    const url = new URL('https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html');
+    if (year) url.searchParams.set('selectedNendo', year);
+    return url.toString();
+  }
+
+  function renderSyllabusChip({ title = '', href = '', year = '' } = {}) {
+    const query = normalizeSyllabusQuery(title);
+    if (!query) return '';
+    return `<a class="ku-chip blue ku-chip-link ku-syllabus-chip" href="${escapeAttr(buildSyllabusFallbackHref(year))}" data-syllabus-title="${escapeAttr(query)}" data-syllabus-href="${escapeAttr(href || '')}" data-syllabus-year="${escapeAttr(year || '')}" title="シラバスを開く" aria-label="${escapeAttr(`${query} のシラバスを開く`)}">シ</a>`;
+  }
+
+  async function handleSyllabusNavigation(anchor) {
+    if (anchor.dataset.loading === 'true') return;
+    anchor.dataset.loading = 'true';
+    const originalText = anchor.textContent;
+    anchor.textContent = '…';
+    try {
+      const payload = {
+        title: anchor.dataset.syllabusTitle || '',
+        courseHref: anchor.dataset.syllabusHref || '',
+        year: anchor.dataset.syllabusYear || ''
+      };
+      const resolved = await resolveSyllabusUrl(payload);
+      if (resolved) {
+        window.location.href = resolved;
+      } else {
+        await submitSyllabusSearchNavigation(payload);
+      }
+    } catch (error) {
+      console.warn('[KU Redesign] syllabus lookup failed', error);
+      window.location.href = anchor.href;
+    } finally {
+      anchor.dataset.loading = 'false';
+      anchor.textContent = originalText;
+    }
+  }
+
+  async function resolveSyllabusUrl({ title = '', courseHref = '', year = '' } = {}) {
+    const direct = await resolveSyllabusFromCourseInfo(courseHref);
+    if (direct) return direct;
+    return '';
+  }
+
+  async function resolveSyllabusFromCourseInfo(courseHref = '') {
+    const courseId = extractCourseId(courseHref);
+    if (!courseId) return '';
+    try {
+      const infoDoc = await loadSupplementalDocument(absoluteUrl(`/webclass/course.php/${courseId}/info`));
+      const syllabusLink = Array.from(infoDoc.querySelectorAll('a[href]')).find((link) => /シラバス/i.test(link.textContent || '') || /syllabus/i.test(link.getAttribute('href') || ''));
+      return syllabusLink ? absoluteUrl(syllabusLink.getAttribute('href') || '') : '';
+    } catch (error) {
+      console.warn('[KU Redesign] course info syllabus lookup failed', courseHref, error);
+      return '';
+    }
+  }
+
+  async function resolveCourseInstructor(courseHref = '') {
+    const courseId = extractCourseId(courseHref);
+    if (!courseId) return '';
+    try {
+      const infoDoc = await loadSupplementalDocument(absoluteUrl(`/webclass/course.php/${courseId}/info`));
+      const instructorLink = Array.from(infoDoc.querySelectorAll('a[href*="msg_editor.php?username="]')).find((link) => sanitizeCourseItemTitle(link.textContent || ''));
+      return instructorLink?.textContent.replace(/\s+/g, ' ').trim() || '';
+    } catch (error) {
+      console.warn('[KU Redesign] course instructor lookup failed', courseHref, error);
+      return '';
+    }
+  }
+
+  async function submitSyllabusSearchNavigation({ title = '', courseHref = '', year = '' } = {}) {
+    const query = normalizeSyllabusQuery(title);
+    if (!query) {
+      window.location.href = buildSyllabusFallbackHref(year || '');
+      return;
+    }
+    const resolvedYear = year || state.currentView?.filters?.year || '';
+    const instructor = await resolveCourseInstructor(courseHref);
+    rememberPendingSyllabusNavigation({
+      title: query,
+      year: resolvedYear,
+      instructor,
+      courseCode: deriveSyllabusCourseCode(courseHref)
+    });
+    submitSyllabusSearchForm({ query, year: resolvedYear });
+  }
+
+  function rememberPendingSyllabusNavigation(payload) {
+    try {
+      window.name = `__KU_SYLLABUS_AUTO__${JSON.stringify(payload)}`;
+    } catch (error) {
+      console.warn('[KU Redesign] failed to store syllabus auto payload', error);
+    }
+  }
+
+  function readPendingSyllabusNavigation() {
+    const raw = String(window.name || '');
+    if (!raw.startsWith('__KU_SYLLABUS_AUTO__')) return null;
+    try {
+      return JSON.parse(raw.slice('__KU_SYLLABUS_AUTO__'.length));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function clearPendingSyllabusNavigation() {
+    if (String(window.name || '').startsWith('__KU_SYLLABUS_AUTO__')) {
+      window.name = '';
+    }
+  }
+
+  function submitSyllabusSearchForm({ query = '', year = '' } = {}) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller';
+    form.style.display = 'none';
+    const fields = {
+      query,
+      gaiyo: '0',
+      tantousya: '0',
+      kamoku: '1',
+      biko: '0',
+      daigaku_flg: '0',
+      actionClass: 'syllabus.search.KeySearchUp',
+      hidSelIdx: '',
+      hideSelectNendo: year,
+      hideNendo: year,
+      hideSelectJyugyohouhou: '',
+      G_USERKBN: 'IPPAN',
+      G_USERID: '999999',
+      G_USERKBNCD: 'I',
+      tileNendo: year,
+      Nendo: year
+    };
+    Object.entries(fields).forEach(([name, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value || '';
+      form.appendChild(input);
+    });
+    document.body.appendChild(form);
+    form.submit();
+  }
+
+  function initSyllabusAssist() {
+    const run = () => {
+      document.documentElement.dataset.kuSyllabusAssist = 'booted';
+      const pending = readPendingSyllabusNavigation();
+      if (!pending) {
+        document.documentElement.dataset.kuSyllabusAssist = 'no-pending';
+        return;
+      }
+      if (/DetailKeySearchSt/.test(window.location.href)) {
+        clearPendingSyllabusNavigation();
+        document.documentElement.dataset.kuSyllabusAssist = 'detail';
+        return;
+      }
+      const candidates = parseSyllabusResultCandidates(document);
+      document.documentElement.dataset.kuSyllabusCandidateCount = String(candidates.length);
+      if (!candidates.length) {
+        document.documentElement.dataset.kuSyllabusAssist = 'no-candidates';
+        return;
+      }
+      document.documentElement.dataset.kuSyllabusAssist = 'resolving';
+      autoResolveSyllabusResult(pending, candidates).catch((error) => console.warn('[KU Redesign] syllabus result auto-resolve failed', error));
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run, { once: true });
+    } else {
+      run();
+    }
+  }
+
+  async function autoResolveSyllabusResult(pending, candidates) {
+    const normalizedTitle = normalizeSyllabusQuery(pending.title || '');
+    const normalizedInstructor = normalizeSyllabusQuery(pending.instructor || '');
+    const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedTitle);
+    if (exactMatches.length === 1) {
+      document.documentElement.dataset.kuSyllabusAssist = 'redirect-exact';
+      clearPendingSyllabusNavigation();
+      window.location.replace(buildSyllabusDetailUrl(exactMatches[0], pending.title, pending.year));
+      return;
+    }
+    if (normalizedInstructor) {
+      const instructorMatches = exactMatches.filter((candidate) => candidate.normalizedInstructor === normalizedInstructor);
+      const instructorResolved = await resolveSyllabusCandidateByCourseCode(instructorMatches, pending);
+      if (instructorResolved) {
+        document.documentElement.dataset.kuSyllabusAssist = 'redirect-instructor-code';
+        clearPendingSyllabusNavigation();
+        window.location.replace(instructorResolved);
+        return;
+      }
+    }
+    const exactResolved = await resolveSyllabusCandidateByCourseCode(exactMatches, pending);
+    if (exactResolved) {
+      document.documentElement.dataset.kuSyllabusAssist = 'redirect-course-code';
+      clearPendingSyllabusNavigation();
+      window.location.replace(exactResolved);
+      return;
+    }
+    document.documentElement.dataset.kuSyllabusAssist = 'unresolved';
+  }
+
+  function parseSyllabusResultCandidates(doc) {
+    const candidates = [];
+    const seen = new Set();
+    doc.querySelectorAll('a[onclick*=\"linkSetGoSt\"], a[onkeydown*=\"linkSetGoSt\"]').forEach((anchor) => {
+      const source = anchor.getAttribute('onclick') || anchor.getAttribute('onkeydown') || '';
+      const match = source.match(/linkSetGoSt\('([^']+)'\s*,\s*'([^']+)'\s*,\s*'([^']*)'\)/);
+      if (!match) return;
+      const [, year, id, query] = match;
+      const row = anchor.closest('tr');
+      const cells = Array.from(row?.querySelectorAll('td') || []).map((cell) => cell.textContent.replace(/\s+/g, ' ').trim());
+      const key = `${year}:${id}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const title = anchor.textContent.replace(/\s+/g, ' ').trim();
+      candidates.push({
+        year,
+        id,
+        query,
+        title,
+        faculty: cells[0] || '',
+        instructor: cells[2] || '',
+        normalizedTitle: normalizeSyllabusQuery(title),
+        normalizedInstructor: normalizeSyllabusQuery(cells[2] || '')
+      });
+    });
+    return candidates;
+  }
+
+  async function resolveSyllabusCandidateByCourseCode(candidates, pending) {
+    const courseCode = String(pending.courseCode || '').trim();
+    if (!courseCode || candidates.length < 2) return '';
+    for (const candidate of candidates) {
+      const detailUrl = buildSyllabusDetailUrl(candidate, pending.title, pending.year);
+      const detailCode = await loadSyllabusCourseCodeViaFrame(detailUrl);
+      if (detailCode === courseCode) {
+        return detailUrl;
+      }
+    }
+    return '';
+  }
+
+  async function loadSyllabusCourseCodeViaFrame(detailUrl) {
+    return new Promise((resolve) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.onload = () => {
+        try {
+          const text = iframe.contentDocument?.body?.textContent || '';
+          resolve(extractSyllabusCourseCodeFromText(text));
+        } catch (error) {
+          resolve('');
+        } finally {
+          iframe.remove();
+        }
+      };
+      iframe.src = detailUrl;
+      document.body.appendChild(iframe);
+    });
+  }
+
+  function buildSyllabusDetailUrl(candidate, query = '', year = '') {
+    return `https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=${encodeURIComponent(candidate.id)}&actionClass=syllabus.search.DetailKeySearchSt&nendo=${encodeURIComponent(candidate.year || year || '')}&queryString=${encodeURIComponent(query || candidate.query || candidate.title || '')}&st=key`;
+  }
+
+  function extractSyllabusCourseCodeFromText(html = '') {
+    const text = String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const match = text.match(/Course Code\s+([0-9A-Z]{4,})/i)
+      || text.match(/時間割コード\s+Course Code\s+([0-9A-Z]{4,})/i)
+      || text.match(/時間割コード\s+([0-9A-Z]{4,})/i);
+    return match ? String(match[1] || '').trim() : '';
+  }
+
 
   function truncate(text, length) {
     if (!text) return '';
@@ -1234,6 +1706,9 @@
       note: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>',
       list: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
       file: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+      link: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19"/></svg>',
+      clipboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h6"/></svg>',
+      "badge-check": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.5 2.5L18 4l1.5 3.5L23 10l-2.5 2 1 4-4 .5-1.5 3.5-3.5-1.5L9 20l-1.5-3.5-4-.5 1-4L2 10l3.5-2.5L7 4l3.5 1.5Z"/><path d="m9 12 2 2 4-4"/></svg>',
       pin: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-6-4.35-6-10a6 6 0 1 1 12 0c0 5.65-6 10-6 10Z"/><circle cx="12" cy="11" r="2"/></svg>',
       clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
       search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',

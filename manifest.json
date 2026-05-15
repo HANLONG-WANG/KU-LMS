@@ -4,7 +4,8 @@
   "description": "Pre-paint KU-LMS redesign overlay for home, course, notices, and messages routes.",
   "version": "0.1.0",
   "host_permissions": [
-    "https://kulms.tl.kansai-u.ac.jp/webclass/*"
+    "https://kulms.tl.kansai-u.ac.jp/webclass/*",
+    "https://syllabus3.jm.kansai-u.ac.jp/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js"
@@ -13,6 +14,11 @@
     {
       "matches": ["https://kulms.tl.kansai-u.ac.jp/webclass/*"],
       "css": ["src/content/critical.css"],
+      "js": ["src/content/main.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://syllabus3.jm.kansai-u.ac.jp/syllabus/*"],
       "js": ["src/content/main.js"],
       "run_at": "document_start"
     }

@@ -167,9 +167,9 @@ html[data-ku-redesign-state="ready"] body {
 }
 
 .ku-page {
-  max-width: 1448px;
+  max-width: 1760px;
   margin: 0 auto;
-  padding: 20px 18px 28px;
+  padding: 20px 24px 32px;
 }
 
 .ku-footer {
@@ -219,8 +219,8 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-home-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2.15fr) minmax(340px, 0.95fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 2.35fr) minmax(420px, 1.05fr);
+  gap: 20px;
 }
 
 .ku-home-main,
@@ -391,6 +391,23 @@ html[data-ku-redesign-state="ready"] body {
   line-height: 1.35;
 }
 
+.ku-class-title-row,
+.ku-title-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ku-class-title-row {
+  justify-content: space-between;
+}
+
+.ku-class-title-link {
+  flex: 1;
+  min-width: 0;
+}
+
 .ku-class-sub {
   font-size: 13px;
   color: rgba(0,0,0,.62);
@@ -451,6 +468,7 @@ html[data-ku-redesign-state="ready"] body {
 .ku-chip.orange { background: #fff7ed; color: var(--ku-warning); border-color: #ffd6a7; }
 .ku-chip.blue { background: #eef4ff; color: var(--ku-blue-strong); border-color: #d4e1ff; }
 .ku-chip.green { background: #eefbf3; color: var(--ku-success); border-color: #caefd8; }
+.ku-chip.purple { background: #f4f1ff; color: #7a5bd5; border-color: #d9ccff; }
 .ku-chip.neutral { background: #f7f9fd; color: #6d7896; border-color: #e2e8f4; }
 
 .ku-panel-title,
@@ -513,6 +531,10 @@ html[data-ku-redesign-state="ready"] body {
   border-top: 1px solid #edf2fb;
 }
 
+.ku-course-link-stack {
+  min-width: 0;
+}
+
 .ku-route-header {
   display: flex;
   flex-direction: column;
@@ -522,6 +544,14 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-route-header-card {
   padding: 22px 24px;
+}
+
+.ku-title-inline-large {
+  align-items: center;
+}
+
+.ku-title-inline-large .ku-page-title {
+  margin: 0;
 }
 
 .ku-hero-meta {
@@ -566,8 +596,8 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-course-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 220px;
-  gap: 18px;
+  grid-template-columns: 320px minmax(0, 1fr) 260px;
+  gap: 20px;
 }
 
 .ku-timeline-card,
@@ -609,6 +639,48 @@ html[data-ku-redesign-state="ready"] body {
   background: #eef4ff;
   color: var(--ku-blue-strong);
   border: 1px solid #d9e4ff;
+}
+
+.ku-token-material {
+  background: #eef4ff;
+  color: var(--ku-blue-strong);
+  border-color: #d9e4ff;
+}
+
+.ku-token-survey {
+  background: #eefbf3;
+  color: var(--ku-success);
+  border-color: #caefd8;
+}
+
+.ku-token-report {
+  background: #fff7ed;
+  color: #cd7c17;
+  border-color: #ffd6a7;
+}
+
+.ku-token-exam {
+  background: #fff0f0;
+  color: var(--ku-danger);
+  border-color: #ffc7c8;
+}
+
+.ku-token-lti {
+  background: #f4f1ff;
+  color: #7a5bd5;
+  border-color: #d9ccff;
+}
+
+.ku-token-selfstudy {
+  background: #f7f9fd;
+  color: #6d7896;
+  border-color: #e2e8f4;
+}
+
+.ku-token-generic {
+  background: #f7f9fd;
+  color: #6d7896;
+  border-color: #e2e8f4;
 }
 
 .ku-section-block {
@@ -656,6 +728,43 @@ html[data-ku-redesign-state="ready"] body {
   border: 1px solid #d9e4ff;
 }
 
+.ku-item-icon.ku-token-material {
+  background: #eef4ff;
+  color: var(--ku-blue-strong);
+  border-color: #d9e4ff;
+}
+
+.ku-item-icon.ku-token-survey {
+  background: #eefbf3;
+  color: var(--ku-success);
+  border-color: #caefd8;
+}
+
+.ku-item-icon.ku-token-report {
+  background: #fff7ed;
+  color: #cd7c17;
+  border-color: #ffd6a7;
+}
+
+.ku-item-icon.ku-token-exam {
+  background: #fff0f0;
+  color: var(--ku-danger);
+  border-color: #ffc7c8;
+}
+
+.ku-item-icon.ku-token-lti {
+  background: #f4f1ff;
+  color: #7a5bd5;
+  border-color: #d9ccff;
+}
+
+.ku-item-icon.ku-token-selfstudy,
+.ku-item-icon.ku-token-generic {
+  background: #f7f9fd;
+  color: #6d7896;
+  border-color: #e2e8f4;
+}
+
 .ku-rightnav-list {
   list-style: none;
   padding: 8px 0 0;
@@ -684,6 +793,15 @@ html[data-ku-redesign-state="ready"] body {
   background: #eef4ff;
   color: var(--ku-blue-strong);
   font-weight: 800;
+}
+
+.ku-syllabus-chip {
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .ku-sidebar-shell {

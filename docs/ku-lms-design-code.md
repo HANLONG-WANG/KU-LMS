@@ -153,7 +153,9 @@
   - do not compress multiline academic titles
 
 ### Spacing / layout rhythm
-- Global page max width: target visual fit for 1448×1086 reference
+- Global page max width:
+  - reference baseline remains 1448×1086
+  - on wider desktop monitors, the shell may expand up to roughly 1720–1760px equivalent width when it improves information density and reduces unnecessary line wrapping
 - Horizontal page padding: ~18–24px
 - Card internal padding:
   - standard: 16–20px
@@ -209,10 +211,13 @@
 - Message inbox table shell
 - Course section accordion/timeline hybrid
 - My-report display settings popover
+- Compact syllabus jump chip (`シ`) that sits immediately after course names and reuses the shared chip language
 
 ### Variants and states
 - Chips:
   - red / orange / blue / green / neutral
+  - purple for platform/tool-linked content when needed
+  - compact blue micro-chip for direct syllabus jumps; it should stay small, bordered, and secondary to the course title link
 - Buttons:
   - primary
   - ghost
@@ -237,6 +242,17 @@
 ### Token / component ownership
 - Future AI must prefer updating the shared token/component patterns before adding one-off styling.
 - If a component visually matches an existing one, extend the existing pattern instead of creating a new branch.
+
+### Content-type visual tokens
+- Course-material content should use stable semantic tokens when the type is known:
+  - `資料` → blue + file/document icon
+  - `アンケート` → green + checklist/list icon
+  - `レポート` / `課題` → orange + clipboard/task icon
+  - `試験` / `小テスト` → red + verified/badge icon
+  - `LTIツール` → purple + link/tool icon
+- The icon badge background must inherit the same semantic token family as the type chip; do not leave all material icons on a fixed blue background.
+- `自習` and unknown/non-content utility types should use a neutral token instead of impersonating `資料`.
+- Unknown types should fall back to a neutral token rather than reusing blue by default.
 
 ## Accessibility
 - Target standard:
