@@ -174,19 +174,19 @@
       week: getWeekDays(today, state.weekOffset),
       upcoming: { loading: true, items: [] },
       messages: { loading: true, items: [], total: 0 },
-      announcements: { loading: true, items: homeNotices },
-      allCourseLinks: uniqueBy(schedule.entries.map((entry) => entry.href).concat(otherCourses.flatMap((group) => group.items.map((item) => item.href))).filter(Boolean), (item) => item)
+      announcements: { loading: true, items: homeNotices }
     };
   }
 
   async function enrichHomeAsync(context, view) {
     const nextView = { ...view, upcoming: { loading: false, items: [] }, announcements: { loading: false, items: [] }, messages: { loading: false, items: [], total: 0 } };
-    let upcomingAnnouncementSource = [];
+    const fallbackAnnouncements = normalizeHomeAnnouncementItems(view.homeNotices);
+    let upcomingAnnouncementSource = fallbackAnnouncements;
 
     try {
       const noticesDoc = await loadSupplementalDocument(context.links.notifications || '/webclass/information.php/');
       const fetchedAnnouncements = parseNotificationsList(noticesDoc).items;
-      upcomingAnnouncementSource = fetchedAnnouncements;
+      upcomingAnnouncementSource = mergeAnnouncementSources(fallbackAnnouncements, fetchedAnnouncements);
       nextView.announcements = { loading: false, items: fetchedAnnouncements.slice(0, 5) };
     } catch (error) {
       console.warn('[KU Redesign] notices enrichment failed', error);
@@ -201,16 +201,15 @@
 
     try {
       const now = new Date();
-      const fallbackUpcoming = parseUpcomingFromAnnouncements(upcomingAnnouncementSource, view.schedule.entries, view.filters.year)
-        .sort((a, b) => {
-          if (a.dueDate?.getTime() !== b.dueDate?.getTime()) return a.dueDate - b.dueDate;
-          return a.title.localeCompare(b.title, 'ja');
-        });
+      const detailUpcoming = parseUpcomingFromAnnouncements(upcomingAnnouncementSource, view.schedule.entries, view.filters.year);
+      const fallbackUpcoming = detailUpcoming
+        .concat(buildDueFlagCourseAlertItems(view.schedule.entries, detailUpcoming))
+        .sort(compareUpcomingItems);
       nextView.upcoming = {
         loading: false,
         items: fallbackUpcoming
           .slice(0, 5)
-          .map((item) => ({ ...item, daysLeft: Math.max(0, Math.ceil((item.dueDate - now) / 86400000)) }))
+          .map((item) => ({ ...item, daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate - now) / 86400000)) : null }))
       };
     } catch (error) {
       console.warn('[KU Redesign] upcoming enrichment failed', error);
@@ -325,6 +324,7 @@
         entries.push({
           period,
           weekdayIndex: cellIndex,
+          sortIndex: entries.length,
           weekday: DAY_NAMES[cellIndex],
           title: fullText.replace(dueFlag, '').replace(/^»\s*/, '').trim(),
           href: canonicalizeCourseMaterialsHref(rawHref),
@@ -341,6 +341,46 @@
       title: anchor.textContent.trim(),
       href: absoluteUrl(anchor.getAttribute('href')),
       meta: anchor.parentElement?.textContent.replace(anchor.textContent, '').trim() || ''
+    }));
+  }
+
+  function normalizeHomeAnnouncementItems(items) {
+    return (items || []).map((item) => ({
+      ...item,
+      source: item.source || item.meta || '',
+      deadline: item.deadline || '',
+      important: typeof item.important === 'boolean' ? item.important : /重要|テスト/.test(item.title || '')
+    }));
+  }
+
+  function mergeAnnouncementSources(homeItems, fetchedItems) {
+    return uniqueBy([...(homeItems || []), ...(fetchedItems || [])], (item) => {
+      const href = item?.href || '';
+      const title = item?.title || '';
+      return href || title ? `${href}::${title}` : '';
+    });
+  }
+
+  function buildDueFlagCourseAlertItems(scheduleEntries, existingUpcoming) {
+    const coveredCourses = new Set((existingUpcoming || []).map((item) => item.courseHref).filter(Boolean));
+    return (scheduleEntries || []).filter((entry) => entry.note && !coveredCourses.has(entry.href)).map((entry) => ({
+      title: `${shortenCourseTitle(entry.title)} の締切課題を確認`,
+      type: '課題',
+      availability: '',
+      dueDate: null,
+      href: entry.href,
+      detailHref: entry.href,
+      historyHref: '',
+      courseHref: entry.href,
+      courseTitle: shortenCourseTitle(entry.title),
+      courseNote: entry.note || '',
+      hasCourseDueFlag: true,
+      usageText: '',
+      usageCount: 0,
+      hasUsage: false,
+      usageKnown: false,
+      scheduleIndex: entry.sortIndex ?? Number.MAX_SAFE_INTEGER,
+      isCourseAlert: true
     }));
   }
 
@@ -434,9 +474,14 @@
         historyHref: courseItem.historyHref,
         courseHref: canonicalizeCourseMaterialsHref(courseHref || courseItem.href || courseItem.detailHref),
         courseTitle,
+        courseNote: '',
+        hasCourseDueFlag: false,
         usageText: courseItem.usage,
         usageCount: courseItem.usageCount,
-        hasUsage: courseItem.usageCount > 0
+        hasUsage: courseItem.usageCount > 0,
+        usageKnown: true,
+        scheduleIndex: Number.MAX_SAFE_INTEGER,
+        isCourseAlert: false
       });
     });
     return items;
@@ -673,10 +718,12 @@
       : (view.upcoming.items.length ? renderPanelList(view.upcoming.items.map((item) => ({
           badge: `<span class="ku-chip ${materialTypeTone(item.type)}">${escapeHtml(item.type || '未提出')}</span>`,
           title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
-          subtitle: escapeHtml(`${item.courseTitle}${item.usageText ? ` · ${item.usageText}` : ' · 未利用'}`),
-          trailing: `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>`
+          subtitle: escapeHtml(buildUpcomingSubtitle(item)),
+          trailing: item.dueDate
+            ? `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>`
+            : `<div class="ku-deadline"><strong>コース内で確認</strong></div>`
         }))) : `<div class="ku-empty">近い締切の課題は見つかりませんでした。</div>`);
-    const announcementSource = view.announcements.items.length ? view.announcements.items : view.homeNotices.map((item) => ({ ...item, source: item.meta || '', deadline: '', important: /重要|テスト/.test(item.title) }));
+    const announcementSource = view.announcements.items.length ? view.announcements.items : normalizeHomeAnnouncementItems(view.homeNotices);
     const announcementsHtml = view.announcements.loading
       ? `<div class="ku-loading"><div class="ku-spinner"></div><div>お知らせを読み込み中…</div></div>`
       : (announcementSource.length ? renderPanelList(announcementSource.map((item) => ({
@@ -1132,6 +1179,37 @@
     return `${pad(date.getMonth() + 1)}/${pad(date.getDate())}（${DAY_LABELS[(date.getDay() + 6) % 7] || ''}） ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
+  function upcomingPriorityRank(item) {
+    if (item?.hasCourseDueFlag) return 0;
+    if (item?.hasUsage) return 2;
+    return 1;
+  }
+
+  function compareUpcomingItems(a, b) {
+    const rankDiff = upcomingPriorityRank(a) - upcomingPriorityRank(b);
+    if (rankDiff !== 0) return rankDiff;
+    const aDue = typeof a?.dueDate?.getTime === 'function' ? a.dueDate.getTime() : NaN;
+    const bDue = typeof b?.dueDate?.getTime === 'function' ? b.dueDate.getTime() : NaN;
+    const aHasDue = Number.isFinite(aDue);
+    const bHasDue = Number.isFinite(bDue);
+    if (aHasDue !== bHasDue) return aHasDue ? -1 : 1;
+    if (aHasDue && bHasDue && aDue !== bDue) return aDue - bDue;
+    if (!aHasDue && !bHasDue) {
+      const aScheduleIndex = a?.scheduleIndex ?? Number.MAX_SAFE_INTEGER;
+      const bScheduleIndex = b?.scheduleIndex ?? Number.MAX_SAFE_INTEGER;
+      if (aScheduleIndex !== bScheduleIndex) return aScheduleIndex - bScheduleIndex;
+    }
+    return a.title.localeCompare(b.title, 'ja');
+  }
+
+  function buildUpcomingSubtitle(item) {
+    const parts = [item.courseTitle];
+    if (item.courseNote) parts.push(item.courseNote);
+    if (item.usageText) parts.push(item.usageText);
+    else if (item.usageKnown === true && !item.hasUsage) parts.push('未利用');
+    return parts.filter(Boolean).join(' · ');
+  }
+
   function extractPublishDate(text) {
     const match = text.match(/(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2})/);
     return match ? match[1] : text;
@@ -1332,9 +1410,14 @@
         historyHref: '',
         courseHref: matchedCourse.href,
         courseTitle: shortenCourseTitle(matchedCourse.title),
+        courseNote: matchedCourse.note || '',
+        hasCourseDueFlag: Boolean(matchedCourse.note),
         usageText: '',
         usageCount: 0,
-        hasUsage: false
+        hasUsage: false,
+        usageKnown: false,
+        scheduleIndex: matchedCourse.sortIndex ?? Number.MAX_SAFE_INTEGER,
+        isCourseAlert: false
       };
     }).filter(Boolean);
   }
