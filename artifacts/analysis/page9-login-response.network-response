@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0,shrink-to-fit-no">
+
+  <link type="text/css" href="/webclass/css/bootstrap_gray.css" rel="stylesheet" />
+  <link type="text/css" href="/webclass/css/loader.php?css=overlay" rel="stylesheet" />
+  <link type="text/css" href="/webclass/css/loader.php?css=informations" rel="stylesheet" />
+
+  <script src="/webclass/js/loader.php?js=jquery371"></script>
+  <script type="text/javascript" src="/webclass/js/loader.php?js=jquery.overlay"></script>
+
+  <!-- type : kansai-u.html.php -->
+  <style>
+    html {
+      position: relative;
+      min-height: 100%;
+    }
+    body {
+      /* Margin bottom by footer height */
+      margin-bottom: 80px;
+    }
+    header nav.navbar {
+      margin-bottom: 0;
+    }
+    main {
+      padding-top: 20px;
+    }
+    .footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      /* Set the fixed height of the footer here */
+      min-height: 80px;
+      background-color: #f5f5f5;
+    }
+
+    #AnnounceBlock {
+      margin-top: 0.5em;
+    }
+    #overlay_content {
+      border-radius: 5px;
+      padding: 2em;
+    }
+    h2.page-header {
+      font-size: 150%;
+      margin-top:0;
+    }
+    @media (min-width: 1200px) {
+      .container {
+        width: 1024px;
+      }
+    }
+    .copyright,
+    .ft-message{
+      color: #666;
+    }
+  </style>
+  <script type="text/javascript">
+    let _lang = 'JAPANESE';
+    const _lang_resources = {
+      'JAPANESE' : {
+        'WELCOME': 'Welcome to KU-LMS',
+        'USER_ID' : 'ユーザID',
+        'PASSWORD' : 'パスワード',
+        'LOGIN' : 'ログイン',
+        'WRONG_PASSWORD' : 'パスワードが違います',
+        'Notices': 'お知らせ',
+        'PUBLISHED': '公開',
+        'MODIFIED' : '更新'
+      },
+      'ENGLISH' : {
+        'WELCOME': 'Welcome to KU-LMS',
+        'USER_ID' : 'User Id',
+        'PASSWORD' : 'Password',
+        'LOGIN' : 'Login',
+        'WRONG_PASSWORD' : 'invalid password',
+        'Notices' : 'Notices',
+        'PUBLISHED': 'published',
+        'MODIFIED' : 'modified'
+      }
+    };
+    const config = {"TOP_URL":"\/webclass\/"}
+    function switchView(mode) {
+      if (mode==='mobile') {
+        document.getElementById('viewport').setAttribute('content', 'width=767');
+      } else if (mode==='wide') {
+        document.getElementById('viewport').setAttribute('content', 'width=1050');
+      } else {
+        document.getElementById('viewport').setAttribute('content', 'width=device-width,initial-scale=1.0,shrink-to-fit-no');
+      }
+    }
+    function switchLang(lang) {
+      switch(lang) {
+        case 'JAPANESE':
+        case 'ENGLISH':
+          _lang = lang;
+          break;
+        default:
+          _lang = 'JAPANESE';
+      }
+
+      $('#welcome').html(__('WELCOME'));
+      $('#UserLang').val(lang);
+      if($('#GuestLang').length) {
+        $('#GuestLang').val(lang);
+      }
+      $('#username').attr('placeholder', __('USER_ID'));
+      $('#password').attr('placeholder', __('PASSWORD'));
+      $('#Login').val(__('LOGIN'));
+      $('#AnnounceBlock .info-title').text(__('Notices'));
+    }
+    function __(label) {
+      if(_lang_resources[_lang][label]) {
+        return _lang_resources[_lang][label];
+      } else {
+        return label;
+      }
+    }
+
+    function creaateDateFromString(datetime_str) {
+      // IE11 can not execute "new Date(datetime_str)" and may not be able to treat locale correctly.
+      if(datetime_str) {
+        var a=datetime_str.split(" ");
+        var d=a[0].split("-");
+        var t=a[1].split(":");
+        return new Date(d[0],(d[1]-1),d[2],t[0],t[1],t[2]);
+      } else {
+        return null;
+      }
+    }
+
+    /**
+     *
+     * @param datetime Date
+     */
+    function shortenDateTime(datetime) {
+      let format = 'MM/DD';
+      return formatDate(datetime, format);
+    }
+
+    /**
+     * 日付をフォーマットする
+     * @param  {Date}   date     日付
+     * @param  {String} [format] フォーマット
+     * @return {String}          フォーマット済み日付
+     */
+    const formatDate = function (date, format) {
+      if (!format) format = 'YYYY-MM-DD hh:mm:ss.SSS';
+      format = format.replace(/YYYY/g, date.getFullYear());
+      format = format.replace(/MM/g, ('0' + (date.getMonth() + 1)).slice(-2));
+      format = format.replace(/DD/g, ('0' + date.getDate()).slice(-2));
+      format = format.replace(/hh/g, ('0' + date.getHours()).slice(-2));
+      format = format.replace(/mm/g, ('0' + date.getMinutes()).slice(-2));
+      format = format.replace(/ss/g, ('0' + date.getSeconds()).slice(-2));
+      if (format.match(/S/g)) {
+        var milliSeconds = ('00' + date.getMilliseconds()).slice(-3);
+        var length = format.match(/S/g).length;
+        for (var i = 0; i < length; i++) format = format.replace(/S/, milliSeconds.substring(i, i + 1));
+      }
+      return format;
+    };
+
+    function updateInformations() {
+      $.ajax({
+        url : config.TOP_URL +  'information.php/public/api/listForGuest',
+        type: 'GET',
+        dataType: 'json',
+        cache: false,
+        timeout: 20000,
+        success : function(data) {
+          removeLoadingIcon();
+          if(data.records.length && data.records.length > 0) {
+            if (data.page_size > data.totalNum) {
+              size = data.totalNum;
+            } else {
+              size = data.page_size;
+            }
+            $('#AjaxInfoBox ul').append("<li class='list-group-item'>最新 "+size+ "</li>");
+            for(var i=0; i < data.records.length; i++) {
+              var info_url = config.TOP_URL+'information.php/public/post/' + data.records[i].id + '/';
+              var info_mbl_url = config.TOP_URL+'information.php/public/mbl/post/' + data.records[i].id + '/';
+              var time_created = creaateDateFromString(data.records[i].created);
+              var time_modified = creaateDateFromString(data.records[i].modified);
+              var time_open = creaateDateFromString(data.records[i].open_at);
+              if (time_open && (time_modified === time_created || time_open >= time_modified)){
+                publishing_state = ' - '+ shortenDateTime(time_open);
+              } else if( time_modified > time_created && time_modified > time_open) {
+                publishing_state = ' - '+ shortenDateTime(time_modified);
+              } else {
+                publishing_state = ' - '+ shortenDateTime(time_created);
+              }
+              var titleClass = 'title';
+              if(data.records[i].mark1) {
+                titleClass += ' mark1'
+              }
+              var title = '<div class="'+titleClass+'">' + data.records[i].title + '</div>';
+              var username = '<span style="font-weight: bold;">'+ data.records[i].publisher_name+'</span>';
+              var publish_state_tag = '<span>'+publishing_state+'</span>';
+              var status_line = '<div class="data">' + username + publish_state_tag+ "</div>";
+              $('#AjaxInfoBox ul').append("<li class='list-group-item'>" +
+                "<span class='visible-xs'><a href=\""+info_mbl_url+"?language=CHINESE\" target='msgeditor' onclick=\"return openMessage('" + info_mbl_url + "')\" >" + title + status_line + "</a></span>" +
+                "<span class='hidden-xs'><a href=\""+info_url+"?language=CHINESE\" target='msgeditor' onclick=\"return openMessage('" + info_url + "')\" >" + title + status_line + "</a></span>" +
+                "</li>");
+            }
+
+          } else {
+            $('#AjaxInfoBox ul').append('<li>没有通告。</li>');
+          }
+        },
+        error: function(jpXHR, textStatus, errorThrown) {
+          removeLoadingIcon();
+          $('#AjaxInfoBox ul').append('<li>加载失败。</li>');
+        }
+      });
+    }
+
+    function removeLoadingIcon() {
+      $('#InfoLoading').appendTo('<div>');
+    }
+    var floatLogin = null;
+    function showLogin(options) {
+      var options = jQuery.extend({
+        focus : 'username',
+        username : ''
+      }, options);
+
+      var loginFeedback = $("<div class='loginFeedback'><p>正在处理登录。 请稍等片刻。 <img src='./images/loading.gif' /></p></div>");
+      $.overlay({object: loginFeedback});
+      $.showOverlay({
+        speed: 150,
+        callback: function() {
+        }});
+    }
+    function initLoginButton() {
+      $.initOverlay({});
+
+      var loginButtonContainer = $("#LoginBtn").parent();
+
+      var loginButtonReplaceHtml = '<br><img src="./images/loading.gif"> 正在处理登录。';
+
+      $(document.login).on('submit',function(){
+        $("#LoginBtn").remove();
+        loginButtonContainer.append(loginButtonReplaceHtml);
+
+        setTimeout(function(){
+          showLogin()
+        },4000);
+      } );
+    }
+    $(document).ready(function(){
+      if($('#AjaxInfoBox').length > 0) {
+        updateInformations();
+      }
+      if($("#LoginBtn").length > 0) {
+        initLoginButton();
+      }
+
+      if ($('#username').val() != '') {
+        $('#password').trigger('focus');
+      } else {
+        $('#username').trigger('focus');
+      }
+    });
+
+    function callWebClass($lang) {
+      var url = config.TOP_URL + "login.php" + window.location.search;
+      if($lang === 'ENGLISH') {
+        if(window.location.search === '') {
+          url += '?';
+        } else {
+          url += '&';
+        }
+        url += 'language=ENGLISH';
+      }
+
+      var wcl = openWebClassWindow(url);
+    }
+    function openWebClassWindow(url) {
+      var opt_str = "toolbar=0,location=0,directories=0,status=1,menubar=0,scrollbars=yes,resizable=yes,";
+
+      if (screen.availWidth >= 1280) {
+        opt_str += "Width=1200,";
+      } else {
+        opt_str += "Width=" + screen.availWidth + ",";
+      }
+      if (screen.availHeight >= 1024) {
+        opt_str += "Height=900";
+      } else {
+        opt_str += "Height=" + (screen.availHeight-80);
+      }
+
+      var w = window.open(url, "WebClass", opt_str);
+      if (w !== null) {
+        w.window.focus();
+      }
+      return w;
+    }
+    function registrationOpen(file_name) {
+      w = window.open(file_name, "register", "toolbar=no, location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=680,height=400");
+      if(w !== null) {
+        w.window.focus();
+      }
+    }
+    function openMessage(url) {
+      w = window.open(url, "msgeditor", "toolbar=no, location=no,directories=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,width=820,height=650");
+      if(w !== null) {
+        w.window.focus();
+      }
+    }
+  </script>
+
+  <title>WebClass</title>
+</head>
+<body>
+<header class="header">
+  <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+      <div class="navbar-header">
+        <div class="navbar-brand"><img src="/webclass/login/img/kandai-logo.png" width="160" alt="WebClass"></div>
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#menu">
+          <span class="sr-only">导航</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+      </div>
+      <ul class="nav navbar-nav navbar-right  hidden-xs">
+                <li class="dropdown">
+          <a href="" class="dropdown-toggle" data-toggle="dropdown">Language<span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=JAPANESE">日本語</a></li>
+            <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=ENGLISH">English</a></li>
+            <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=KOREAN">한국어</a></li>
+            <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=CHINESE">简体中文</a></li>
+            <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=CHINESE-TW">正體中文</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div class="container hidden-sm hidden-md hidden-lg">
+      <div class="collapse navbar-collapse" id="menu">
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=JAPANESE">日本語</a></li>
+          <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=ENGLISH">English</a></li>
+          <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=KOREAN">한국어</a></li>
+          <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=CHINESE">简体中文</a></li>
+          <li><a href="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?language=CHINESE-TW">正體中文</a></li>
+                  </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+<main>
+    <noscript>
+    <div class="container">
+      <div class="alert alert-danger">由于您的网络浏览器不支持 Java Script， 或 Java Script <BR><BR>已禁用，所以您无法访问 WebClass。请确认您的 Web 浏览器<BR><BR>设置。<BR></div>
+    </div>
+  </noscript>
+  <div id="" class="container">
+    <div class="row">
+      <div class="col-sm-4">
+        <div class=" hidden-sm hidden-md hidden-lg"><img src="/webclass/login/img/kansai_main.jpg" class="img-responsive"  ><br><br></div>
+        <h2  class="page-header">Welcome to KU-LMS</h2>
+        <form name="login" action="https://kulms.tl.kansai-u.ac.jp/webclass/login.php" method="post" class="form">
+          <p><img src="/webclass/login/img/b_web_user_2.jpg"></p>
+          <p>欢迎来到 <B>WebClass</B>！请输入您的用户 ID 和密码。然后单击 “<B>登录</B>” 按钮。</p>
+          <div class="form-group">
+            <label class="sr-only" for="username">用户 ID</label>
+            <input class="form-control" type="text" name="username" id="username" autocomplete="username" value="" maxlength="60" style="ime-mode: disabled" placeholder="用户 ID">
+          </div>
+
+          <div class="form-group">
+            <label class="sr-only" for="password">密码</label>
+            <input class="form-control" type="password" name="val" id="password" maxlength="64" autocomplete="current-password" placeholder="密码">
+          </div>
+
+          <br>
+                    <div>
+            <input class="btn btn-primary" id="LoginBtn" type="submit" name="login" value="登录">
+          </div>
+          <input type="hidden" name="useragent" value="">
+          <input id="UserLang" type="hidden" name="language" value="CHINESE">
+          <input type="hidden" name="token" value="03e18130fad89fc564bcc20e57740fed" >
+        </form>
+        
+            <div><br><br></div>
+      <div align="center"><img src="/webclass/images/qrcode/aeb5deadae484aabd48f09ceef0dfc30.png"></div>
+      
+    </div>
+    <div class="col-sm-8">
+      <img src="/webclass/login/img/kansai_main.jpg" class="img-responsive hidden-xs" />
+		    <div class="description" >関大LMS問い合わせ先：<font color="blue">kulms@ml.kandai.jp</font></div>
+            <div class="description" >関大LMSお問い合わせ受付フォーム：<a href="https://forms.office.com/r/X4fuG8xmV7">▶▶お問い合わ
+せはこちら◀◀</a></div><br>
+      <div class="row" id="AnnounceBlock" >
+                <p class="info-title">通告</p>
+        <div id='AjaxInfoBox'>
+          <span id="InfoLoading">加载中<img src="./images/loading.gif"></span>
+          <ul class="list-group"></ul>
+        </div>
+        <p align="right" style="margin-top: 1em;">
+          <span class="hidden-xs">
+            <a href="/webclass/information.php/public/?language=CHINESE&amp;acs_=26e00111" target="msgeditor" onClick="return openMessage('/webclass/information.php/public/?language=CHINESE&acs_=26e00111')">&raquo; 通告</a>
+          </span>
+          <span class="visible-xs">
+            <a href="information.php/public/mbl/?language=CHINESE" target="msgeditor" onClick="return openMessage('information.php/public/mbl/')">&raquo; 通告</a>
+          </span>
+        </p>
+                <p align="right" style="color: #666;">Ver.12.1.0</p>
+      </div>
+    </div>
+  </div>
+  </div>
+</main>
+<footer class="footer navbar-default navbar-static-bottom">
+  <div class="container text-center">
+    <br>
+    <p><a href="#" onClick="self.window.close();">&raquo; 关闭这个窗口</a></p>
+        <p class="ft-message">Powered by 関大LMS</p>
+      </div>
+</footer>
+</body>
+<script src="/webclass/js/loader.php?js=bootstrap"></script>
+</html>

@@ -1,0 +1,1143 @@
+uid=1_0 RootWebArea "コースリスト - 関大LMS" url="https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=c630b766"
+  uid=1_1 ignored
+    uid=1_2 generic
+      uid=1_3 ignored
+        uid=1_4 banner
+          uid=1_5 ignored
+            uid=1_6 ignored
+              uid=1_7 image
+            uid=1_8 ignored
+              uid=1_9 StaticText "関大LMS"
+                uid=1_10 InlineTextBox "関大LMS"
+          uid=1_11 navigation
+            uid=1_12 link "ホーム" url="https://kulms.tl.kansai-u.ac.jp/webclass/"
+              uid=1_13 ignored
+                uid=1_14 image
+              uid=1_15 ignored
+                uid=1_16 StaticText "ホーム"
+                  uid=1_10 InlineTextBox "ホーム"
+            uid=1_17 link "コース" url="https://kulms.tl.kansai-u.ac.jp/webclass/"
+              uid=1_18 ignored
+                uid=1_19 image
+              uid=1_20 ignored
+                uid=1_21 StaticText "コース"
+                  uid=1_10 InlineTextBox "コース"
+            uid=1_22 link "お知らせ" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=2c9bc571"
+              uid=1_23 ignored
+                uid=1_24 image
+              uid=1_25 ignored
+                uid=1_26 StaticText "お知らせ"
+                  uid=1_10 InlineTextBox "お知らせ"
+            uid=1_27 link "メッセージ" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=2c9bc571"
+              uid=1_28 ignored
+                uid=1_29 image
+              uid=1_30 ignored
+                uid=1_31 StaticText "メッセージ"
+                  uid=1_10 InlineTextBox "メッセージ"
+            uid=1_32 link "マニュアル" url="https://kulms.tl.kansai-u.ac.jp/webclass/user.php/manual?acs_=2c9bc571"
+              uid=1_33 ignored
+                uid=1_34 image
+              uid=1_35 ignored
+                uid=1_36 StaticText "マニュアル"
+                  uid=1_10 InlineTextBox "マニュアル"
+          uid=1_37 ignored
+            uid=1_38 ignored
+              uid=1_39 image
+              uid=1_40 ignored
+                uid=1_41 StaticText "日本語"
+                  uid=1_10 InlineTextBox "日本語"
+            uid=1_42 ignored
+            uid=1_43 ignored
+              uid=1_44 ignored
+                uid=1_45 StaticText "王 漢隆"
+                  uid=1_10 InlineTextBox "王 漢隆"
+              uid=1_46 ignored
+                uid=1_47 StaticText "王"
+                  uid=1_10 InlineTextBox "王"
+            uid=1_48 link "ログアウト" url="https://kulms.tl.kansai-u.ac.jp/webclass/logout.php?acs_=2c9bc571"
+              uid=1_49 image
+              uid=1_50 ignored
+                uid=1_51 StaticText "ログアウト"
+                  uid=1_10 InlineTextBox "ログアウト"
+        uid=1_52 main
+          uid=1_53 ignored
+            uid=1_54 combobox expandable haspopup="menu" value="2026"
+              uid=1_55 MenuListPopup
+                uid=1_56 option "All" selectable value="All"
+                uid=1_57 option "2027" selectable value="2027"
+                uid=1_58 option "2026" selectable selected value="2026"
+                uid=1_59 option "2025" selectable value="2025"
+                uid=1_60 option "2024" selectable value="2024"
+                uid=1_61 option "2023" selectable value="2023"
+                uid=1_62 option "2022" selectable value="2022"
+                uid=1_63 option "2021" selectable value="2021"
+                uid=1_64 option "2020" selectable value="2020"
+                uid=1_65 option "2019" selectable value="2019"
+                uid=1_66 option "2018" selectable value="2018"
+                uid=1_67 option "2017" selectable value="2017"
+                uid=1_68 option "2016" selectable value="2016"
+                uid=1_69 option "2015" selectable value="2015"
+                uid=1_70 option "2014" selectable value="2014"
+                uid=1_71 option "2013" selectable value="2013"
+                uid=1_72 option "2012" selectable value="2012"
+                uid=1_73 option "2011" selectable value="2011"
+                uid=1_74 option "2010" selectable value="2010"
+                uid=1_75 option "2009" selectable value="2009"
+                uid=1_76 option "2008" selectable value="2008"
+                uid=1_77 option "2007" selectable value="2007"
+                uid=1_78 option "2006" selectable value="2006"
+                uid=1_79 option "2005" selectable value="2005"
+                uid=1_80 option "2004" selectable value="2004"
+                uid=1_81 option "2003" selectable value="2003"
+                uid=1_82 option "2002" selectable value="2002"
+                uid=1_83 option "2001" selectable value="2001"
+            uid=1_84 combobox expandable haspopup="menu" value="春学期"
+              uid=1_85 MenuListPopup
+                uid=1_86 option "All" selectable value="All"
+                uid=1_87 option "春学期" selectable selected value="春学期"
+                uid=1_88 option "秋学期" selectable value="秋学期"
+            uid=1_89 generic
+              uid=1_90 StaticText "表示中: 2026 春学期"
+                uid=1_10 InlineTextBox "表示中: 2026 春学期"
+          uid=1_91 ignored
+            uid=1_92 ignored
+              uid=1_93 generic
+                uid=1_94 ignored
+                  uid=1_95 heading "時間割（今週）" level="2"
+                    uid=1_96 StaticText "時間割（今週）"
+                      uid=1_10 InlineTextBox "時間割（今週）"
+                uid=1_97 ignored
+                  uid=1_98 ignored
+                    uid=1_99 button "今日"
+                      uid=1_100 StaticText "今日"
+                        uid=1_10 InlineTextBox "今日"
+                    uid=1_101 button
+                      uid=1_102 image
+                    uid=1_103 button
+                      uid=1_104 image
+                    uid=1_105 generic
+                      uid=1_106 StaticText "2026/05/11 〜 05/16"
+                        uid=1_10 InlineTextBox "2026/05/11 〜 05/16"
+                  uid=1_107 ignored
+                    uid=1_108 button " 週表示"
+                      uid=1_109 image
+                      uid=1_110 StaticText " 週表示"
+                        uid=1_10 InlineTextBox " 週表示"
+                uid=1_111 ignored
+                  uid=1_112 ignored
+                  uid=1_113 ignored
+                    uid=1_114 StaticText "月 5/11"
+                      uid=1_10 InlineTextBox "月 5/11"
+                  uid=1_115 ignored
+                    uid=1_116 StaticText "火 5/12"
+                      uid=1_10 InlineTextBox "火 5/12"
+                  uid=1_117 ignored
+                    uid=1_118 StaticText "水 5/13"
+                      uid=1_10 InlineTextBox "水 5/13"
+                  uid=1_119 ignored
+                    uid=1_120 StaticText "木 5/14"
+                      uid=1_10 InlineTextBox "木 5/14"
+                  uid=1_121 ignored
+                    uid=1_122 StaticText "金 5/15"
+                      uid=1_10 InlineTextBox "金 5/15"
+                  uid=1_123 ignored
+                    uid=1_124 StaticText "土 5/16"
+                      uid=1_10 InlineTextBox "土 5/16"
+                  uid=1_125 ignored
+                    uid=1_126 generic
+                      uid=1_127 StaticText "1限"
+                        uid=1_10 InlineTextBox "1限"
+                    uid=1_128 generic
+                      uid=1_129 StaticText "08:50–10:20"
+                        uid=1_10 InlineTextBox "08:50–10:20"
+                  uid=1_130 ignored
+                    uid=1_131 ignored
+                      uid=1_132 ignored
+                        uid=1_133 link "コンピュータシステムの基礎" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170381/?acs_=2c9bc571"
+                          uid=1_134 StaticText "コンピュータシステムの基礎"
+                            uid=1_10 InlineTextBox "コンピュータ"
+                            uid=1_10 InlineTextBox "システムの基"
+                            uid=1_10 InlineTextBox "礎"
+                        uid=1_135 link "コンピュータシステムの基礎 のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_136 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_137 generic
+                        uid=1_138 StaticText "1限-70381"
+                          uid=1_10 InlineTextBox "1限-70381"
+                  uid=1_139 ignored
+                  uid=1_140 ignored
+                  uid=1_141 ignored
+                    uid=1_142 ignored
+                      uid=1_143 ignored
+                        uid=1_144 link "言語学" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/?acs_=2c9bc571"
+                          uid=1_145 StaticText "言語学"
+                            uid=1_10 InlineTextBox "言語学"
+                        uid=1_146 link "言語学 のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_147 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_148 generic
+                        uid=1_149 StaticText "1限-70340"
+                          uid=1_10 InlineTextBox "1限-70340"
+                      uid=1_150 ignored
+                        uid=1_151 StaticText "締切が近い課題があります。"
+                          uid=1_10 InlineTextBox "締切が近い課題が"
+                          uid=1_10 InlineTextBox "あります。"
+                  uid=1_152 ignored
+                  uid=1_153 ignored
+                  uid=1_154 ignored
+                    uid=1_155 generic
+                      uid=1_156 StaticText "2限"
+                        uid=1_10 InlineTextBox "2限"
+                    uid=1_157 generic
+                      uid=1_158 StaticText "10:30–12:00"
+                        uid=1_10 InlineTextBox "10:30–12:00"
+                  uid=1_159 ignored
+                    uid=1_160 ignored
+                      uid=1_161 ignored
+                        uid=1_162 link "日本語３ａ" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26105097/?acs_=2c9bc571"
+                          uid=1_163 StaticText "日本語３ａ"
+                            uid=1_10 InlineTextBox "日本語３ａ"
+                        uid=1_164 link "日本語３ａ のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_165 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_166 generic
+                        uid=1_167 StaticText "2限-05097"
+                          uid=1_10 InlineTextBox "2限-05097"
+                  uid=1_168 ignored
+                  uid=1_169 ignored
+                  uid=1_170 ignored
+                    uid=1_171 ignored
+                      uid=1_172 ignored
+                        uid=1_173 link "コンピュータ・シミュレーション＜S＞＜C＞" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170460/?acs_=2c9bc571"
+                          uid=1_174 StaticText "コンピュータ・シミュレーション＜S＞＜C＞"
+                            uid=1_10 InlineTextBox "コンピュー"
+                            uid=1_10 InlineTextBox "タ・シミュレ"
+                            uid=1_10 InlineTextBox "ーション＜S＞"
+                            uid=1_10 InlineTextBox "＜C＞"
+                        uid=1_175 link "コンピュータ・シミュレーション のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_176 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_177 generic
+                        uid=1_178 StaticText "2限-70460"
+                          uid=1_10 InlineTextBox "2限-70460"
+                  uid=1_179 ignored
+                    uid=1_180 ignored
+                      uid=1_181 ignored
+                        uid=1_182 link "ヒューマンエージェントインタラクション＜M＞＜C＞" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170399/?acs_=2c9bc571"
+                          uid=1_183 StaticText "ヒューマンエージェントインタラクション＜M＞＜C＞"
+                            uid=1_10 InlineTextBox "ヒューマンエ"
+                            uid=1_10 InlineTextBox "ージェントイ"
+                            uid=1_10 InlineTextBox "ンタラクショ"
+                            uid=1_10 InlineTextBox "ン＜M＞＜C＞"
+                        uid=1_184 link "ヒューマンエージェントインタラクション のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_185 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_186 generic
+                        uid=1_187 StaticText "2限-70399"
+                          uid=1_10 InlineTextBox "2限-70399"
+                      uid=1_188 ignored
+                        uid=1_189 StaticText "締切が近い課題があります。"
+                          uid=1_10 InlineTextBox "締切が近い課題が"
+                          uid=1_10 InlineTextBox "あります。"
+                  uid=1_190 ignored
+                  uid=1_191 ignored
+                    uid=1_192 generic
+                      uid=1_193 StaticText "3限"
+                        uid=1_10 InlineTextBox "3限"
+                    uid=1_194 generic
+                      uid=1_195 StaticText "13:00–14:30"
+                        uid=1_10 InlineTextBox "13:00–14:30"
+                  uid=1_196 ignored
+                    uid=1_197 ignored
+                      uid=1_198 ignored
+                        uid=1_199 link "知的財産法（著作権）＜M＞＜S＞＜C＞" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170427/?acs_=2c9bc571"
+                          uid=1_200 StaticText "知的財産法（著作権）＜M＞＜S＞＜C＞"
+                            uid=1_10 InlineTextBox "知的財産法"
+                            uid=1_10 InlineTextBox "（著作権）＜"
+                            uid=1_10 InlineTextBox "M＞＜S＞＜C"
+                            uid=1_10 InlineTextBox "＞"
+                        uid=1_201 link "知的財産法（著作権） のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_202 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_203 generic
+                        uid=1_204 StaticText "3限-70427"
+                          uid=1_10 InlineTextBox "3限-70427"
+                  uid=1_205 ignored
+                  uid=1_206 ignored
+                  uid=1_207 ignored
+                    uid=1_208 ignored
+                      uid=1_209 ignored
+                        uid=1_210 link "英語２ａ中級" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170076/?acs_=2c9bc571"
+                          uid=1_211 StaticText "英語２ａ中級"
+                            uid=1_10 InlineTextBox "英語２ａ中級"
+                        uid=1_212 link "英語２ａ中級 のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_213 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_214 generic
+                        uid=1_215 StaticText "3限-70076"
+                          uid=1_10 InlineTextBox "3限-70076"
+                  uid=1_216 ignored
+                  uid=1_217 ignored
+                  uid=1_218 ignored
+                    uid=1_219 generic
+                      uid=1_220 StaticText "4限"
+                        uid=1_10 InlineTextBox "4限"
+                    uid=1_221 generic
+                      uid=1_222 StaticText "14:40–16:10"
+                        uid=1_10 InlineTextBox "14:40–16:10"
+                  uid=1_223 ignored
+                  uid=1_224 ignored
+                  uid=1_225 ignored
+                  uid=1_226 ignored
+                  uid=1_227 ignored
+                    uid=1_228 ignored
+                      uid=1_229 ignored
+                        uid=1_230 link "ソフトウェア開発の基礎＜S＞＜C＞" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170461/?acs_=2c9bc571"
+                          uid=1_231 StaticText "ソフトウェア開発の基礎＜S＞＜C＞"
+                            uid=1_10 InlineTextBox "ソフトウェア"
+                            uid=1_10 InlineTextBox "開発の基礎＜S"
+                            uid=1_10 InlineTextBox "＞＜C＞"
+                        uid=1_232 link "ソフトウェア開発の基礎 のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_233 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_234 generic
+                        uid=1_235 StaticText "4限-70461"
+                          uid=1_10 InlineTextBox "4限-70461"
+                  uid=1_236 ignored
+                  uid=1_237 ignored
+                    uid=1_238 generic
+                      uid=1_239 StaticText "5限"
+                        uid=1_10 InlineTextBox "5限"
+                    uid=1_240 generic
+                      uid=1_241 StaticText "16:20–17:50"
+                        uid=1_10 InlineTextBox "16:20–17:50"
+                  uid=1_242 ignored
+                  uid=1_243 ignored
+                  uid=1_244 ignored
+                  uid=1_245 ignored
+                  uid=1_246 ignored
+                    uid=1_247 ignored
+                      uid=1_248 ignored
+                        uid=1_249 link "日本語４ａ" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26105099/?acs_=2c9bc571"
+                          uid=1_250 StaticText "日本語４ａ"
+                            uid=1_10 InlineTextBox "日本語４ａ"
+                        uid=1_251 link "日本語４ａ のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_252 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_253 generic
+                        uid=1_254 StaticText "5限-05099"
+                          uid=1_10 InlineTextBox "5限-05099"
+                  uid=1_255 ignored
+                  uid=1_256 ignored
+                    uid=1_257 generic
+                      uid=1_258 StaticText "6限"
+                        uid=1_10 InlineTextBox "6限"
+                    uid=1_259 generic
+                      uid=1_260 StaticText "18:00–19:30"
+                        uid=1_10 InlineTextBox "18:00–19:30"
+                  uid=1_261 ignored
+                  uid=1_262 ignored
+                  uid=1_263 ignored
+                  uid=1_264 ignored
+                  uid=1_265 ignored
+                  uid=1_266 ignored
+                  uid=1_267 ignored
+                    uid=1_268 generic
+                      uid=1_269 StaticText "7限"
+                        uid=1_10 InlineTextBox "7限"
+                    uid=1_270 generic
+                      uid=1_271 StaticText "19:40–21:10"
+                        uid=1_10 InlineTextBox "19:40–21:10"
+                  uid=1_272 ignored
+                  uid=1_273 ignored
+                  uid=1_274 ignored
+                  uid=1_275 ignored
+                  uid=1_276 ignored
+                  uid=1_277 ignored
+                  uid=1_278 ignored
+                    uid=1_279 generic
+                      uid=1_280 StaticText "8限"
+                        uid=1_10 InlineTextBox "8限"
+                    uid=1_281 generic
+                      uid=1_282 StaticText "21:20–22:50"
+                        uid=1_10 InlineTextBox "21:20–22:50"
+                  uid=1_283 ignored
+                  uid=1_284 ignored
+                  uid=1_285 ignored
+                  uid=1_286 ignored
+                  uid=1_287 ignored
+                  uid=1_288 ignored
+              uid=1_289 generic
+                uid=1_290 ignored
+                  uid=1_291 heading "その他のコース" level="2"
+                    uid=1_292 StaticText "その他のコース"
+                      uid=1_10 InlineTextBox "その他のコース"
+                  uid=1_293 searchbox "コース名・教員名で検索"
+                    uid=1_294 ignored
+                    uid=1_295 ignored
+                      uid=1_296 generic
+                uid=1_297 generic
+                  uid=1_298 generic
+                    uid=1_299 StaticText "オンデマンド・集中・隔週 等"
+                      uid=1_10 InlineTextBox "オンデマンド・集中・隔週 等"
+                  uid=1_300 ignored
+                    uid=1_301 ignored
+                      uid=1_302 ignored
+                        uid=1_303 link "活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26100311/?acs_=2c9bc571"
+                          uid=1_304 StaticText "活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311)"
+                            uid=1_10 InlineTextBox "活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311)"
+                        uid=1_305 link "活用法を見聞するAI・データサイエンス のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_306 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_307 generic
+                        uid=1_308 StaticText "2026 春学期 - -"
+                          uid=1_10 InlineTextBox "2026 春学期 - -"
+                uid=1_309 generic
+                  uid=1_310 generic
+                    uid=1_311 StaticText "[未分類]"
+                      uid=1_10 InlineTextBox "[未分類]"
+                  uid=1_312 ignored
+                    uid=1_313 ignored
+                      uid=1_314 ignored
+                        uid=1_315 link "外国人留学生の在籍確認　Enrollment confirmation for International students" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/202210_kokusai004/?acs_=2c9bc571"
+                          uid=1_316 StaticText "外国人留学生の在籍確認　Enrollment confirmation for International students"
+                            uid=1_10 InlineTextBox "外国人留学生の在籍確認　Enrollment confirmation for International students"
+                        uid=1_317 link "外国人留学生の在籍確認 Enrollment confirmation for International students のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_318 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_319 generic
+                        uid=1_320 StaticText "2026 通年 - -"
+                          uid=1_10 InlineTextBox "2026 通年 - -"
+                  uid=1_321 ignored
+                    uid=1_322 ignored
+                      uid=1_323 ignored
+                        uid=1_324 link "2026年度在学生（上位年次）対象　外国人留学生オリエンテーション" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/202302_kokusai009/?acs_=2c9bc571"
+                          uid=1_325 StaticText "2026年度在学生（上位年次）対象　外国人留学生オリエンテーション"
+                            uid=1_10 InlineTextBox "2026年度在学生（上位年次）対象　外国人留学生オリエンテーション"
+                        uid=1_326 link "2026年度在学生（上位年次）対象 外国人留学生オリエンテーション のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_327 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_328 generic
+                        uid=1_329 StaticText "2026 通年 - -"
+                          uid=1_10 InlineTextBox "2026 通年 - -"
+                  uid=1_330 ignored
+                    uid=1_331 ignored
+                      uid=1_332 ignored
+                        uid=1_333 link "2026年度「関大版ハタチのトビラ（学部２年次生）」" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/202602_career17/?acs_=2c9bc571"
+                          uid=1_334 StaticText "2026年度「関大版ハタチのトビラ（学部２年次生）」"
+                            uid=1_10 InlineTextBox "2026年度「関大版ハタチのトビラ（学部２年次生）」"
+                        uid=1_335 link "2026年度「関大版ハタチのトビラ（学部２年次生）」 のシラバスを開く" description="シラバスを開く" url="https://syllabus3.jm.kansai-u.ac.jp/syllabus/search/keyword/KeywordSearchTop.html?selectedNendo=2026"
+                          uid=1_336 StaticText "シ"
+                            uid=1_10 InlineTextBox "シ"
+                      uid=1_337 generic
+                        uid=1_338 StaticText "2026 通年 - -"
+                          uid=1_10 InlineTextBox "2026 通年 - -"
+            uid=1_339 complementary
+              uid=1_340 generic
+                uid=1_341 ignored
+                  uid=1_342 heading "期限が近い課題" level="2"
+                    uid=1_343 StaticText "期限が近い課題"
+                      uid=1_10 InlineTextBox "期限が近い課題"
+                  uid=1_344 link "すべて見る" url="https://kulms.tl.kansai-u.ac.jp/webclass/"
+                    uid=1_345 StaticText "すべて見る"
+                      uid=1_10 InlineTextBox "すべて見る"
+                uid=1_346 generic
+                  uid=1_347 StaticText "近い締切の課題は見つかりませんでした。"
+                    uid=1_10 InlineTextBox "近い締切の課題は見つかりませんでした。"
+              uid=1_348 generic
+                uid=1_349 ignored
+                  uid=1_350 heading "最新のお知らせ" level="2"
+                    uid=1_351 StaticText "最新のお知らせ"
+                      uid=1_10 InlineTextBox "最新のお知らせ"
+                  uid=1_352 link "すべて見る" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=2c9bc571"
+                    uid=1_353 StaticText "すべて見る"
+                      uid=1_10 InlineTextBox "すべて見る"
+                uid=1_354 ignored
+                  uid=1_355 ignored
+                    uid=1_356 generic
+                    uid=1_357 ignored
+                      uid=1_358 generic
+                        uid=1_359 link "Review Test 1, Vocabulary Test 2 について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/71043/"
+                          uid=1_360 StaticText "Review Test 1, Vocabulary Test 2 について"
+                            uid=1_10 InlineTextBox "Review Test 1, Vocabulary Test 2 について"
+                    uid=1_361 ignored
+                      uid=1_362 ignored
+                  uid=1_363 ignored
+                    uid=1_364 generic
+                    uid=1_365 ignored
+                      uid=1_366 generic
+                        uid=1_367 link "中間テスト（5/30 1300-1400）" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/69868/"
+                          uid=1_368 StaticText "中間テスト（5/30 1300-1400）"
+                            uid=1_10 InlineTextBox "中間テスト（5/30 1300-1400）"
+                    uid=1_369 ignored
+                      uid=1_370 ignored
+                  uid=1_371 ignored
+                    uid=1_372 generic
+                    uid=1_373 ignored
+                      uid=1_374 generic
+                        uid=1_375 link "関大LMSから授業動画が見られない時は" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/69849/"
+                          uid=1_376 StaticText "関大LMSから授業動画が見られない時は"
+                            uid=1_10 InlineTextBox "関大LMSから授業動画が見られない時は"
+                    uid=1_377 ignored
+                      uid=1_378 ignored
+                  uid=1_379 ignored
+                    uid=1_380 generic
+                    uid=1_381 ignored
+                      uid=1_382 generic
+                        uid=1_383 link "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/68585/"
+                          uid=1_384 StaticText "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                            uid=1_10 InlineTextBox "【最新版】【学生の皆さんへ】テスト教材を受"
+                            uid=1_10 InlineTextBox "ける際の注意点"
+                    uid=1_385 ignored
+                      uid=1_386 ignored
+                  uid=1_387 ignored
+                    uid=1_388 generic
+                    uid=1_389 ignored
+                      uid=1_390 generic
+                        uid=1_391 link "【学生の皆さんへ】メールで質問する前に、必ず確認してくだ..." url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/54911/"
+                          uid=1_392 StaticText "【学生の皆さんへ】メールで質問する前に、必ず確認してくだ..."
+                            uid=1_10 InlineTextBox "【学生の皆さんへ】メールで質問する前に、必"
+                            uid=1_10 InlineTextBox "ず確認してくだ..."
+                    uid=1_393 ignored
+                      uid=1_394 ignored
+              uid=1_395 generic
+                uid=1_396 ignored
+                  uid=1_397 heading "メッセージ" level="2"
+                    uid=1_398 StaticText "メッセージ"
+                      uid=1_10 InlineTextBox "メッセージ"
+                  uid=1_399 link "すべて見る" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=2c9bc571"
+                    uid=1_400 StaticText "すべて見る"
+                      uid=1_10 InlineTextBox "すべて見る"
+                uid=1_401 generic
+                  uid=1_402 StaticText "表示できるメッセージがありません。"
+                    uid=1_10 InlineTextBox "表示できるメッセージがありません。"
+                uid=1_403 generic
+                  uid=1_404 link "受信箱へ →" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=2c9bc571"
+                    uid=1_405 StaticText "受信箱へ →"
+                      uid=1_10 InlineTextBox "受信箱へ →"
+          uid=1_406 generic
+            uid=1_407 StaticText "Powered by 関大LMS"
+              uid=1_10 InlineTextBox "Powered by 関大LMS"
+    uid=1_408 generic
+      uid=1_409 banner
+        uid=1_410 navigation
+          uid=1_411 ignored
+            uid=1_412 ignored
+              uid=1_413 generic
+                uid=1_414 link "関大LMS" url="https://kulms.tl.kansai-u.ac.jp/webclass/"
+                  uid=1_415 StaticText "関大LMS"
+                    uid=1_10 InlineTextBox "関大LMS"
+            uid=1_416 list
+              uid=1_417 listitem level="1"
+                uid=1_418 link expandable expanded haspopup="menu" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=2c9bc571"
+                  uid=1_419 ignored
+                    uid=1_420 ignored
+              uid=1_421 listitem level="1"
+                uid=1_422 link "言語" url="https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=c630b766#"
+                  uid=1_423 StaticText "言語"
+                    uid=1_10 InlineTextBox "言語"
+                  uid=1_424 generic
+              uid=1_425 listitem level="1"
+                uid=1_426 link "王　漢隆 " description="アカウントメニュー" url="https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=c630b766"
+                  uid=1_427 StaticText "王　漢隆"
+                    uid=1_10 InlineTextBox "王　漢隆"
+                  uid=1_428 StaticText " "
+                    uid=1_10 InlineTextBox " "
+                  uid=1_429 image url="https://kulms.tl.kansai-u.ac.jp/webclass/user.php/identicon.png"
+          uid=1_430 ignored
+            uid=1_431 generic
+              uid=1_432 list
+                uid=1_433 listitem level="1"
+                  uid=1_434 link "ログアウト" url="https://kulms.tl.kansai-u.ac.jp/webclass/logout.php?acs_=2c9bc571"
+                    uid=1_435 StaticText "ログアウト"
+                      uid=1_10 InlineTextBox "ログアウト"
+                uid=1_436 listitem level="1"
+              uid=1_437 list
+                uid=1_438 listitem level="1"
+                  uid=1_439 link "コース" url="https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=c630b766"
+                    uid=1_440 StaticText "コース"
+                      uid=1_10 InlineTextBox "コース"
+                uid=1_441 listitem level="1"
+                  uid=1_442 link " ショーケースポートフォリオ" url="https://kulms.tl.kansai-u.ac.jp/webclass/eportfolio.php/showcases/?acs_=2c9bc571"
+                    uid=1_443 StaticText " ショーケースポートフォリオ"
+                      uid=1_10 InlineTextBox " ショーケースポートフォリオ"
+                uid=1_444 listitem level="1"
+                  uid=1_445 link " マニュアル" url="https://kulms.tl.kansai-u.ac.jp/webclass/user.php/manual?acs_=2c9bc571"
+                    uid=1_446 StaticText " マニュアル"
+                      uid=1_10 InlineTextBox " マニュアル"
+              uid=1_447 list
+      uid=1_448 main
+        uid=1_449 ignored
+          uid=1_450 ignored
+            uid=1_451 generic
+              uid=1_452 ignored
+                uid=1_453 ignored
+                  uid=1_454 heading "学習記録ビューア" level="4"
+                    uid=1_455 StaticText "学習記録ビューア"
+                      uid=1_10 InlineTextBox "学習記録ビューア"
+                  uid=1_456 ignored
+                    uid=1_457 list
+                      uid=1_458 listitem level="1"
+                        uid=1_459 link "» コース活動状況" url="https://kulms.tl.kansai-u.ac.jp/webclass/ip_mods.php/plugin/webclass/activity/index?m=s&acs_=2c9bc571"
+                          uid=1_460 StaticText "» コース活動状況"
+                            uid=1_10 InlineTextBox "» コース活動状況"
+              uid=1_461 ignored
+                uid=1_462 ignored
+                  uid=1_463 heading "リンク" level="4"
+                    uid=1_464 StaticText "リンク"
+                      uid=1_10 InlineTextBox "リンク"
+                  uid=1_465 ignored
+                    uid=1_466 list
+                      uid=1_467 listitem level="1"
+                        uid=1_468 link "» 【関大LMS】 マニュアル・Q&A集などのポータルサイトへ" url="https://wps.itc.kansai-u.ac.jp/panopto/2022/05/30/%e3%80%90%e5%ad%a6%e7%94%9f%e7%94%a8%e3%80%91ku-lms-%e6%93%8d%e4%bd%9c%e3%83%9e%e3%83%8b%e3%83%a5%e3%82%a2%e3%83%ab/"
+                          uid=1_469 StaticText "» "
+                            uid=1_10 InlineTextBox "» "
+                          uid=1_470 StaticText "【関大LMS】 マニュアル・Q&A集などのポータルサイトへ"
+                            uid=1_10 InlineTextBox "【関大LMS】 マニュアル・Q&A集など"
+                            uid=1_10 InlineTextBox "のポータルサイトへ"
+                      uid=1_471 listitem level="1"
+                        uid=1_472 link "» 【Panopto】 マニュアル・Q&A集などのポータルサイトへ" url="https://wps.itc.kansai-u.ac.jp/panopto/2022/05/30/%e3%80%90%e5%ad%a6%e7%94%9f%e7%94%a8%e3%80%91panopto%e5%88%a9%e7%94%a8%e3%83%9e%e3%83%8b%e3%83%a5%e3%82%a2%e3%83%ab/"
+                          uid=1_473 StaticText "» "
+                            uid=1_10 InlineTextBox "» "
+                          uid=1_474 StaticText "【Panopto】 マニュアル・Q&A集などのポータルサイトへ"
+                            uid=1_10 InlineTextBox "【Panopto】 マニュアル・Q&A集など"
+                            uid=1_10 InlineTextBox "のポータルサイトへ"
+                      uid=1_475 listitem level="1"
+                        uid=1_476 link "» 【スマホ版】Linkポータルサイトへ" url="https://www.kansai-u.ac.jp/lc/panopticon/"
+                          uid=1_477 StaticText "» 【スマホ版】Linkポータルサイトへ"
+                            uid=1_10 InlineTextBox "» 【スマホ版】Linkポータルサイトへ"
+                      uid=1_478 listitem level="1"
+                        uid=1_479 link "» 関西大学 キャリア支援システム KICSS" url="https://www.kansai-u.ac.jp/career/kicss_student/"
+                          uid=1_480 StaticText "» "
+                            uid=1_10 InlineTextBox "» "
+                          uid=1_481 StaticText "関西大学 キャリア支援システム KICSS"
+                            uid=1_10 InlineTextBox "関西大学 キャリア支援システム KICSS"
+                      uid=1_482 listitem level="1"
+                        uid=1_483 link "» 関大LMSに関するお問い合わせ ▶▶お問い合わせはこちら◀◀" url="https://forms.office.com/r/X4fuG8xmV7"
+                          uid=1_484 StaticText "» 関大LMSに関するお問い合わせ"
+                            uid=1_10 InlineTextBox "» 関大LMSに関するお問い合わせ"
+                          uid=1_485 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                          uid=1_486 StaticText "▶▶お問い合わせはこちら◀◀"
+                            uid=1_10 InlineTextBox "▶▶お問い合わせはこちら◀◀"
+            uid=1_487 generic
+              uid=1_488 generic
+                uid=1_489 heading "管理者からのお知らせ" level="4"
+                  uid=1_490 StaticText "管理者からのお知らせ"
+                    uid=1_10 InlineTextBox "管理者からのお知らせ"
+                uid=1_491 generic
+                  uid=1_492 generic
+                    uid=1_493 ignored
+                      uid=1_494 list
+                        uid=1_495 listitem level="1"
+                          uid=1_496 StaticText "最新5件 (全 62 件)"
+                            uid=1_10 InlineTextBox "最新5件 (全 62 件)"
+                        uid=1_497 listitem level="1"
+                          uid=1_498 link "Review Test 1, Vocabulary Test 2 について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/71043/"
+                            uid=1_499 StaticText "Review Test 1, Vocabulary Test 2 について"
+                              uid=1_10 InlineTextBox "Review Test 1, Vocabulary Test 2 について"
+                          uid=1_500 generic
+                            uid=1_501 generic
+                              uid=1_502 StaticText "英語２ａ中級[ 6] (2026-春学期-木曜日-3限-70076)"
+                                uid=1_10 InlineTextBox "英語２ａ中級[ 6] (2026-春学期-木曜日-3限-70076)"
+                              uid=1_503 StaticText " - May 15"
+                                uid=1_10 InlineTextBox " - May 15"
+                        uid=1_504 listitem level="1"
+                          uid=1_505 link "中間テスト（5/30 1300-1400）" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/69868/"
+                            uid=1_506 StaticText "中間テスト（5/30 1300-1400）"
+                              uid=1_10 InlineTextBox "中間テスト（5/30 1300-1400）"
+                          uid=1_507 generic
+                            uid=1_508 generic
+                              uid=1_509 StaticText "コンピュータシステムの基礎[ 1] (2026-春学期-月曜日-1限-70381)"
+                                uid=1_10 InlineTextBox "コンピュータシステムの基礎[ 1] (2026-春学期-月曜日-1限-70381)"
+                              uid=1_510 StaticText " - Apr 20"
+                                uid=1_10 InlineTextBox " - Apr 20"
+                        uid=1_511 listitem level="1"
+                          uid=1_512 link "関大LMSから授業動画が見られない時は" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/69849/"
+                            uid=1_513 StaticText "関大LMSから授業動画が見られない時は"
+                              uid=1_10 InlineTextBox "関大LMSから授業動画が見られない時は"
+                          uid=1_514 generic
+                            uid=1_515 generic
+                              uid=1_516 StaticText "システム管理者"
+                                uid=1_10 InlineTextBox "システム管理者"
+                              uid=1_517 StaticText " - Apr 20"
+                                uid=1_10 InlineTextBox " - Apr 20"
+                        uid=1_518 listitem level="1"
+                          uid=1_519 link "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/68585/"
+                            uid=1_520 StaticText "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                              uid=1_10 InlineTextBox "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                          uid=1_521 generic
+                            uid=1_522 generic
+                              uid=1_523 StaticText "システム管理者"
+                                uid=1_10 InlineTextBox "システム管理者"
+                              uid=1_524 StaticText " - Apr 13"
+                                uid=1_10 InlineTextBox " - Apr 13"
+                        uid=1_525 listitem level="1"
+                          uid=1_526 link "【学生の皆さんへ】メールで質問する前に、必ず確認してくだ..." description="【学生の皆さんへ】メールで質問する前に、必ず確認してください。" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/54911/"
+                            uid=1_527 StaticText "【学生の皆さんへ】メールで質問する前に、必ず確認してくだ..."
+                              uid=1_10 InlineTextBox "【学生の皆さんへ】メールで質問する前に、必ず確認してくだ..."
+                          uid=1_528 generic
+                            uid=1_529 generic
+                              uid=1_530 StaticText "システム管理者"
+                                uid=1_10 InlineTextBox "システム管理者"
+                              uid=1_531 StaticText " - Apr 13"
+                                uid=1_10 InlineTextBox " - Apr 13"
+                  uid=1_532 paragraph
+                    uid=1_533 link "» お知らせ一覧" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=2c9bc571"
+                      uid=1_534 StaticText "» お知らせ一覧"
+                        uid=1_10 InlineTextBox "» お知らせ一覧"
+              uid=1_535 heading "参加しているコース" level="3"
+                uid=1_536 StaticText "参加しているコース"
+                  uid=1_10 InlineTextBox "参加しているコース"
+              uid=1_537 generic
+                uid=1_538 heading "表示する学期" level="4"
+                  uid=1_539 StaticText "表示する学期"
+                    uid=1_10 InlineTextBox "表示する学期"
+                uid=1_540 generic
+                  uid=1_541 combobox expandable haspopup="menu" value="2026"
+                    uid=1_542 MenuListPopup
+                      uid=1_543 option "All" selectable value="All"
+                      uid=1_544 option "2027" selectable value="2027"
+                      uid=1_545 option "2026" selectable selected value="2026"
+                      uid=1_546 option "2025" selectable value="2025"
+                      uid=1_547 option "2024" selectable value="2024"
+                      uid=1_548 option "2023" selectable value="2023"
+                      uid=1_549 option "2022" selectable value="2022"
+                      uid=1_550 option "2021" selectable value="2021"
+                      uid=1_551 option "2020" selectable value="2020"
+                      uid=1_552 option "2019" selectable value="2019"
+                      uid=1_553 option "2018" selectable value="2018"
+                      uid=1_554 option "2017" selectable value="2017"
+                      uid=1_555 option "2016" selectable value="2016"
+                      uid=1_556 option "2015" selectable value="2015"
+                      uid=1_557 option "2014" selectable value="2014"
+                      uid=1_558 option "2013" selectable value="2013"
+                      uid=1_559 option "2012" selectable value="2012"
+                      uid=1_560 option "2011" selectable value="2011"
+                      uid=1_561 option "2010" selectable value="2010"
+                      uid=1_562 option "2009" selectable value="2009"
+                      uid=1_563 option "2008" selectable value="2008"
+                      uid=1_564 option "2007" selectable value="2007"
+                      uid=1_565 option "2006" selectable value="2006"
+                      uid=1_566 option "2005" selectable value="2005"
+                      uid=1_567 option "2004" selectable value="2004"
+                      uid=1_568 option "2003" selectable value="2003"
+                      uid=1_569 option "2002" selectable value="2002"
+                      uid=1_570 option "2001" selectable value="2001"
+                  uid=1_571 combobox expandable haspopup="menu" value="春学期"
+                    uid=1_572 MenuListPopup
+                      uid=1_573 option "All" selectable value="All"
+                      uid=1_574 option "春学期" selectable selected value="春学期"
+                      uid=1_575 option "秋学期" selectable value="秋学期"
+                  uid=1_576 StaticText "   "
+                    uid=1_10 InlineTextBox "   "
+                  uid=1_577 StaticText "¤"
+                    uid=1_10 InlineTextBox "¤"
+                  uid=1_578 LineBreak "
+"
+                    uid=1_10 InlineTextBox "
+"
+                  uid=1_579 StaticText "同一ブラウザの別ウィンドウやタブを利用し、LMSの画面を同時に複数立ち上げて操作しないでください。画面で操作したデータが不整合を起こし、破損する危険性があります。"
+                    uid=1_10 InlineTextBox "同一ブラウザの別ウィンドウやタブを利用し、LMSの画面を同時に複数立ち上げて操作しないでください。画面で操作したデータが不"
+                    uid=1_10 InlineTextBox "整合を起こし、破損する危険性があります。"
+                uid=1_580 heading "時間割表" level="4"
+                  uid=1_581 StaticText "時間割表"
+                    uid=1_10 InlineTextBox "時間割表"
+                uid=1_582 ignored
+                  uid=1_583 table
+                    uid=1_584 rowgroup
+                      uid=1_585 row
+                        uid=1_586 columnheader
+                        uid=1_587 columnheader "月曜日"
+                          uid=1_588 StaticText "月曜日"
+                            uid=1_10 InlineTextBox "月曜日"
+                        uid=1_589 columnheader "火曜日"
+                          uid=1_590 StaticText "火曜日"
+                            uid=1_10 InlineTextBox "火曜日"
+                        uid=1_591 columnheader "水曜日"
+                          uid=1_592 StaticText "水曜日"
+                            uid=1_10 InlineTextBox "水曜日"
+                        uid=1_593 columnheader "木曜日"
+                          uid=1_594 StaticText "木曜日"
+                            uid=1_10 InlineTextBox "木曜日"
+                        uid=1_595 columnheader "金曜日"
+                          uid=1_596 StaticText "金曜日"
+                            uid=1_10 InlineTextBox "金曜日"
+                        uid=1_597 columnheader "土曜日"
+                          uid=1_598 StaticText "土曜日"
+                            uid=1_10 InlineTextBox "土曜日"
+                    uid=1_599 ignored
+                      uid=1_600 row
+                        uid=1_601 cell "1限"
+                          uid=1_602 StaticText "1限"
+                            uid=1_10 InlineTextBox "1限"
+                        uid=1_603 cell "» コンピュータシステムの基礎[ 1] (2026-春学期-月曜日-1限-70381)"
+                          uid=1_604 generic
+                            uid=1_605 link "» コンピュータシステムの基礎[ 1] (2026-春学期-月曜日-1限-70381)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170381/login?acs_=2c9bc571"
+                              uid=1_606 StaticText "» コンピュータシステムの基礎[ 1] (2026-春学期-月曜日-1限-70381)"
+                                uid=1_10 InlineTextBox "» コンピュータシス"
+                                uid=1_10 InlineTextBox "テムの基礎[ 1] "
+                                uid=1_10 InlineTextBox "(2026-春学期-月曜"
+                                uid=1_10 InlineTextBox "日-1限-70381)"
+                        uid=1_607 cell "  "
+                          uid=1_608 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_609 cell "  "
+                          uid=1_610 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_611 cell "» 言語学 (2026-春学期-木曜日-1限-70340) 締切が近い課題があります。"
+                          uid=1_612 generic
+                            uid=1_613 link "» 言語学 (2026-春学期-木曜日-1限-70340) 締切が近い課題があります。" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/login?acs_=2c9bc571"
+                              uid=1_614 StaticText "» 言語学 (2026-春学期-木曜日-1限-70340)"
+                                uid=1_10 InlineTextBox "» 言語学 (2026-春"
+                                uid=1_10 InlineTextBox "学期-木曜日-1"
+                                uid=1_10 InlineTextBox "限-70340)"
+                              uid=1_615 generic
+                                uid=1_616 StaticText "締切が近い課題があります。"
+                                  uid=1_10 InlineTextBox "締切が近い課題があり"
+                                  uid=1_10 InlineTextBox "ます。"
+                        uid=1_617 cell "  "
+                          uid=1_618 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_619 cell "  "
+                          uid=1_620 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                      uid=1_621 row
+                        uid=1_622 cell "2限"
+                          uid=1_623 StaticText "2限"
+                            uid=1_10 InlineTextBox "2限"
+                        uid=1_624 cell "» 日本語３ａ (2026-春学期-月曜日-2限-05097)"
+                          uid=1_625 generic
+                            uid=1_626 link "» 日本語３ａ (2026-春学期-月曜日-2限-05097)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26105097/login?acs_=2c9bc571"
+                              uid=1_627 StaticText "» 日本語３ａ (2026-春学期-月曜日-2限-05097)"
+                                uid=1_10 InlineTextBox "» 日本語３ａ "
+                                uid=1_10 InlineTextBox "(2026-春学期-月曜"
+                                uid=1_10 InlineTextBox "日-2限-05097)"
+                        uid=1_628 cell "  "
+                          uid=1_629 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_630 cell "  "
+                          uid=1_631 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_632 cell "» コンピュータ・シミュレーション＜S＞＜C＞ (2026-春学期-木曜日-2限-70460)"
+                          uid=1_633 generic
+                            uid=1_634 link "» コンピュータ・シミュレーション＜S＞＜C＞ (2026-春学期-木曜日-2限-70460)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170460/login?acs_=2c9bc571"
+                              uid=1_635 StaticText "» コンピュータ・シミュレーション＜S＞＜C＞ (2026-春学期-木曜日-2限-70460)"
+                                uid=1_10 InlineTextBox "» コンピュータ・シ"
+                                uid=1_10 InlineTextBox "ミュレーション＜S"
+                                uid=1_10 InlineTextBox "＞＜C＞ (2026-春学"
+                                uid=1_10 InlineTextBox "期-木曜日-2"
+                                uid=1_10 InlineTextBox "限-70460)"
+                        uid=1_636 cell "» ヒューマンエージェントインタラクション＜M＞＜C＞ (2026-春学期-金曜日-2限-70399) 締切が近い課題があります。"
+                          uid=1_637 generic
+                            uid=1_638 link "» ヒューマンエージェントインタラクション＜M＞＜C＞ (2026-春学期-金曜日-2限-70399) 締切が近い課題があります。" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170399/login?acs_=2c9bc571"
+                              uid=1_639 StaticText "» ヒューマンエージェントインタラクション＜M＞＜C＞ (2026-春学期-金曜日-2限-70399)"
+                                uid=1_10 InlineTextBox "» ヒューマンエージ"
+                                uid=1_10 InlineTextBox "ェントインタラクシ"
+                                uid=1_10 InlineTextBox "ョン＜M＞＜C＞ "
+                                uid=1_10 InlineTextBox "(2026-春学期-金曜"
+                                uid=1_10 InlineTextBox "日-2限-70399)"
+                              uid=1_640 generic
+                                uid=1_641 StaticText "締切が近い課題があります。"
+                                  uid=1_10 InlineTextBox "締切が近い課題があり"
+                                  uid=1_10 InlineTextBox "ます。"
+                        uid=1_642 cell "  "
+                          uid=1_643 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                      uid=1_644 row
+                        uid=1_645 cell "3限"
+                          uid=1_646 StaticText "3限"
+                            uid=1_10 InlineTextBox "3限"
+                        uid=1_647 cell "» 知的財産法（著作権）＜M＞＜S＞＜C＞ (2026-春学期-月曜日-3限-70427)"
+                          uid=1_648 generic
+                            uid=1_649 link "» 知的財産法（著作権）＜M＞＜S＞＜C＞ (2026-春学期-月曜日-3限-70427)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170427/login?acs_=2c9bc571"
+                              uid=1_650 StaticText "» 知的財産法（著作権）＜M＞＜S＞＜C＞ (2026-春学期-月曜日-3限-70427)"
+                                uid=1_10 InlineTextBox "» 知的財産法（著作"
+                                uid=1_10 InlineTextBox "権）＜M＞＜S＞＜C"
+                                uid=1_10 InlineTextBox "＞ (2026-春学期-月"
+                                uid=1_10 InlineTextBox "曜日-3限-70427)"
+                        uid=1_651 cell "  "
+                          uid=1_652 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_653 cell "  "
+                          uid=1_654 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_655 cell "» 英語２ａ中級[ 6] (2026-春学期-木曜日-3限-70076)"
+                          uid=1_656 generic
+                            uid=1_657 link "» 英語２ａ中級[ 6] (2026-春学期-木曜日-3限-70076)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170076/login?acs_=2c9bc571"
+                              uid=1_658 StaticText "» 英語２ａ中級[ 6] (2026-春学期-木曜日-3限-70076)"
+                                uid=1_10 InlineTextBox "» 英語２ａ中級[ 6] "
+                                uid=1_10 InlineTextBox "(2026-春学期-木曜"
+                                uid=1_10 InlineTextBox "日-3限-70076)"
+                        uid=1_659 cell "  "
+                          uid=1_660 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_661 cell "  "
+                          uid=1_662 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                      uid=1_663 row
+                        uid=1_664 cell "4限"
+                          uid=1_665 StaticText "4限"
+                            uid=1_10 InlineTextBox "4限"
+                        uid=1_666 cell "  "
+                          uid=1_667 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_668 cell "  "
+                          uid=1_669 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_670 cell "  "
+                          uid=1_671 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_672 cell "  "
+                          uid=1_673 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_674 cell "» ソフトウェア開発の基礎＜S＞＜C＞ (2026-春学期-金曜日-4限-70461)"
+                          uid=1_675 generic
+                            uid=1_676 link "» ソフトウェア開発の基礎＜S＞＜C＞ (2026-春学期-金曜日-4限-70461)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170461/login?acs_=2c9bc571"
+                              uid=1_677 StaticText "» ソフトウェア開発の基礎＜S＞＜C＞ (2026-春学期-金曜日-4限-70461)"
+                                uid=1_10 InlineTextBox "» ソフトウェア開発"
+                                uid=1_10 InlineTextBox "の基礎＜S＞＜C＞ "
+                                uid=1_10 InlineTextBox "(2026-春学期-金曜"
+                                uid=1_10 InlineTextBox "日-4限-70461)"
+                        uid=1_678 cell "  "
+                          uid=1_679 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                      uid=1_680 row
+                        uid=1_681 cell "5限"
+                          uid=1_682 StaticText "5限"
+                            uid=1_10 InlineTextBox "5限"
+                        uid=1_683 cell "  "
+                          uid=1_684 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_685 cell "  "
+                          uid=1_686 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_687 cell "  "
+                          uid=1_688 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_689 cell "  "
+                          uid=1_690 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_691 cell "» 日本語４ａ (2026-春学期-金曜日-5限-05099)"
+                          uid=1_692 generic
+                            uid=1_693 link "» 日本語４ａ (2026-春学期-金曜日-5限-05099)" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26105099/login?acs_=2c9bc571"
+                              uid=1_694 StaticText "» 日本語４ａ (2026-春学期-金曜日-5限-05099)"
+                                uid=1_10 InlineTextBox "» 日本語４ａ "
+                                uid=1_10 InlineTextBox "(2026-春学期-金曜"
+                                uid=1_10 InlineTextBox "日-5限-05099)"
+                        uid=1_695 cell "  "
+                          uid=1_696 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                      uid=1_697 row
+                        uid=1_698 cell "6限"
+                          uid=1_699 StaticText "6限"
+                            uid=1_10 InlineTextBox "6限"
+                        uid=1_700 cell "  "
+                          uid=1_701 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_702 cell "  "
+                          uid=1_703 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_704 cell "  "
+                          uid=1_705 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_706 cell "  "
+                          uid=1_707 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_708 cell "  "
+                          uid=1_709 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_710 cell "  "
+                          uid=1_711 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                      uid=1_712 row
+                        uid=1_713 cell "7限"
+                          uid=1_714 StaticText "7限"
+                            uid=1_10 InlineTextBox "7限"
+                        uid=1_715 cell "  "
+                          uid=1_716 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_717 cell "  "
+                          uid=1_718 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_719 cell "  "
+                          uid=1_720 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_721 cell "  "
+                          uid=1_722 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_723 cell "  "
+                          uid=1_724 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_725 cell "  "
+                          uid=1_726 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                      uid=1_727 row
+                        uid=1_728 cell "8限"
+                          uid=1_729 StaticText "8限"
+                            uid=1_10 InlineTextBox "8限"
+                        uid=1_730 cell "  "
+                          uid=1_731 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_732 cell "  "
+                          uid=1_733 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_734 cell "  "
+                          uid=1_735 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_736 cell "  "
+                          uid=1_737 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_738 cell "  "
+                          uid=1_739 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                        uid=1_740 cell "  "
+                          uid=1_741 LineBreak "
+"
+                            uid=1_10 InlineTextBox "
+"
+                uid=1_742 generic
+                  uid=1_743 link "コースを追加" url="https://kulms.tl.kansai-u.ac.jp/webclass/index.php/courses/?acs_=2c9bc571"
+                    uid=1_744 StaticText "コースを追加"
+                      uid=1_10 InlineTextBox "コースを追加"
+                uid=1_745 heading "その他のコース" level="4"
+                  uid=1_746 StaticText "その他のコース"
+                    uid=1_10 InlineTextBox "その他のコース"
+                uid=1_747 textbox "検索"
+                  uid=1_748 ignored
+                  uid=1_749 generic
+                uid=1_750 LineBreak "
+"
+                  uid=1_10 InlineTextBox "
+"
+                uid=1_751 generic
+                  uid=1_752 list
+                    uid=1_753 listitem level="1"
+                      uid=1_754 heading "オンデマンド・集中・隔週 等" level="4"
+                        uid=1_755 StaticText "オンデマンド・集中・隔週 等"
+                          uid=1_10 InlineTextBox "オンデマンド・集中・隔週 等"
+                      uid=1_756 list
+                        uid=1_757 listitem level="2"
+                          uid=1_758 list
+                            uid=1_759 listitem level="3"
+                              uid=1_760 ignored
+                                uid=1_761 generic
+                                  uid=1_762 link "» 活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311) " url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26100311/login?acs_=2c9bc571"
+                                    uid=1_763 StaticText "» 活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311) "
+                                      uid=1_10 InlineTextBox "» 活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311) "
+                                  uid=1_764 StaticText "    2026 春学期 - - "
+                                    uid=1_10 InlineTextBox "    2026 春学期 - - "
+                    uid=1_765 listitem level="1"
+                      uid=1_766 heading "[未分類]" level="4"
+                        uid=1_767 StaticText "[未分類]"
+                          uid=1_10 InlineTextBox "[未分類]"
+                      uid=1_768 list
+                        uid=1_769 listitem level="2"
+                          uid=1_770 list
+                            uid=1_771 listitem level="3"
+                              uid=1_772 ignored
+                                uid=1_773 generic
+                                  uid=1_774 link "» 外国人留学生の在籍確認　Enrollment confirmation for International students " url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/202210_kokusai004/login?acs_=2c9bc571"
+                                    uid=1_775 StaticText "» 外国人留学生の在籍確認　Enrollment confirmation for International students "
+                                      uid=1_10 InlineTextBox "» 外国人留学生の在籍確認　Enrollment confirmation for International students "
+                                  uid=1_776 StaticText "    2026 通年 - - "
+                                    uid=1_10 InlineTextBox "    2026 通年 - - "
+                            uid=1_777 listitem level="3"
+                              uid=1_778 ignored
+                                uid=1_779 generic
+                                  uid=1_780 link "» 2026年度在学生（上位年次）対象　外国人留学生オリエンテーション " url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/202302_kokusai009/login?acs_=2c9bc571"
+                                    uid=1_781 StaticText "» 2026年度在学生（上位年次）対象　外国人留学生オリエンテーション "
+                                      uid=1_10 InlineTextBox "» 2026年度在学生（上位年次）対象　外国人留学生オリエンテーション "
+                                  uid=1_782 StaticText "    2026 通年 - - "
+                                    uid=1_10 InlineTextBox "    2026 通年 - - "
+                            uid=1_783 listitem level="3"
+                              uid=1_784 ignored
+                                uid=1_785 generic
+                                  uid=1_786 link "» 2026年度「関大版ハタチのトビラ（学部２年次生）」 " url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/202602_career17/login?acs_=2c9bc571"
+                                    uid=1_787 StaticText "» 2026年度「関大版ハタチのトビラ（学部２年次生）」 "
+                                      uid=1_10 InlineTextBox "» 2026年度「関大版ハタチのトビラ（学部２年次生）」 "
+                                  uid=1_788 StaticText "    2026 通年 - - "
+                                    uid=1_10 InlineTextBox "    2026 通年 - - "
+      uid=1_789 contentinfo
+        uid=1_790 ignored
+          uid=1_791 paragraph
+            uid=1_792 StaticText "Powered by 関大LMS"
+              uid=1_10 InlineTextBox "Powered by 関大LMS"

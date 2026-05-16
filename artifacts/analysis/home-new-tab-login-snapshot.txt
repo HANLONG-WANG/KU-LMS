@@ -1,0 +1,172 @@
+uid=2_0 RootWebArea "WebClass" url="https://kulms.tl.kansai-u.ac.jp/webclass/login.php"
+  uid=2_1 ignored
+    uid=2_2 generic
+      uid=2_3 banner
+        uid=2_4 navigation
+          uid=2_5 ignored
+            uid=2_6 ignored
+              uid=2_7 ignored
+                uid=2_8 image "WebClass" url="https://kulms.tl.kansai-u.ac.jp/webclass/login/img/kandai-logo.png"
+            uid=2_9 list
+              uid=2_10 listitem level="1"
+                uid=2_11 link "Language" url="https://kulms.tl.kansai-u.ac.jp/webclass/login.php"
+                  uid=2_12 StaticText "Language"
+                    uid=2_13 InlineTextBox "Language"
+      uid=2_14 main
+        uid=2_15 generic
+          uid=2_16 ignored
+            uid=2_17 generic
+              uid=2_18 heading "Welcome to KU-LMS" level="2"
+                uid=2_19 StaticText "Welcome to KU-LMS"
+                  uid=2_13 InlineTextBox "Welcome to KU-LMS"
+              uid=2_20 generic
+                uid=2_21 paragraph
+                  uid=2_22 image url="https://kulms.tl.kansai-u.ac.jp/webclass/login/img/b_web_user_2.jpg"
+                uid=2_23 paragraph
+                  uid=2_24 StaticText "欢迎来到 "
+                    uid=2_13 InlineTextBox "欢迎来到 "
+                  uid=2_25 StaticText "WebClass"
+                    uid=2_13 InlineTextBox "WebClass"
+                  uid=2_26 StaticText "！请输入您的用户 ID 和密码。然后单击 “"
+                    uid=2_13 InlineTextBox "！请输入您的用户 ID 和密"
+                    uid=2_13 InlineTextBox "码。然后单击 “"
+                  uid=2_27 StaticText "登录"
+                    uid=2_13 InlineTextBox "登录"
+                  uid=2_28 StaticText "” 按钮。"
+                    uid=2_13 InlineTextBox "” 按钮。"
+                uid=2_29 ignored
+                  uid=2_30 LabelText
+                    uid=2_31 StaticText "用户 ID"
+                      uid=2_13 InlineTextBox "用"
+                      uid=2_13 InlineTextBox "户 "
+                      uid=2_13 InlineTextBox "ID"
+                  uid=2_32 textbox "用户 ID" focusable focused value="k381662"
+                    uid=2_33 ignored
+                    uid=2_34 generic
+                      uid=2_35 StaticText "k381662"
+                        uid=2_13 InlineTextBox "k381662"
+                uid=2_36 ignored
+                  uid=2_37 LabelText
+                    uid=2_38 StaticText "密码"
+                      uid=2_13 InlineTextBox "密"
+                      uid=2_13 InlineTextBox "码"
+                  uid=2_39 textbox "密码" value="•••••••••••••••"
+                    uid=2_40 ignored
+                    uid=2_41 generic
+                      uid=2_42 StaticText "•••••••••••••••"
+                        uid=2_13 InlineTextBox "•••••••••••••••"
+                uid=2_43 LineBreak "
+"
+                  uid=2_13 InlineTextBox "
+"
+                uid=2_44 generic
+                  uid=2_45 button "登录"
+                    uid=2_46 StaticText "登录"
+                      uid=2_13 InlineTextBox "登录"
+              uid=2_47 generic
+                uid=2_48 LineBreak "
+"
+                  uid=2_13 InlineTextBox "
+"
+                uid=2_49 LineBreak "
+"
+                  uid=2_13 InlineTextBox "
+"
+              uid=2_50 generic
+                uid=2_51 image url="https://kulms.tl.kansai-u.ac.jp/webclass/images/qrcode/aeb5deadae484aabd48f09ceef0dfc30.png"
+            uid=2_52 generic
+              uid=2_53 image url="https://kulms.tl.kansai-u.ac.jp/webclass/login/img/kansai_main.jpg"
+              uid=2_54 generic
+                uid=2_55 StaticText "関大LMS問い合わせ先："
+                  uid=2_13 InlineTextBox "関大LMS問い合わせ先："
+                uid=2_56 StaticText "kulms@ml.kandai.jp"
+                  uid=2_13 InlineTextBox "kulms@ml.kandai.jp"
+              uid=2_57 generic
+                uid=2_58 StaticText "関大LMSお問い合わせ受付フォーム："
+                  uid=2_13 InlineTextBox "関大LMSお問い合わせ受付フォーム："
+                uid=2_59 link "▶▶お問い合わ せはこちら◀◀" url="https://forms.office.com/r/X4fuG8xmV7"
+                  uid=2_60 StaticText "▶▶お問い合わ せはこちら◀◀"
+                    uid=2_13 InlineTextBox "▶▶お問い合わ せはこちら◀◀"
+              uid=2_61 LineBreak "
+"
+                uid=2_13 InlineTextBox "
+"
+              uid=2_62 generic
+                uid=2_63 paragraph
+                  uid=2_64 StaticText "通告"
+                    uid=2_13 InlineTextBox "通告"
+                uid=2_65 generic
+                  uid=2_66 list
+                    uid=2_67 listitem level="1"
+                      uid=2_68 StaticText "最新 5"
+                        uid=2_13 InlineTextBox "最新 5"
+                    uid=2_69 listitem level="1"
+                      uid=2_70 link "関大LMSから授業動画が見られない時は システム管理者 - 04/20" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/public/post/69849/?language=CHINESE"
+                        uid=2_71 generic
+                          uid=2_72 StaticText "関大LMSから授業動画が見られない時は"
+                            uid=2_13 InlineTextBox "関大LMSから授業動画が見られない時は"
+                        uid=2_73 generic
+                          uid=2_74 StaticText "システム管理者"
+                            uid=2_13 InlineTextBox "システム管理者"
+                          uid=2_75 StaticText " - 04/20"
+                            uid=2_13 InlineTextBox " - 04/20"
+                    uid=2_76 listitem level="1"
+                      uid=2_77 link "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点 システム管理者 - 04/13" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/public/post/68585/?language=CHINESE"
+                        uid=2_78 generic
+                          uid=2_79 StaticText "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                            uid=2_13 InlineTextBox "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                        uid=2_80 generic
+                          uid=2_81 StaticText "システム管理者"
+                            uid=2_13 InlineTextBox "システム管理者"
+                          uid=2_82 StaticText " - 04/13"
+                            uid=2_13 InlineTextBox " - 04/13"
+                    uid=2_83 listitem level="1"
+                      uid=2_84 link "【学生の皆さんへ】メールで質問する前に、必ず確認してください。 システム管理者 - 04/13" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/public/post/54911/?language=CHINESE"
+                        uid=2_85 generic
+                          uid=2_86 StaticText "【学生の皆さんへ】メールで質問する前に、必ず確認してください。"
+                            uid=2_13 InlineTextBox "【学生の皆さんへ】メールで質問する前に、必ず確認してください。"
+                        uid=2_87 generic
+                          uid=2_88 StaticText "システム管理者"
+                            uid=2_13 InlineTextBox "システム管理者"
+                          uid=2_89 StaticText " - 04/13"
+                            uid=2_13 InlineTextBox " - 04/13"
+                    uid=2_90 listitem level="1"
+                      uid=2_91 link "【重要】Panoptoで動画を視聴するための設定について システム管理者 - 04/11" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/public/post/53176/?language=CHINESE"
+                        uid=2_92 generic
+                          uid=2_93 StaticText "【重要】Panoptoで動画を視聴するための設定について"
+                            uid=2_13 InlineTextBox "【重要】Panoptoで動画を視聴するための設定について"
+                        uid=2_94 generic
+                          uid=2_95 StaticText "システム管理者"
+                            uid=2_13 InlineTextBox "システム管理者"
+                          uid=2_96 StaticText " - 04/11"
+                            uid=2_13 InlineTextBox " - 04/11"
+                    uid=2_97 listitem level="1"
+                      uid=2_98 link "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！ システム管理者 - 04/06" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/public/post/58881/?language=CHINESE"
+                        uid=2_99 generic
+                          uid=2_100 StaticText "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！"
+                            uid=2_13 InlineTextBox "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！"
+                        uid=2_101 generic
+                          uid=2_102 StaticText "システム管理者"
+                            uid=2_13 InlineTextBox "システム管理者"
+                          uid=2_103 StaticText " - 04/06"
+                            uid=2_13 InlineTextBox " - 04/06"
+                uid=2_104 paragraph
+                  uid=2_105 link "» 通告" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/public/?language=CHINESE&acs_=26e00111"
+                    uid=2_106 StaticText "» 通告"
+                      uid=2_13 InlineTextBox "» 通告"
+                uid=2_107 paragraph
+                  uid=2_108 StaticText "Ver.12.1.0"
+                    uid=2_13 InlineTextBox "Ver.12.1.0"
+      uid=2_109 contentinfo
+        uid=2_110 ignored
+          uid=2_111 LineBreak "
+"
+            uid=2_13 InlineTextBox "
+"
+          uid=2_112 paragraph
+            uid=2_113 link "» 关闭这个窗口" url="https://kulms.tl.kansai-u.ac.jp/webclass/login.php#"
+              uid=2_114 StaticText "» 关闭这个窗口"
+                uid=2_13 InlineTextBox "» 关闭这个窗口"
+          uid=2_115 paragraph
+            uid=2_116 StaticText "Powered by 関大LMS"
+              uid=2_13 InlineTextBox "Powered by 関大LMS"

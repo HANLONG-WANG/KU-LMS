@@ -3,42 +3,41 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message?.type !== 'ku:lms:lookup-syllabus') return undefined;
-  lookupSyllabusDetailUrl(message.payload || {})
-    .then((url) => sendResponse({ url }))
-    .catch((error) => {
-      console.warn('[KU-LMS Redesign] syllabus lookup failed', error);
-      sendResponse({ url: '' });
-    });
-  return true;
+  if (message?.type === 'ku:lms:lookup-syllabus') {
+    lookupSyllabusDetailUrl(message.payload || {})
+      .then((url) => sendResponse({ url }))
+      .catch((error) => {
+        console.warn('[KU-LMS Redesign] syllabus lookup failed', error);
+        sendResponse({ url: '' });
+      });
+    return true;
+  }
+  if (message?.type === 'ku:lms:fetch-upcoming-courses') {
+    fetchUpcomingCourseHtml(message.payload?.entries || [])
+      .then((results) => sendResponse({ results }))
+      .catch((error) => {
+        console.warn('[KU-LMS Redesign] upcoming course fetch failed', error);
+        sendResponse({ results: [] });
+      });
+    return true;
+  }
+  return undefined;
 });
 
-async function lookupSyllabusDetailUrl({ title = '', year = '', instructor = '', courseCode = '' } = {}) {
-  const query = normalizeQuery(title);
-  if (!query) return '';
+async function lookupSyllabusDetailUrl({ title = '', year = '', courseCode = '' } = {}) {
   const nendo = String(year || new Date().getFullYear());
-  const candidates = parseSyllabusCandidates(await searchSyllabus({ query, nendo, tantousya: '0', kamoku: '1' }));
-  if (!candidates.length) return '';
-  const normalizedQuery = normalizeQuery(query);
-  const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedQuery);
-  if (exactMatches.length === 1) {
-    return buildSyllabusDetailUrl(exactMatches[0], query, nendo);
-  }
-  const normalizedInstructor = normalizeQuery(instructor);
-  if (normalizedInstructor) {
-    const instructorCandidates = parseSyllabusCandidates(await searchSyllabus({ query: normalizedInstructor, nendo, tantousya: '1', kamoku: '0' }))
-      .filter((candidate) => candidate.normalizedTitle === normalizedQuery && candidate.normalizedInstructor === normalizedInstructor);
-    if (instructorCandidates.length === 1) {
-      return buildSyllabusDetailUrl(instructorCandidates[0], query, nendo);
+  for (const query of buildQueryVariants(title)) {
+    const candidates = parseSyllabusCandidates(await searchSyllabus({ query, nendo, tantousya: '0', kamoku: '1' }));
+    if (!candidates.length) continue;
+    const normalizedQuery = normalizeQuery(query);
+    const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedQuery);
+    if (exactMatches.length === 1) {
+      return buildSyllabusDetailUrl(exactMatches[0], query, nendo);
     }
-    const instructorResolved = await resolveCandidateByCourseCode(instructorCandidates, query, nendo, courseCode);
-    if (instructorResolved) {
-      return instructorResolved;
+    const exactResolved = await resolveCandidateByCourseCode(exactMatches, query, nendo, courseCode);
+    if (exactResolved) {
+      return exactResolved;
     }
-  }
-  const exactResolved = await resolveCandidateByCourseCode(exactMatches, query, nendo, courseCode);
-  if (exactResolved) {
-    return exactResolved;
   }
   return '';
 }
@@ -85,8 +84,7 @@ function parseSyllabusCandidates(html = '') {
       title,
       faculty: cells[0] || '',
       instructor: cells[2] || '',
-      normalizedTitle: normalizeQuery(title),
-      normalizedInstructor: normalizeQuery(cells[2] || '')
+      normalizedTitle: normalizeQuery(title)
     });
   }
   return uniqueBy(candidates, (candidate) => `${candidate.year}:${candidate.id}`);
@@ -104,15 +102,57 @@ function stripHtml(value = '') {
 
 function normalizeQuery(value = '') {
   return String(value || '')
-    .replace(/\(\d{4}-.+?\)/g, '')
-    .replace(/\[\s*\d+\]/g, '')
     .replace(/^»\s*/, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[\u3000\s]+/g, ' ')
+    .replace(/[\(（]\d{4}-.+?[\)）]\s*$/g, '')
+    .replace(/(?:\s*(?:＜[^＞]{1,8}＞|<[^>]{1,8}>))+\s*$/g, '')
+    .replace(/(?:\s*\[[^\]]{1,8}\])+\s*$/g, '')
+    .replace(/[\u3000\s]+/g, ' ')
     .trim();
+}
+
+function buildQueryVariants(title = '') {
+  return uniqueBy([normalizeQuery(title)], (item) => item).filter(Boolean);
 }
 
 function buildSyllabusDetailUrl(candidate, query, nendo) {
   return `https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=${encodeURIComponent(candidate.id)}&actionClass=syllabus.search.DetailKeySearchSt&nendo=${encodeURIComponent(candidate.year || nendo)}&queryString=${encodeURIComponent(query)}&st=key`;
+}
+
+async function fetchUpcomingCourseHtml(entries = []) {
+  const results = [];
+  for (const entry of entries) {
+    const fetchUrl = String(entry?.supplementalHref || entry?.href || '').trim();
+    if (!fetchUrl) continue;
+    try {
+      const response = await fetch(fetchUrl, {
+        credentials: 'include',
+        redirect: 'follow',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const html = await response.text();
+      results.push({
+        href: String(entry?.href || '').trim(),
+        supplementalHref: fetchUrl,
+        html,
+        conflict: /コース利用中に、別のコースへのアクセスがリクエストされました/.test(html),
+        loginRedirect: /window\.top\.location\.href="\/webclass\/login\.php"/.test(html)
+      });
+      if (results.at(-1)?.conflict || results.at(-1)?.loginRedirect) break;
+    } catch (error) {
+      results.push({
+        href: String(entry?.href || '').trim(),
+        supplementalHref: fetchUrl,
+        html: '',
+        conflict: false,
+        loginRedirect: false,
+        error: String(error?.message || error || '')
+      });
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+  return results;
 }
 
 async function resolveCandidateByCourseCode(candidates, query, nendo, courseCode = '') {
