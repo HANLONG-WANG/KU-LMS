@@ -181,10 +181,13 @@
 
   async function enrichHomeAsync(context, view) {
     const nextView = { ...view, upcoming: { loading: false, items: [] }, announcements: { loading: false, items: [] }, messages: { loading: false, items: [], total: 0 } };
+    let upcomingAnnouncementSource = [];
 
     try {
       const noticesDoc = await loadSupplementalDocument(context.links.notifications || '/webclass/information.php/');
-      nextView.announcements = { loading: false, items: parseNotificationsList(noticesDoc).items.slice(0, 5) };
+      const fetchedAnnouncements = parseNotificationsList(noticesDoc).items;
+      upcomingAnnouncementSource = fetchedAnnouncements;
+      nextView.announcements = { loading: false, items: fetchedAnnouncements.slice(0, 5) };
     } catch (error) {
       console.warn('[KU Redesign] notices enrichment failed', error);
     }
@@ -198,7 +201,7 @@
 
     try {
       const now = new Date();
-      const fallbackUpcoming = parseUpcomingFromAnnouncements(nextView.announcements.items, view.schedule.entries, view.filters.year)
+      const fallbackUpcoming = parseUpcomingFromAnnouncements(upcomingAnnouncementSource, view.schedule.entries, view.filters.year)
         .sort((a, b) => {
           if (a.dueDate?.getTime() !== b.dueDate?.getTime()) return a.dueDate - b.dueDate;
           return a.title.localeCompare(b.title, 'ja');
@@ -1344,8 +1347,12 @@
     return new Date(Number(year), Number(month) - 1, Number(day), Number(endHour), Number(endMinute));
   }
 
-  function normalizeSyllabusQuery(title = '') {
+  function normalizeSyllabusCourseQuery(title = '') {
     return shortenCourseTitle(String(title || '')).replace(/^»\s*/, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function normalizeSyllabusInstructorName(name = '') {
+    return String(name || '').replace(/\s+/g, ' ').trim();
   }
 
   function buildSyllabusFallbackHref(year = '') {
@@ -1355,7 +1362,7 @@
   }
 
   function renderSyllabusChip({ title = '', href = '', year = '' } = {}) {
-    const query = normalizeSyllabusQuery(title);
+    const query = normalizeSyllabusCourseQuery(title);
     if (!query) return '';
     return `<a class="ku-chip blue ku-chip-link ku-syllabus-chip" href="${escapeAttr(buildSyllabusFallbackHref(year))}" data-syllabus-title="${escapeAttr(query)}" data-syllabus-href="${escapeAttr(href || '')}" data-syllabus-year="${escapeAttr(year || '')}" title="シラバスを開く" aria-label="${escapeAttr(`${query} のシラバスを開く`)}">シ</a>`;
   }
@@ -1419,7 +1426,7 @@
   }
 
   async function submitSyllabusSearchNavigation({ title = '', courseHref = '', year = '' } = {}) {
-    const query = normalizeSyllabusQuery(title);
+    const query = normalizeSyllabusCourseQuery(title);
     if (!query) {
       window.location.href = buildSyllabusFallbackHref(year || '');
       return;
@@ -1523,8 +1530,8 @@
   }
 
   async function autoResolveSyllabusResult(pending, candidates) {
-    const normalizedTitle = normalizeSyllabusQuery(pending.title || '');
-    const normalizedInstructor = normalizeSyllabusQuery(pending.instructor || '');
+    const normalizedTitle = normalizeSyllabusCourseQuery(pending.title || '');
+    const normalizedInstructor = normalizeSyllabusInstructorName(pending.instructor || '');
     const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedTitle);
     if (exactMatches.length === 1) {
       document.documentElement.dataset.kuSyllabusAssist = 'redirect-exact';
@@ -1534,6 +1541,13 @@
     }
     if (normalizedInstructor) {
       const instructorMatches = exactMatches.filter((candidate) => candidate.normalizedInstructor === normalizedInstructor);
+      // Instructor matching is its own disambiguation signal; once it leaves one exact-title candidate, redirect without extra course-code probing.
+      if (instructorMatches.length === 1) {
+        document.documentElement.dataset.kuSyllabusAssist = 'redirect-instructor';
+        clearPendingSyllabusNavigation();
+        window.location.replace(buildSyllabusDetailUrl(instructorMatches[0], pending.title, pending.year));
+        return;
+      }
       const instructorResolved = await resolveSyllabusCandidateByCourseCode(instructorMatches, pending);
       if (instructorResolved) {
         document.documentElement.dataset.kuSyllabusAssist = 'redirect-instructor-code';
@@ -1573,8 +1587,8 @@
         title,
         faculty: cells[0] || '',
         instructor: cells[2] || '',
-        normalizedTitle: normalizeSyllabusQuery(title),
-        normalizedInstructor: normalizeSyllabusQuery(cells[2] || '')
+        normalizedTitle: normalizeSyllabusCourseQuery(title),
+        normalizedInstructor: normalizeSyllabusInstructorName(cells[2] || '')
       });
     });
     return candidates;

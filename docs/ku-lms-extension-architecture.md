@@ -29,6 +29,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Prefer session-safe same-origin `fetch()` for supplemental documents instead of hidden iframe course preloads.
 - On the homepage, render immediately from the current page DOM (`schedule`, `homeNotices`, filters, and course links), then asynchronously enrich the three right-column panels (`announcements`, `messages`, `upcoming`).
 - Homepage announcements enrichment fetches `/webclass/information.php/`, parses the notification rows, and uses that list both for the visible notice preview and as the source data for deadline aggregation.
+- Homepage upcoming-deadline aggregation must use the full fetched notification list before the visible announcements preview is capped; only the rendered notice preview and rendered upcoming card list are truncated to five items.
 - Homepage upcoming-deadline aggregation no longer crawls course materials pages; it derives candidate items from notification titles, extracts due datetimes from the notice text, matches each notice back to a timetable course by shortened course title, sorts by nearest due date, and shows the first five results with computed `daysLeft` values.
 - For homepage year / semester controls, mirror the native `condition` form options and submit the native form in the same tab.
 - For the homepage deadline CTA, target the first aggregated upcoming item's `courseHref`, and fall back to the native course list when no upcoming item resolves.
@@ -36,7 +37,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - For syllabus jumping, try extracting a direct syllabus link from the same-origin course-info page first.
 - If no direct syllabus link exists, submit the public Kansai University syllabus keyword search in the current tab, persist pending course metadata (`title`, `year`, `instructor`, `courseCode`), and let the content script assist on the syllabus domain.
 - On the syllabus domain, assist mode must inspect search-result candidates and only auto-redirect when the result is either:
-  - a unique exact title match, or
+  - a unique exact title match,
+  - an exact-title candidate set that becomes unique after matching the KU-LMS instructor, or
   - an exact-title candidate set that can be disambiguated by comparing KU-LMS course code against the public syllabus detail page.
 - Because direct `fetch(detailUrl)` on the syllabus site can return a generic system-error page, course-code disambiguation should use same-origin document navigation (for example a hidden iframe) rather than assuming detail `fetch()` is reliable.
 - If the candidate set remains ambiguous, fall back to the public search/results page instead of guessing.
