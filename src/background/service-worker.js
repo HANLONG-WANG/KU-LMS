@@ -12,15 +12,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true;
   }
-  if (message?.type === 'ku:lms:fetch-upcoming-courses') {
-    fetchUpcomingCourseHtml(message.payload?.entries || [])
-      .then((results) => sendResponse({ results }))
-      .catch((error) => {
-        console.warn('[KU-LMS Redesign] upcoming course fetch failed', error);
-        sendResponse({ results: [] });
-      });
-    return true;
-  }
   return undefined;
 });
 
@@ -117,42 +108,6 @@ function buildQueryVariants(title = '') {
 
 function buildSyllabusDetailUrl(candidate, query, nendo) {
   return `https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=${encodeURIComponent(candidate.id)}&actionClass=syllabus.search.DetailKeySearchSt&nendo=${encodeURIComponent(candidate.year || nendo)}&queryString=${encodeURIComponent(query)}&st=key`;
-}
-
-async function fetchUpcomingCourseHtml(entries = []) {
-  const results = [];
-  for (const entry of entries) {
-    const fetchUrl = String(entry?.supplementalHref || entry?.href || '').trim();
-    if (!fetchUrl) continue;
-    try {
-      const response = await fetch(fetchUrl, {
-        credentials: 'include',
-        redirect: 'follow',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      });
-      const html = await response.text();
-      results.push({
-        href: String(entry?.href || '').trim(),
-        supplementalHref: fetchUrl,
-        html,
-        conflict: /コース利用中に、別のコースへのアクセスがリクエストされました/.test(html),
-        loginRedirect: /window\.top\.location\.href="\/webclass\/login\.php"/.test(html)
-      });
-      if (results.at(-1)?.conflict || results.at(-1)?.loginRedirect) break;
-    } catch (error) {
-      results.push({
-        href: String(entry?.href || '').trim(),
-        supplementalHref: fetchUrl,
-        html: '',
-        conflict: false,
-        loginRedirect: false,
-        error: String(error?.message || error || '')
-      });
-      break;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 120));
-  }
-  return results;
 }
 
 async function resolveCandidateByCourseCode(candidates, query, nendo, courseCode = '') {

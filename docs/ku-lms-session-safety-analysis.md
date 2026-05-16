@@ -54,5 +54,12 @@ Unsafe or unproven homepage strategies:
 - hidden multi-course fan-out, even if serialized
 - assuming service-worker fetches are safe just because they are not running in page JS
 
+## Current implementation direction
+- Homepage automatic near-deadline rendering is now cache-first and reads only same-tab cached course data for course-specific task details.
+- Explicit course visits remain the authoritative cache writer for near-deadline items.
+- Homepage exposes a user-invoked refresh path for stale red-flag courses, but that path is intentionally described as **session-safer / validation-gated**, not universally safe.
+- That refresh path must use top-level same-tab navigation only; it must not use hidden content-script fetches or service-worker fetches to course login/material pages.
+- The refresh flow must block user interaction with a full-screen mask while active and restore the supported home state when it completes or aborts.
+
 ## Relationship to current architecture docs
-`docs/ku-lms-extension-architecture.md` describes the current implementation shape. This analysis adds an important qualification: the current red-flag background course probing strategy is **not** proven session-safe and is the most likely cause of the forced logout behavior still seen in live KU-LMS.
+`docs/ku-lms-extension-architecture.md` describes the current implementation shape. This analysis remains the reason the codebase forbids homepage auto-fetching of course login pages and treats any cross-course refresh path as validation-gated until live KU-LMS evidence says otherwise.

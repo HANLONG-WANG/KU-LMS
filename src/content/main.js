@@ -4,6 +4,7 @@
 
   const ROOT_ID = 'ku-redesign-root';
   const COURSE_UPCOMING_CACHE_KEY = 'ku-redesign-course-upcoming-v1';
+  const HOME_REFRESH_STATE_KEY = 'ku-redesign-home-refresh-v1';
   const PERIOD_TIMES = {
     '1限': '08:50–10:20',
     '2限': '10:30–12:00',
@@ -51,11 +52,19 @@
 
   async function init() {
     const route = detectRoute(window.location);
-    if (!route.supported) return releaseNative();
+    const refreshState = readHomeRefreshState();
+    if (!route.supported) {
+      if (isHomeRefreshActive(refreshState)) {
+        restoreHomeRefreshState(refreshState, 'unsupported-route');
+        return;
+      }
+      return releaseNative();
+    }
     if (route.name === 'notifications' && window.location.pathname.replace(/\/$/, '') === '/webclass/information.php/mbl') {
       window.location.replace(normalizeNotificationsUrl(window.location.href));
       return;
     }
+    syncHomeRefreshOverlay(refreshState);
 
     try {
       const context = await collectContext(route);
@@ -72,6 +81,7 @@
       if (route.name === 'home') {
         enrichHomeAsync(context, view).catch((error) => console.warn('[KU Redesign] home enrichment failed', error));
       }
+      await continueHomeRefreshIfNeeded(route, view);
     } catch (error) {
       console.error('[KU Redesign] init failed', error);
       releaseNative();
@@ -180,11 +190,9 @@
   async function enrichHomeAsync(context, view) {
     const nextView = { ...view, upcoming: { loading: false, items: [] }, announcements: { loading: false, items: [] }, messages: { loading: false, items: [], total: 0 } };
     const fallbackAnnouncements = normalizeHomeAnnouncementItems(view.homeNotices);
-    let upcomingAnnouncementSource = fallbackAnnouncements;
 
     try {
       const noticeFeed = await loadNotificationFeed(context.links.notifications || '/webclass/information.php/');
-      upcomingAnnouncementSource = mergeAnnouncementSources(fallbackAnnouncements, noticeFeed.allItems);
       nextView.announcements = { loading: false, items: noticeFeed.previewItems.slice(0, 5) };
     } catch (error) {
       console.warn('[KU Redesign] notices enrichment failed', error);
@@ -218,7 +226,9 @@
   async function buildCourseMaterialsView(doc, context) {
     const course = parseCourseDocument(doc);
     rememberCourseUpcoming(course.course.links.materials || window.location.href, parseUpcomingFromCourse(doc, course.course.links.materials || window.location.href));
-    course.timeline = await fetchCourseTimeline(course.course.courseId);
+    course.timeline = shouldSuppressRefreshSideEffects(course.course.links.materials || window.location.href)
+      ? { items: [], error: false }
+      : await fetchCourseTimeline(course.course.courseId);
     return { course, currentTab: 'materials' };
   }
 
@@ -396,72 +406,28 @@
   }
 
   async function loadUpcomingFromDueCourses(scheduleEntries, year = '') {
-    const dueEntries = (scheduleEntries || []).filter((entry) => isDueFlagNote(entry.note) && entry.href);
-    const backgroundItems = await loadUpcomingFromDueCoursesViaBackground(dueEntries, year);
-    const cacheItems = loadUpcomingFromCourseCache(dueEntries);
-    return mergeUpcomingSources(backgroundItems, cacheItems).filter((item) => isUpcomingDueSoonUnused(item));
+    return loadUpcomingFromCourseCache((scheduleEntries || []).filter((entry) => isDueFlagNote(entry.note) && entry.href));
   }
 
   function loadUpcomingFromCourseCache(scheduleEntries) {
     const cache = readCourseUpcomingCache();
+    let dirty = false;
     const items = [];
     (scheduleEntries || []).forEach((entry) => {
       const cacheKey = buildCourseCacheKey(entry.href);
       const cachedItems = Array.isArray(cache[cacheKey]) ? cache[cacheKey] : [];
-      cachedItems.forEach((item) => {
-        const dueDate = item?.dueDate ? new Date(item.dueDate) : null;
-        if (!dueDate || Number.isNaN(dueDate.getTime())) return;
-        items.push({
-          ...item,
-          dueDate,
-          courseHref: cacheKey,
-          courseTitle: shortenCourseTitle(entry.title),
-          courseNote: entry.note || '',
-          hasCourseDueFlag: true,
-          scheduleIndex: entry.sortIndex ?? Number.MAX_SAFE_INTEGER
-        });
-      });
+      const hydratedItems = cachedItems
+        .map((item) => hydrateCourseUpcomingItem(item, entry, cacheKey))
+        .filter(Boolean);
+      const prunedItems = pruneUpcomingItems(hydratedItems);
+      const serializedItems = prunedItems.map(serializeCourseUpcomingItem);
+      if (serializedItems.length) cache[cacheKey] = serializedItems;
+      else if (cachedItems.length) delete cache[cacheKey];
+      if (!areUpcomingCacheEntriesEqual(cachedItems, serializedItems)) dirty = true;
+      items.push(...prunedItems);
     });
+    if (dirty) writeCourseUpcomingCache(cache);
     return items;
-  }
-
-  async function loadUpcomingFromDueCoursesViaBackground(dueEntries, year = '') {
-    if (!chrome?.runtime?.sendMessage || !dueEntries.length) return [];
-    const results = await requestBackgroundUpcomingCourseFetch(dueEntries);
-    const items = [];
-    for (const entry of dueEntries) {
-      const result = results.find((row) => row.href === entry.href || row.supplementalHref === entry.supplementalHref);
-      if (!result || !result.html || result.conflict || result.loginRedirect) continue;
-      const courseDoc = new DOMParser().parseFromString(result.html, 'text/html');
-      items.push(...parseUpcomingFromCourse(courseDoc, entry.href, { year, scheduleEntry: entry }));
-    }
-    return items;
-  }
-
-  async function requestBackgroundUpcomingCourseFetch(entries = []) {
-    return new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage({
-          type: 'ku:lms:fetch-upcoming-courses',
-          payload: {
-            entries: entries.map((entry) => ({
-              href: entry.href,
-              supplementalHref: entry.supplementalHref || entry.href
-            }))
-          }
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.warn('[KU Redesign] background upcoming fetch failed', chrome.runtime.lastError.message);
-            resolve([]);
-            return;
-          }
-          resolve(Array.isArray(response?.results) ? response.results : []);
-        });
-      } catch (error) {
-        console.warn('[KU Redesign] background upcoming fetch threw', error);
-        resolve([]);
-      }
-    });
   }
 
   function isUpcomingDueSoonUnused(item) {
@@ -517,7 +483,28 @@
     const cacheKey = buildCourseCacheKey(courseHref);
     if (!cacheKey) return;
     const cache = readCourseUpcomingCache();
-    cache[cacheKey] = (items || []).map((item) => ({
+    const serializedItems = pruneUpcomingItems(items || []).map(serializeCourseUpcomingItem);
+    if (serializedItems.length) cache[cacheKey] = serializedItems;
+    else delete cache[cacheKey];
+    writeCourseUpcomingCache(cache);
+  }
+
+  function hydrateCourseUpcomingItem(item, scheduleEntry, cacheKey = '') {
+    const dueDate = item?.dueDate ? new Date(item.dueDate) : null;
+    if (!dueDate || Number.isNaN(dueDate.getTime())) return null;
+    return {
+      ...item,
+      dueDate,
+      courseHref: cacheKey || buildCourseCacheKey(item?.courseHref || scheduleEntry?.href || ''),
+      courseTitle: shortenCourseTitle(scheduleEntry?.title || item?.courseTitle || ''),
+      courseNote: scheduleEntry?.note || item?.courseNote || '',
+      hasCourseDueFlag: isDueFlagNote(scheduleEntry?.note || item?.courseNote || ''),
+      scheduleIndex: scheduleEntry?.sortIndex ?? item?.scheduleIndex ?? Number.MAX_SAFE_INTEGER
+    };
+  }
+
+  function serializeCourseUpcomingItem(item) {
+    return {
       title: item.title,
       type: item.type,
       availability: item.availability,
@@ -529,8 +516,37 @@
       usageCount: item.usageCount,
       hasUsage: item.hasUsage,
       usageKnown: item.usageKnown
-    })).filter((item) => item.title && item.dueDate);
-    writeCourseUpcomingCache(cache);
+    };
+  }
+
+  function areUpcomingCacheEntriesEqual(a = [], b = []) {
+    return JSON.stringify(a || []) === JSON.stringify(b || []);
+  }
+
+  function pruneUpcomingItems(items = []) {
+    return (items || []).filter((item) => isUpcomingDueSoonUnused(item));
+  }
+
+  function getStaleRefreshEntries(scheduleEntries = []) {
+    const dueEntries = (scheduleEntries || []).filter((entry) => isDueFlagNote(entry.note) && entry.href);
+    const cache = readCourseUpcomingCache();
+    let dirty = false;
+    const staleEntries = [];
+    dueEntries.forEach((entry) => {
+      const cacheKey = buildCourseCacheKey(entry.href);
+      const cachedItems = Array.isArray(cache[cacheKey]) ? cache[cacheKey] : [];
+      const hydratedItems = cachedItems
+        .map((item) => hydrateCourseUpcomingItem(item, entry, cacheKey))
+        .filter(Boolean);
+      const prunedItems = pruneUpcomingItems(hydratedItems);
+      const serializedItems = prunedItems.map(serializeCourseUpcomingItem);
+      if (serializedItems.length) cache[cacheKey] = serializedItems;
+      else if (cachedItems.length) delete cache[cacheKey];
+      if (!areUpcomingCacheEntriesEqual(cachedItems, serializedItems)) dirty = true;
+      if (!prunedItems.length) staleEntries.push(entry);
+    });
+    if (dirty) writeCourseUpcomingCache(cache);
+    return staleEntries;
   }
 
   function parseOtherCourses(doc) {
@@ -876,6 +892,8 @@
   function renderHome(view) {
     const filteredGroups = filterOtherCourses(view.otherCourses, state.homeSearch);
     const deadlineTarget = view.upcoming.items[0]?.courseHref || state.currentContext.links.courses;
+    const refreshState = readHomeRefreshState();
+    const refreshActive = isHomeRefreshActive(refreshState);
     const upcomingHtml = view.upcoming.loading
       ? `<div class="ku-loading"><div class="ku-spinner"></div><div>課題を集約中…</div></div>`
       : (view.upcoming.items.length ? renderPanelList(view.upcoming.items.map((item) => ({
@@ -935,7 +953,7 @@
           </section>
         </div>
         <aside class="ku-side-stack">
-          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><a class="ku-panel-title" href="${escapeAttr(deadlineTarget)}">すべて見る</a></div>${upcomingHtml}</section>
+          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><button class="ku-button ghost" data-action="refresh-upcoming" ${refreshActive ? 'disabled aria-disabled="true"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(deadlineTarget)}">すべて見る</a></div></div>${upcomingHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">最新のお知らせ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.notifications)}">すべて見る</a></div>${announcementsHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">メッセージ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.messages)}">すべて見る</a></div>${messagesHtml}</section>
         </aside>
@@ -1180,6 +1198,10 @@
     root.querySelectorAll('[data-action="today-week"]').forEach((button) => button.addEventListener('click', () => { state.weekOffset = 0; state.currentView.week = getWeekDays(new Date(), state.weekOffset); rerender(); }));
     root.querySelectorAll('[data-action="week-prev"]').forEach((button) => button.addEventListener('click', () => { state.weekOffset -= 1; state.currentView.week = getWeekDays(new Date(), state.weekOffset); rerender(); }));
     root.querySelectorAll('[data-action="week-next"]').forEach((button) => button.addEventListener('click', () => { state.weekOffset += 1; state.currentView.week = getWeekDays(new Date(), state.weekOffset); rerender(); }));
+    root.querySelectorAll('[data-action="refresh-upcoming"]').forEach((button) => button.addEventListener('click', (event) => {
+      event.preventDefault();
+      void startHomeRefresh(view);
+    }));
     root.querySelectorAll('[data-action="toggle-settings"]').forEach((button) => button.addEventListener('click', () => { state.showSettings = !state.showSettings; rerender(); }));
     root.querySelectorAll('[data-setting-key]').forEach((checkbox) => checkbox.addEventListener('change', (event) => {
       state.myReportColumns[event.target.dataset.settingKey] = event.target.checked;
@@ -1773,6 +1795,231 @@
     document.getElementById('ku-syllabus-assist-overlay')?.remove();
   }
 
+  async function startHomeRefresh(view) {
+    const existing = readHomeRefreshState();
+    if (isHomeRefreshActive(existing)) {
+      syncHomeRefreshOverlay(existing);
+      return;
+    }
+    const targets = getStaleRefreshEntries(view.schedule.entries).map((entry) => ({
+      href: entry.href,
+      courseHref: buildCourseCacheKey(entry.href),
+      title: entry.title,
+      note: entry.note || '',
+      sortIndex: entry.sortIndex ?? Number.MAX_SAFE_INTEGER
+    }));
+    if (!targets.length) {
+      state.currentView = {
+        ...state.currentView,
+        upcoming: {
+          loading: false,
+          items: loadUpcomingFromCourseCache(view.schedule.entries)
+            .sort(compareUpcomingItems)
+            .slice(0, 5)
+            .map((item) => ({
+              ...item,
+              daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate.getTime() - Date.now()) / 86400000)) : null
+            }))
+        }
+      };
+      rerender();
+      return;
+    }
+    const payload = {
+      version: 1,
+      phase: 'arming',
+      startedAt: new Date().toISOString(),
+      lastProgressAt: '',
+      currentIndex: 0,
+      homeUrl: window.location.href,
+      homeYear: view.filters.year || '',
+      homeSemester: view.filters.semester || '',
+      targets,
+      lastProcessedCourse: '',
+      abortReason: ''
+    };
+    writeHomeRefreshState(payload);
+    syncHomeRefreshOverlay(payload);
+    await continueHomeRefreshIfNeeded(state.currentRoute, view);
+  }
+
+  async function continueHomeRefreshIfNeeded(route, view) {
+    const payload = readHomeRefreshState();
+    if (!isHomeRefreshActive(payload)) {
+      syncHomeRefreshOverlay(null);
+      return;
+    }
+    syncHomeRefreshOverlay(payload);
+    if (route.name === 'home') {
+      await continueHomeRefreshOnHome(view, payload);
+      return;
+    }
+    if (route.name === 'course-materials') {
+      await continueHomeRefreshOnCourse(view, payload);
+      return;
+    }
+    restoreHomeRefreshState(payload, `unsupported-route:${route.name}`);
+  }
+
+  async function continueHomeRefreshOnHome(view, payload) {
+    if (payload.phase === 'arming' || payload.phase === 'navigating-to-course' || payload.phase === 'advancing') {
+      const nextPayload = writeHomeRefreshState({
+        ...payload,
+        phase: 'navigating-to-course',
+        lastProgressAt: new Date().toISOString()
+      });
+      navigateToHomeRefreshTarget(nextPayload);
+      return;
+    }
+    if (payload.phase === 'restoring-home') {
+      if (doesHomeRefreshMatchCurrentView(view, payload)) {
+        clearHomeRefreshState();
+        syncHomeRefreshOverlay(null);
+        return;
+      }
+      submitHomeFilters(payload.homeYear || view.filters.year, payload.homeSemester || view.filters.semester);
+      return;
+    }
+    if (payload.phase === 'failed-recoverable' || payload.phase === 'aborted') {
+      clearHomeRefreshState();
+      syncHomeRefreshOverlay(null);
+    }
+  }
+
+  async function continueHomeRefreshOnCourse(view, payload) {
+    const target = getCurrentHomeRefreshTarget(payload);
+    if (!target) {
+      restoreHomeRefreshState(payload, 'missing-target');
+      return;
+    }
+    const currentCourseHref = buildCourseCacheKey(view.course.course.links.materials || window.location.href);
+    if (currentCourseHref !== buildCourseCacheKey(target.courseHref || target.href)) {
+      restoreHomeRefreshState(payload, 'target-mismatch');
+      return;
+    }
+    const nextIndex = payload.currentIndex + 1;
+    if (nextIndex < payload.targets.length) {
+      const nextPayload = writeHomeRefreshState({
+        ...payload,
+        phase: 'navigating-to-course',
+        currentIndex: nextIndex,
+        lastProcessedCourse: currentCourseHref,
+        lastProgressAt: new Date().toISOString()
+      });
+      navigateToHomeRefreshTarget(nextPayload);
+      return;
+    }
+    restoreHomeRefreshState({
+      ...payload,
+      phase: 'restoring-home',
+      currentIndex: nextIndex,
+      lastProcessedCourse: currentCourseHref,
+      lastProgressAt: new Date().toISOString()
+    });
+  }
+
+  function navigateToHomeRefreshTarget(payload) {
+    const target = getCurrentHomeRefreshTarget(payload);
+    if (!target?.href) {
+      restoreHomeRefreshState(payload, 'missing-target-href');
+      return;
+    }
+    syncHomeRefreshOverlay(payload);
+    window.location.href = target.href;
+  }
+
+  function restoreHomeRefreshState(payload, reason = '') {
+    const nextPayload = writeHomeRefreshState({
+      ...(payload || readHomeRefreshState() || {}),
+      phase: 'restoring-home',
+      abortReason: reason || payload?.abortReason || '',
+      lastProgressAt: new Date().toISOString()
+    });
+    syncHomeRefreshOverlay(nextPayload);
+    const homeUrl = nextPayload.homeUrl || absoluteUrl('/webclass/');
+    if (window.location.href !== homeUrl) {
+      window.location.href = homeUrl;
+      return;
+    }
+    if (state.currentRoute?.name === 'home' && state.currentView && doesHomeRefreshMatchCurrentView(state.currentView, nextPayload)) {
+      clearHomeRefreshState();
+      syncHomeRefreshOverlay(null);
+    }
+  }
+
+  function doesHomeRefreshMatchCurrentView(view, payload) {
+    if (!view || !payload) return false;
+    const currentUrl = new URL(window.location.href, window.location.origin);
+    const targetUrl = new URL(payload.homeUrl || absoluteUrl('/webclass/'), window.location.origin);
+    return currentUrl.pathname === targetUrl.pathname
+      && currentUrl.search === targetUrl.search
+      && String(view.filters?.year || '') === String(payload.homeYear || '')
+      && String(view.filters?.semester || '') === String(payload.homeSemester || '');
+  }
+
+  function getCurrentHomeRefreshTarget(payload = readHomeRefreshState()) {
+    return payload?.targets?.[payload.currentIndex] || null;
+  }
+
+  function isHomeRefreshActive(payload = readHomeRefreshState()) {
+    return !!payload && !['completed', 'aborted'].includes(String(payload.phase || ''));
+  }
+
+  function shouldSuppressRefreshSideEffects(courseHref = '') {
+    const payload = readHomeRefreshState();
+    if (!isHomeRefreshActive(payload)) return false;
+    const target = getCurrentHomeRefreshTarget(payload);
+    if (!target) return false;
+    return buildCourseCacheKey(target.courseHref || target.href) === buildCourseCacheKey(courseHref || window.location.href);
+  }
+
+  function readHomeRefreshState() {
+    try {
+      const raw = window.sessionStorage?.getItem(HOME_REFRESH_STATE_KEY) || '';
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeHomeRefreshState(payload) {
+    try {
+      window.sessionStorage?.setItem(HOME_REFRESH_STATE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      console.warn('[KU Redesign] failed to write home refresh state', error);
+    }
+    return payload;
+  }
+
+  function clearHomeRefreshState() {
+    try {
+      window.sessionStorage?.removeItem(HOME_REFRESH_STATE_KEY);
+    } catch (error) {
+      console.warn('[KU Redesign] failed to clear home refresh state', error);
+    }
+  }
+
+  function syncHomeRefreshOverlay(payload = readHomeRefreshState()) {
+    if (!isHomeRefreshActive(payload)) {
+      document.getElementById('ku-home-refresh-overlay')?.remove();
+      return;
+    }
+    const total = payload.targets?.length || 0;
+    const step = payload.phase === 'restoring-home' ? total : Math.min(total, (payload.currentIndex || 0) + 1);
+    const subtitle = payload.phase === 'restoring-home'
+      ? 'ホームへ戻っています…'
+      : `対象 ${Math.max(0, step)} / ${Math.max(0, total)} を更新中…`;
+    let overlay = document.getElementById('ku-home-refresh-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'ku-home-refresh-overlay';
+      (document.body || document.documentElement).appendChild(overlay);
+    }
+    overlay.innerHTML = `<div class="ku-home-refresh-box"><div class="ku-spinner"></div><div><strong>期限が近い課題を更新しています…</strong><div class="ku-home-refresh-subtitle">${escapeHtml(subtitle)}</div></div></div>`;
+  }
+
   function submitSyllabusSearchForm({ query = '', year = '' } = {}) {
     const form = document.createElement('form');
     form.method = 'POST';
@@ -2020,6 +2267,7 @@
       "badge-check": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.5 2.5L18 4l1.5 3.5L23 10l-2.5 2 1 4-4 .5-1.5 3.5-3.5-1.5L9 20l-1.5-3.5-4-.5 1-4L2 10l3.5-2.5L7 4l3.5 1.5Z"/><path d="m9 12 2 2 4-4"/></svg>',
       pin: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-6-4.35-6-10a6 6 0 1 1 12 0c0 5.65-6 10-6 10Z"/><circle cx="12" cy="11" r="2"/></svg>',
       clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+      "refresh-cw": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',
       search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
       sliders: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h7M14 6h6M4 12h11M18 12h2M4 18h3M10 18h10"/><circle cx="12" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/></svg>',
       send: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>',

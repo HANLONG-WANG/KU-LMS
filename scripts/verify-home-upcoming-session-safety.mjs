@@ -32,105 +32,160 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const sandbox = { console };
+const enrichHomeAsyncSource = extractFunction('enrichHomeAsync');
+assert(enrichHomeAsyncSource.includes('loadNotificationFeed('), 'Home enrich should still fetch paginated notifications');
+assert(enrichHomeAsyncSource.includes('msgappmode=inbox'), 'Home enrich should still fetch inbox preview');
+assert(enrichHomeAsyncSource.includes('loadUpcomingFromDueCourses('), 'Home enrich should still build homepage upcoming items');
+assert(!enrichHomeAsyncSource.includes('loadUpcomingFromDueCoursesViaBackground('), 'Home enrich must not trigger background course-page fetches');
+assert(!enrichHomeAsyncSource.includes('requestBackgroundUpcomingCourseFetch('), 'Home enrich must not use the removed worker fan-out path');
+assert(!enrichHomeAsyncSource.includes('ku:lms:fetch-upcoming-courses'), 'Home enrich must not reference the retired worker message');
+assert(!enrichHomeAsyncSource.includes('/course.php/'), 'Home enrich must not reference course-page fetch URLs');
+assert(!enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements('), 'Home enrich should no longer build upcoming items from notice-title parsing');
+
+const renderHomeSource = extractFunction('renderHome');
+assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Home due card should expose an explicit refresh action');
+
+const loadUpcomingSource = extractFunction('loadUpcomingFromDueCourses');
+assert(loadUpcomingSource.includes('loadUpcomingFromCourseCache('), 'Home upcoming should be sourced from the same-tab course cache');
+assert(!loadUpcomingSource.includes('loadUpcomingFromDueCoursesViaBackground('), 'Home upcoming must not call background course fetches');
+assert(!loadUpcomingSource.includes('requestBackgroundUpcomingCourseFetch('), 'Home upcoming must not call the removed worker bridge');
+
+assert(entrypointDoc.includes('prd-ku-lms-home-safe-refresh-deadlines.md'), 'AI docs entrypoint should point to the active safe-refresh PRD');
+assert(entrypointDoc.includes('test-spec-ku-lms-home-safe-refresh-deadlines.md'), 'AI docs entrypoint should point to the active safe-refresh test spec');
+assert(architectureDoc.includes('Homepage automatic near-deadline rendering is now cache-first'), 'Architecture doc should describe cache-first homepage upcoming data');
+assert(architectureDoc.includes('it must use top-level same-tab navigation only'), 'Architecture doc should document the refresh transport rule');
+
+const storage = new Map();
+const sandbox = {
+  console,
+  URL,
+  COURSE_UPCOMING_CACHE_KEY: 'ku-redesign-course-upcoming-v1',
+  window: {
+    sessionStorage: {
+      getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+      setItem(key, value) { storage.set(key, String(value)); },
+      removeItem(key) { storage.delete(key); }
+    }
+  },
+  absoluteUrl: (value = '') => value,
+  canonicalizeCourseMaterialsHref: (value = '') => value
+};
 vm.createContext(sandbox);
 for (const name of [
-  'uniqueBy',
-  'normalizeHomeAnnouncementItems',
-  'mergeAnnouncementSources',
-  'buildDueFlagCourseAlertItems',
-  'inferMaterialType',
+  'extractCourseId',
+  'buildCourseCacheKey',
+  'isDueFlagNote',
+  'parseAvailabilityRange',
+  'isUpcomingDueSoonUnused',
+  'readCourseUpcomingCache',
+  'writeCourseUpcomingCache',
+  'serializeCourseUpcomingItem',
+  'pruneUpcomingItems',
+  'hydrateCourseUpcomingItem',
+  'areUpcomingCacheEntriesEqual',
   'shortenCourseTitle',
-  'parseAnnouncementDueDate',
-  'parseUpcomingFromAnnouncements',
-  'upcomingPriorityRank',
-  'compareUpcomingItems',
-  'buildUpcomingSubtitle'
+  'rememberCourseUpcoming',
+  'loadUpcomingFromCourseCache',
+  'getStaleRefreshEntries'
 ]) {
   vm.runInContext(extractFunction(name), sandbox, { filename: 'src/content/main.js' });
 }
 
-const enrichHomeAsyncSource = extractFunction('enrichHomeAsync');
-assert(enrichHomeAsyncSource.includes('/webclass/information.php/'), 'Home enrich should fetch notifications');
-assert(enrichHomeAsyncSource.includes('msgappmode=inbox'), 'Home enrich should fetch inbox preview');
-assert(enrichHomeAsyncSource.includes('mergeAnnouncementSources(fallbackAnnouncements, fetchedAnnouncements)'), 'Home enrich should merge current-page and fetched announcements');
-assert(enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements(upcomingAnnouncementSource, view.schedule.entries, view.filters.year)'), 'Home enrich should parse the merged announcement source');
-assert(!enrichHomeAsyncSource.includes('parseUpcomingFromCourse('), 'Home enrich must not rebuild upcoming from course-page fetches');
-assert(!enrichHomeAsyncSource.includes('/course.php/'), 'Home enrich must not reference course-page supplemental fetches');
-assert(!enrichHomeAsyncSource.includes('iframe'), 'Home enrich must not create iframe fan-out');
-assert(!enrichHomeAsyncSource.includes('loadSyllabusCourseCodeViaFrame'), 'Home enrich must stay separate from iframe-based syllabus helpers');
+const now = Date.now();
+const pad = (n) => String(n).padStart(2, '0');
+const fmt = (ts) => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const activeAvailability = `${fmt(now - 60 * 60 * 1000)} - ${fmt(now + 2 * 86400000)}`;
+const expiredAvailability = `${fmt(now - 3 * 86400000)} - ${fmt(now - 2 * 86400000)}`;
+const scheduleEntry = {
+  href: '/webclass/course.php/26170340/?acs_=123',
+  title: '言語学 (2026-春学期-木曜日-1限-70340)',
+  note: '締切が近い課題があります。',
+  sortIndex: 2
+};
 
-const homeOnlyNotice = { title: '第1回課題 05/25 09:00-10:00', href: '/home-only', meta: '経済学' };
-const duplicateFetched = { title: '第1回課題 05/25 09:00-10:00', href: '/home-only', source: '経済学', important: false, deadline: '' };
-const fetchedOnlyNotice = { title: '第2回課題 05/24 09:00-10:00', href: '/fetched-only', source: '法学', important: false, deadline: '' };
-const normalizedHome = sandbox.normalizeHomeAnnouncementItems([homeOnlyNotice]);
-const merged = sandbox.mergeAnnouncementSources(normalizedHome, [duplicateFetched, fetchedOnlyNotice]);
-assert(merged.length === 2, 'Merged announcement source should dedupe repeated notices across home/fetched sources');
-assert(merged.some((item) => item.href === '/home-only'), 'Merged announcement source should retain home-only due notice');
-assert(merged.some((item) => item.href === '/fetched-only'), 'Merged announcement source should retain fetched-only due notice');
+sandbox.rememberCourseUpcoming(scheduleEntry.href, [
+  {
+    title: '有効課題',
+    type: '課題',
+    availability: activeAvailability,
+    dueDate: new Date(now + 86_400_000),
+    href: '/detail-valid',
+    detailHref: '/detail-valid',
+    historyHref: '',
+    usageText: '',
+    usageCount: 0,
+    hasUsage: false,
+    usageKnown: true
+  },
+  {
+    title: '既利用課題',
+    type: '課題',
+    availability: activeAvailability,
+    dueDate: new Date(now + 86_400_000),
+    href: '/detail-used',
+    detailHref: '/detail-used',
+    historyHref: '',
+    usageText: '利用回数 1',
+    usageCount: 1,
+    hasUsage: true,
+    usageKnown: true
+  },
+  {
+    title: '期限切れ課題',
+    type: '課題',
+    availability: expiredAvailability,
+    dueDate: new Date(now - 86_400_000),
+    href: '/detail-expired',
+    detailHref: '/detail-expired',
+    historyHref: '',
+    usageText: '',
+    usageCount: 0,
+    hasUsage: false,
+    usageKnown: true
+  }
+]);
 
-const longFetched = [
-  { title: '一般連絡 05/20 09:00-10:00', href: '/n1', source: '未対応A' },
-  { title: '一般連絡 05/19 09:00-10:00', href: '/n2', source: '未対応B' },
-  { title: '一般連絡 05/18 09:00-10:00', href: '/n3', source: '未対応C' },
-  { title: '一般連絡 05/17 09:00-10:00', href: '/n4', source: '未対応D' },
-  { title: '一般連絡 05/16 09:00-10:00', href: '/n5', source: '未対応E' },
-  { title: '第6回レポート 05/10 09:00-12:00', href: '/n6', source: '経済学' }
-];
-const scheduleForLong = [{ title: '経済学 (2026-前期)', href: '/course-long', note: '', sortIndex: 0 }];
-const longParsed = sandbox.parseUpcomingFromAnnouncements(longFetched, scheduleForLong, '2026');
-assert(longParsed.length === 1 && longParsed[0].href === '/n6', 'Upcoming parsing should preserve a matching notice beyond the fifth fetched row');
+const prunedUpcoming = sandbox.loadUpcomingFromCourseCache([scheduleEntry]);
+assert(prunedUpcoming.length === 1, 'Cache-backed homepage upcoming should prune used and expired items');
+assert(prunedUpcoming[0].title === '有効課題', 'Only valid unused due-soon cache entries should remain visible');
 
-const scheduleEntries = [
-  { title: '経済学 (2026-前期)', href: '/course-a', note: '締切が近い課題があります。', sortIndex: 0 },
-  { title: '法学 (2026-前期)', href: '/course-b', note: '', sortIndex: 1 },
-  { title: '社会学 (2026-前期)', href: '/course-c', note: '締切が近い課題があります。', sortIndex: 2 }
-];
-const parsed = sandbox.parseUpcomingFromAnnouncements(merged, scheduleEntries, '2026');
-assert(parsed.length === 2, 'Upcoming parser should keep due notices from both home preview and fetched notifications');
-const alerts = sandbox.buildDueFlagCourseAlertItems(scheduleEntries, parsed);
-assert(alerts.length === 1, 'Due-flagged schedule course without matching notice should produce one fallback alert card');
-assert(alerts[0].courseHref === '/course-c', 'Fallback alert should target the uncovered due-flagged course');
-const ranked = [...parsed, ...alerts].sort(sandbox.compareUpcomingItems);
-assert(ranked[0].courseHref === '/course-a', 'Detailed due item on a red-flagged course should rank first');
-assert(ranked[1].courseHref === '/course-c' && ranked[1].isCourseAlert === true, 'Red-flagged fallback course alert should rank before non-flagged due items');
-assert(ranked[2].courseHref === '/course-b', 'Non-flagged due item should remain below red-flagged items');
+const rawCache = sandbox.readCourseUpcomingCache();
+const cacheKey = sandbox.buildCourseCacheKey(scheduleEntry.href);
+assert(Array.isArray(rawCache[cacheKey]) && rawCache[cacheKey].length === 1, 'Cache pruning should persist the reduced cache entry set');
 
-const usageRanked = [
-  { title: 'B課題', dueDate: new Date('2026-05-01T10:00:00Z'), hasCourseDueFlag: false, hasUsage: true, scheduleIndex: 1 },
-  { title: 'A課題', dueDate: new Date('2026-05-02T10:00:00Z'), hasCourseDueFlag: false, hasUsage: false, scheduleIndex: 0 }
-].sort(sandbox.compareUpcomingItems);
-assert(usageRanked[0].title === 'A課題', 'Unknown/no-usage items should rank before used items even when their due date is later');
+const staleEntries = sandbox.getStaleRefreshEntries([scheduleEntry]);
+assert(staleEntries.length === 0, 'Red-flag course with a valid cached item should not be considered stale');
 
-const titleTiebreak = [
-  { title: 'い課題', dueDate: new Date('2026-05-01T10:00:00Z'), hasCourseDueFlag: false, hasUsage: false, scheduleIndex: 0 },
-  { title: 'あ課題', dueDate: new Date('2026-05-01T10:00:00Z'), hasCourseDueFlag: false, hasUsage: false, scheduleIndex: 99 }
-].sort(sandbox.compareUpcomingItems);
-assert(titleTiebreak[0].title === 'あ課題', 'Items with the same due date should fall back to title ordering before schedule position');
-
-const unknownUsageSubtitle = sandbox.buildUpcomingSubtitle({ courseTitle: '経済学', courseNote: '', usageText: '', usageKnown: false, hasUsage: false });
-assert(!unknownUsageSubtitle.includes('未利用'), 'Unknown usage state must not be rendered as 未利用');
-const knownUnusedSubtitle = sandbox.buildUpcomingSubtitle({ courseTitle: '経済学', courseNote: '', usageText: '', usageKnown: true, hasUsage: false });
-assert(knownUnusedSubtitle.includes('未利用'), 'Known unused state should still render 未利用');
-
-assert(entrypointDoc.includes('prd-ku-lms-home-upcoming-session-safety.md'), 'AI docs entrypoint should point to the new active PRD');
-assert(entrypointDoc.includes('test-spec-ku-lms-home-upcoming-session-safety.md'), 'AI docs entrypoint should point to the new active test spec');
-assert(architectureDoc.includes('must not crawl or prefetch course pages during automatic homepage enrichment'), 'Architecture doc should state that homepage enrichment stays off course pages');
-assert(architectureDoc.includes('add an honest fallback card'), 'Architecture doc should document the red-flag fallback-card behavior');
+sandbox.rememberCourseUpcoming(scheduleEntry.href, [
+  {
+    title: '利用済みのみ',
+    type: '課題',
+    availability: activeAvailability,
+    dueDate: new Date(now + 86_400_000),
+    href: '/detail-used-only',
+    detailHref: '/detail-used-only',
+    historyHref: '',
+    usageText: '利用回数 1',
+    usageCount: 1,
+    hasUsage: true,
+    usageKnown: true
+  }
+]);
+const staleAfterUsedOnly = sandbox.getStaleRefreshEntries([scheduleEntry]);
+assert(staleAfterUsedOnly.length === 1, 'Red-flag course whose cache is empty after pruning should be targeted by refresh');
 
 const report = {
   ok: true,
   checks: [
-    'home-enrich-stays-off-course-pages-and-iframes',
-    'home-plus-fetched-announcements-merged-and-deduped',
-    'upcoming-parser-retains-home-only-and-fetched-only-due-notices',
-    'fetched-announcements-keep-sixth-row-before-preview-cap',
-    'due-flag-priority-ranks-before-non-flagged',
-    'red-flagged-course-alert-fallback-fills-uncovered-courses',
-    'used-items-rank-after-unknown-or-unused-items',
-    'same-due-date-falls-back-to-title-order',
-    'unknown-usage-does-not-render-unused-label',
-    'docs-point-to-current-phase-and-architecture-contract'
+    'home-enrich-retired-worker-fetch-path',
+    'home-upcoming-cache-first',
+    'refresh-button-exposed-on-home-card',
+    'cache-pruning-persists-valid-items-only',
+    'stale-redflag-targeting-uses-pruned-cache',
+    'docs-point-to-safe-refresh-phase'
   ]
 };
 
