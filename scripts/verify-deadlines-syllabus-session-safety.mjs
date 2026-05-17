@@ -66,6 +66,8 @@ const contentSandbox = {
   URL,
   COURSE_UPCOMING_CACHE_KEY: 'ku-redesign-course-upcoming-v1',
   HOME_REFRESH_STATE_KEY: 'ku-redesign-home-refresh-v1',
+  HOME_REFRESH_MAX_AGE_MS: 5 * 60 * 1000,
+  HOME_REFRESH_STALL_MS: 45 * 1000,
   absoluteUrl: (value = '') => value,
   canonicalizeCourseMaterialsHref: (value = '') => value,
   window: {
@@ -193,6 +195,8 @@ assert(parsedLoginUpcoming.length === 1 && parsedLoginUpcoming[0].title.includes
 contentSandbox.writeHomeRefreshState({
   version: 1,
   phase: 'navigating-to-course',
+  startedAt: new Date().toISOString(),
+  expiresAt: new Date(Date.now() + 60_000).toISOString(),
   homeUrl: 'https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=abc',
   homeYear: '2026',
   homeSemester: '春学期',

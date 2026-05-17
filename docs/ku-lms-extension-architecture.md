@@ -33,7 +33,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Homepage automatic near-deadline rendering is now cache-first: it reads same-tab course cache only and does not fetch course login/material pages during automatic homepage enrichment.
 - Same-tab session cache is the authoritative homepage source for course-specific near-deadline details; explicit course visits update that cache automatically.
 - Homepage cached course items are shown only when they are still inside their `利用可能期間`, have no `利用回数`, and their due date is within 7 days.
-- Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh may only traverse course pages through top-level same-tab navigation; it may not use hidden content-script fetches or service-worker fetches to course login/material pages.
+- Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh must actually re-fetch the latest data for currently red-flagged timetable courses through top-level same-tab navigation, using the native course-entry URLs rather than hidden content-script or service-worker fetches.
 - The refresh flow is intentionally treated as session-safer rather than proven-safe until live KU-LMS validation confirms the narrowed contract.
 - Course-detail parsing skips `締め切り後提出` items and keeps only real future-due task rows; no `コース内で確認` placeholder is allowed.
 - Final upcoming ordering remains: red-flag course items first, then unknown/no-usage before used, then nearest due date, then title.
@@ -56,6 +56,11 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Avoid multi-course hidden prefetch bursts from the homepage; they risk triggering KU-LMS cross-course/session warnings.
 - Avoid treating service-worker background fetches to `/webclass/course.php/:courseId/login?...` as session-safe just because they are serialized or off-page; live evidence suggests they can still poison session state.
 - Homepage refresh must not use hidden content-script fetches or service-worker fetches to course login/material pages; if refresh is enabled, it must use top-level same-tab navigation only and remain validation-gated.
+- If refresh lands on `login.php`, a conflict page, or any unexpected route while active, it must fail closed, clear or tombstone refresh state, and stop auto-navigation instead of bouncing back to `homeUrl`.
+- If the user manually interrupts refresh by returning home, moving to a non-target course, or traversing browser history, refresh must abort instead of reclaiming navigation control.
+- Persisted refresh state must expire automatically; stale refresh state may not revive itself on a later unrelated navigation.
+- Same-tab supplemental/timeline fetches that are no longer needed after navigation must be abortable so a just-left course page cannot keep competing with the next course navigation.
+- Until fresh live validation proves that same-tab refresh no longer falls into `login.php`/conflict, the refresh control may remain visible only as an explicit user-invoked, validation-gated path with fail-closed behavior and no “proven-safe” claim.
 - Preferred future direction: homepage automatic enrichment should stay on current-page DOM, `information.php`, `msg_editor.php?msgappmode=inbox`, and same-tab cache written after explicit user course visits. Any cross-course refresh remains subject to live go/no-go validation.
 
 ## Design system direction

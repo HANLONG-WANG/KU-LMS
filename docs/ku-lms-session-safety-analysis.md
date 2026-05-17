@@ -57,8 +57,12 @@ Unsafe or unproven homepage strategies:
 ## Current implementation direction
 - Homepage automatic near-deadline rendering is now cache-first and reads only same-tab cached course data for course-specific task details.
 - Explicit course visits remain the authoritative cache writer for near-deadline items.
-- Homepage exposes a user-invoked refresh path for stale red-flag courses, but that path is intentionally described as **session-safer / validation-gated**, not universally safe.
+- Homepage exposes a user-invoked refresh path for currently red-flagged courses, and that path is intentionally described as **session-safer / validation-gated**, not universally safe.
 - That refresh path must use top-level same-tab navigation only; it must not use hidden content-script fetches or service-worker fetches to course login/material pages.
+- If a refresh traversal lands on `login.php` or another auth-invalid route, the refresh workflow must fail closed and stop; it must not attempt endless home restoration while state remains active.
+- If the user manually returns home, opens a different course than the current refresh target, or uses browser back/forward during refresh, the workflow must abort instead of continuing to steer navigation.
+- Refresh state must carry an expiry bound so stale `sessionStorage` cannot reactivate itself on a later unrelated home/course visit.
+- Once the user leaves a course/home page, any in-flight same-tab supplemental or timeline fetch that is no longer needed should abort so it does not overlap with the next course navigation and trip KU-LMS cross-course protection.
 - The refresh flow must block user interaction with a full-screen mask while active and restore the supported home state when it completes or aborts.
 
 ## Relationship to current architecture docs

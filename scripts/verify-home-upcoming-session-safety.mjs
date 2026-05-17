@@ -86,7 +86,7 @@ for (const name of [
   'shortenCourseTitle',
   'rememberCourseUpcoming',
   'loadUpcomingFromCourseCache',
-  'getStaleRefreshEntries'
+  'getRefreshEntries'
 ]) {
   vm.runInContext(extractFunction(name), sandbox, { filename: 'src/content/main.js' });
 }
@@ -156,8 +156,8 @@ const rawCache = sandbox.readCourseUpcomingCache();
 const cacheKey = sandbox.buildCourseCacheKey(scheduleEntry.href);
 assert(Array.isArray(rawCache[cacheKey]) && rawCache[cacheKey].length === 1, 'Cache pruning should persist the reduced cache entry set');
 
-const staleEntries = sandbox.getStaleRefreshEntries([scheduleEntry]);
-assert(staleEntries.length === 0, 'Red-flag course with a valid cached item should not be considered stale');
+const refreshEntries = sandbox.getRefreshEntries([scheduleEntry]);
+assert(refreshEntries.length === 1, 'Explicit refresh should still target red-flag courses even when cache already has valid items');
 
 sandbox.rememberCourseUpcoming(scheduleEntry.href, [
   {
@@ -174,8 +174,8 @@ sandbox.rememberCourseUpcoming(scheduleEntry.href, [
     usageKnown: true
   }
 ]);
-const staleAfterUsedOnly = sandbox.getStaleRefreshEntries([scheduleEntry]);
-assert(staleAfterUsedOnly.length === 1, 'Red-flag course whose cache is empty after pruning should be targeted by refresh');
+const refreshAfterUsedOnly = sandbox.getRefreshEntries([scheduleEntry]);
+assert(refreshAfterUsedOnly.length === 1, 'Red-flag course whose cache prunes to empty should remain refresh-targetable');
 
 const report = {
   ok: true,
@@ -184,7 +184,7 @@ const report = {
     'home-upcoming-cache-first',
     'refresh-button-exposed-on-home-card',
     'cache-pruning-persists-valid-items-only',
-    'stale-redflag-targeting-uses-pruned-cache',
+    'refresh-targets-all-redflag-courses-for-live-latest-data',
     'docs-point-to-safe-refresh-phase'
   ]
 };

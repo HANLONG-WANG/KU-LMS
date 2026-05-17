@@ -5,6 +5,9 @@
   const ROOT_ID = 'ku-redesign-root';
   const COURSE_UPCOMING_CACHE_KEY = 'ku-redesign-course-upcoming-v1';
   const HOME_REFRESH_STATE_KEY = 'ku-redesign-home-refresh-v1';
+  const HOME_REFRESH_MAX_AGE_MS = 5 * 60 * 1000;
+  const HOME_REFRESH_STALL_MS = 45 * 1000;
+  const HOME_REFRESH_MAX_RESTORE_ATTEMPTS = 2;
   const PERIOD_TIMES = {
     '1限': '08:50–10:20',
     '2限': '10:30–12:00',
@@ -17,6 +20,8 @@
   };
   const DAY_LABELS = ['月', '火', '水', '木', '金', '土'];
   const DAY_NAMES = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+  let pageRequestAbortController = typeof AbortController === 'function' ? new AbortController() : null;
+  let pageIsLeaving = false;
   const state = {
     homeSearch: '',
     messageSearch: '',
@@ -41,6 +46,10 @@
     return;
   }
 
+  window.addEventListener('pagehide', abortInFlightPageRequests);
+  window.addEventListener('beforeunload', abortInFlightPageRequests);
+  window.addEventListener('pageshow', resetPageLifecycleGuards);
+
   document.documentElement.dataset.kuRedesignState = 'booting';
   mountBootShell();
 
@@ -53,10 +62,15 @@
   async function init() {
     const route = detectRoute(window.location);
     const refreshState = readHomeRefreshState();
+    if (isAuthInvalidPage(document) || isCourseConflictPage(document)) {
+      if (isHomeRefreshActive(refreshState)) {
+        abortHomeRefresh(refreshState, isAuthInvalidPage(document) ? 'auth-invalid-page' : 'course-conflict-page');
+      }
+      return releaseNative();
+    }
     if (!route.supported) {
       if (isHomeRefreshActive(refreshState)) {
-        restoreHomeRefreshState(refreshState, 'unsupported-route');
-        return;
+        abortHomeRefresh(refreshState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);
       }
       return releaseNative();
     }
@@ -114,6 +128,34 @@
     if (root) root.remove();
   }
 
+  function abortInFlightPageRequests() {
+    pageIsLeaving = true;
+    try {
+      pageRequestAbortController?.abort('navigation');
+    } catch (error) {
+      // Ignore repeated aborts.
+    }
+  }
+
+  function getPageRequestSignal() {
+    return pageRequestAbortController?.signal;
+  }
+
+  function isAbortError(error) {
+    return error?.name === 'AbortError' || String(error?.message || '').includes('aborted');
+  }
+
+  function isPageLeaving() {
+    return pageIsLeaving;
+  }
+
+  function resetPageLifecycleGuards() {
+    pageIsLeaving = false;
+    if (!pageRequestAbortController || pageRequestAbortController.signal?.aborted) {
+      pageRequestAbortController = typeof AbortController === 'function' ? new AbortController() : null;
+    }
+  }
+
   function mountBootShell() {
     const root = ensureRoot();
     root.innerHTML = `<div class="ku-app"><div class="ku-loading" style="min-height:100vh"><div class="ku-spinner"></div><div>KU-LMS を再構築しています…</div></div></div>`;
@@ -131,8 +173,9 @@
     const normalized = pathname.replace(/\/$/, '');
     if (normalized === '/webclass') return { supported: true, name: 'home' };
     if (normalized === '/webclass/index.php') return { supported: true, name: 'home' };
+    if (normalized === '/webclass/login.php') return { supported: false, name: 'auth-invalid' };
     if (/\/webclass\/course\.php\/[^/]+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
-    if (/\/webclass\/course\.php\/[^/]+$/.test(normalized)) return { supported: true, name: 'course-materials' };
+    if (/\/webclass\/course\.php\/[^/]+(?:\/login)?$/.test(normalized)) return { supported: true, name: 'course-materials' };
     if (normalized === '/webclass/information.php' || normalized === '/webclass/information.php/mbl') return { supported: true, name: 'notifications' };
     if (normalized === '/webclass/msg_editor.php' && query.get('msgappmode') === 'inbox') return { supported: true, name: 'messages-inbox' };
     if (normalized === '/webclass/user.php/manual') return { supported: true, name: 'manual' };
@@ -334,7 +377,7 @@
           sortIndex: entries.length,
           weekday: DAY_NAMES[cellIndex],
           title: fullText.replace(dueFlag, '').replace(/^»\s*/, '').trim(),
-          href: canonicalizeCourseMaterialsHref(rawHref),
+          href: rawHref,
           supplementalHref: rawHref,
           note: dueFlag
         });
@@ -527,11 +570,10 @@
     return (items || []).filter((item) => isUpcomingDueSoonUnused(item));
   }
 
-  function getStaleRefreshEntries(scheduleEntries = []) {
+  function getRefreshEntries(scheduleEntries = []) {
     const dueEntries = (scheduleEntries || []).filter((entry) => isDueFlagNote(entry.note) && entry.href);
     const cache = readCourseUpcomingCache();
     let dirty = false;
-    const staleEntries = [];
     dueEntries.forEach((entry) => {
       const cacheKey = buildCourseCacheKey(entry.href);
       const cachedItems = Array.isArray(cache[cacheKey]) ? cache[cacheKey] : [];
@@ -543,10 +585,9 @@
       if (serializedItems.length) cache[cacheKey] = serializedItems;
       else if (cachedItems.length) delete cache[cacheKey];
       if (!areUpcomingCacheEntriesEqual(cachedItems, serializedItems)) dirty = true;
-      if (!prunedItems.length) staleEntries.push(entry);
     });
     if (dirty) writeCourseUpcomingCache(cache);
-    return staleEntries;
+    return dueEntries;
   }
 
   function parseOtherCourses(doc) {
@@ -561,7 +602,7 @@
           if (!anchor) return;
           const meta = box.querySelector('.course-info')?.textContent.replace(/\s+/g, ' ').trim() || '';
           const rawHref = absoluteUrl(anchor.getAttribute('href'));
-          group.items.push({ title: anchor.textContent.replace(/^»\s*/, '').trim(), href: canonicalizeCourseMaterialsHref(rawHref), supplementalHref: rawHref, meta });
+          group.items.push({ title: anchor.textContent.replace(/^»\s*/, '').trim(), href: rawHref, supplementalHref: rawHref, meta });
         });
       }
       if (group.items.length) groups.push(group);
@@ -953,7 +994,7 @@
           </section>
         </div>
         <aside class="ku-side-stack">
-          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><button class="ku-button ghost" data-action="refresh-upcoming" ${refreshActive ? 'disabled aria-disabled="true"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(deadlineTarget)}">すべて見る</a></div></div>${upcomingHtml}</section>
+          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><span class="ku-chip neutral" title="この更新は検証中の fail-closed 方式です">検証中</span><button class="ku-button ghost" data-action="refresh-upcoming" title="検証中の安全更新を実行" ${refreshActive ? 'disabled aria-disabled=\"true\"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(deadlineTarget)}">すべて見る</a></div></div>${upcomingHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">最新のお知らせ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.notifications)}">すべて見る</a></div>${announcementsHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">メッセージ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.messages)}">すべて見る</a></div>${messagesHtml}</section>
         </aside>
@@ -1298,7 +1339,8 @@
       const response = await fetch(normalized, {
         credentials: 'include',
         redirect: 'follow',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        signal: getPageRequestSignal()
       });
       const html = await response.text();
       if (/コース利用中に、別のコースへのアクセスがリクエストされました/.test(html)) {
@@ -1525,7 +1567,8 @@
     if (!courseId) return { items: [], error: false };
     try {
       const response = await fetch(absoluteUrl(`/webclass/course.php/${courseId}/api/timeline/messages?head=1&filter=false`), {
-        credentials: 'include'
+        credentials: 'include',
+        signal: getPageRequestSignal()
       });
       const text = await response.text();
       if (/window\.top\.location\.href="\/webclass\/login\.php"/.test(text)) {
@@ -1538,6 +1581,9 @@
         error: false
       };
     } catch (error) {
+      if (isAbortError(error)) {
+        return { items: [], error: false };
+      }
       console.warn('[KU Redesign] timeline fetch failed', courseId, error);
       return { items: [], error: true };
     }
@@ -1796,12 +1842,13 @@
   }
 
   async function startHomeRefresh(view) {
+    if (isPageLeaving()) return;
     const existing = readHomeRefreshState();
     if (isHomeRefreshActive(existing)) {
       syncHomeRefreshOverlay(existing);
       return;
     }
-    const targets = getStaleRefreshEntries(view.schedule.entries).map((entry) => ({
+    const targets = getRefreshEntries(view.schedule.entries).map((entry) => ({
       href: entry.href,
       courseHref: buildCourseCacheKey(entry.href),
       title: entry.title,
@@ -1829,8 +1876,10 @@
       version: 1,
       phase: 'arming',
       startedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + HOME_REFRESH_MAX_AGE_MS).toISOString(),
       lastProgressAt: '',
       currentIndex: 0,
+      restoreAttempts: 0,
       homeUrl: window.location.href,
       homeYear: view.filters.year || '',
       homeSemester: view.filters.semester || '',
@@ -1850,6 +1899,18 @@
       return;
     }
     syncHomeRefreshOverlay(payload);
+    if (getHomeRefreshNavigationType() === 'back_forward') {
+      abortHomeRefresh(payload, 'manual-history-navigation');
+      return;
+    }
+    if (isPageLeaving()) {
+      abortHomeRefresh(payload, 'page-leaving');
+      return;
+    }
+    if (isAuthInvalidRoute(route) || isAuthInvalidPage(document) || isCourseConflictPage(document)) {
+      abortHomeRefresh(payload, isCourseConflictPage(document) ? 'course-conflict-page' : 'auth-invalid-route');
+      return;
+    }
     if (route.name === 'home') {
       await continueHomeRefreshOnHome(view, payload);
       return;
@@ -1858,11 +1919,11 @@
       await continueHomeRefreshOnCourse(view, payload);
       return;
     }
-    restoreHomeRefreshState(payload, `unsupported-route:${route.name}`);
+    abortHomeRefresh(payload, `unexpected-route:${route.name}`);
   }
 
   async function continueHomeRefreshOnHome(view, payload) {
-    if (payload.phase === 'arming' || payload.phase === 'navigating-to-course' || payload.phase === 'advancing') {
+    if (payload.phase === 'arming') {
       const nextPayload = writeHomeRefreshState({
         ...payload,
         phase: 'navigating-to-course',
@@ -1871,12 +1932,26 @@
       navigateToHomeRefreshTarget(nextPayload);
       return;
     }
+    if (payload.phase === 'navigating-to-course' || payload.phase === 'advancing') {
+      abortHomeRefresh(payload, 'manual-home-navigation');
+      return;
+    }
     if (payload.phase === 'restoring-home') {
       if (doesHomeRefreshMatchCurrentView(view, payload)) {
         clearHomeRefreshState();
         syncHomeRefreshOverlay(null);
         return;
       }
+      const restoreAttempts = Number(payload.restoreAttempts || 0);
+      if (restoreAttempts >= HOME_REFRESH_MAX_RESTORE_ATTEMPTS) {
+        abortHomeRefresh(payload, 'restore-home-mismatch');
+        return;
+      }
+      writeHomeRefreshState({
+        ...payload,
+        restoreAttempts: restoreAttempts + 1,
+        lastProgressAt: new Date().toISOString()
+      });
       submitHomeFilters(payload.homeYear || view.filters.year, payload.homeSemester || view.filters.semester);
       return;
     }
@@ -1889,12 +1964,12 @@
   async function continueHomeRefreshOnCourse(view, payload) {
     const target = getCurrentHomeRefreshTarget(payload);
     if (!target) {
-      restoreHomeRefreshState(payload, 'missing-target');
+      abortHomeRefresh(payload, 'missing-target');
       return;
     }
     const currentCourseHref = buildCourseCacheKey(view.course.course.links.materials || window.location.href);
     if (currentCourseHref !== buildCourseCacheKey(target.courseHref || target.href)) {
-      restoreHomeRefreshState(payload, 'target-mismatch');
+      abortHomeRefresh(payload, 'target-mismatch');
       return;
     }
     const nextIndex = payload.currentIndex + 1;
@@ -1919,9 +1994,13 @@
   }
 
   function navigateToHomeRefreshTarget(payload) {
+    if (isPageLeaving()) {
+      abortHomeRefresh(payload, 'page-leaving');
+      return;
+    }
     const target = getCurrentHomeRefreshTarget(payload);
     if (!target?.href) {
-      restoreHomeRefreshState(payload, 'missing-target-href');
+      abortHomeRefresh(payload, 'missing-target-href');
       return;
     }
     syncHomeRefreshOverlay(payload);
@@ -1929,9 +2008,20 @@
   }
 
   function restoreHomeRefreshState(payload, reason = '') {
+    if (isPageLeaving()) {
+      abortHomeRefresh(payload, 'page-leaving');
+      return;
+    }
+    const currentPayload = payload || readHomeRefreshState() || {};
+    const restoreAttempts = Number(currentPayload.restoreAttempts || 0) + 1;
+    if (restoreAttempts > HOME_REFRESH_MAX_RESTORE_ATTEMPTS) {
+      abortHomeRefresh(currentPayload, reason ? `restore-limit:${reason}` : 'restore-limit');
+      return;
+    }
     const nextPayload = writeHomeRefreshState({
-      ...(payload || readHomeRefreshState() || {}),
+      ...currentPayload,
       phase: 'restoring-home',
+      restoreAttempts,
       abortReason: reason || payload?.abortReason || '',
       lastProgressAt: new Date().toISOString()
     });
@@ -1945,6 +2035,17 @@
       clearHomeRefreshState();
       syncHomeRefreshOverlay(null);
     }
+  }
+
+  function abortHomeRefresh(payload, reason = 'aborted') {
+    const nextPayload = writeHomeRefreshState({
+      ...(payload || readHomeRefreshState() || {}),
+      phase: 'aborted',
+      abortReason: reason,
+      lastProgressAt: new Date().toISOString()
+    });
+    syncHomeRefreshOverlay(nextPayload);
+    return nextPayload;
   }
 
   function doesHomeRefreshMatchCurrentView(view, payload) {
@@ -1965,6 +2066,33 @@
     return !!payload && !['completed', 'aborted'].includes(String(payload.phase || ''));
   }
 
+  function isAuthInvalidRoute(route) {
+    return route?.name === 'auth-invalid';
+  }
+
+  function isAuthInvalidPage(doc = document) {
+    const normalizedPath = window.location.pathname.replace(/\/$/, '');
+    if (normalizedPath === '/webclass/login.php') return true;
+    const bodyText = String(doc?.body?.innerText || '');
+    return bodyText.includes('Welcome to KU-LMS')
+      && bodyText.includes('用户 ID')
+      && bodyText.includes('密码');
+  }
+
+  function isCourseConflictPage(doc = document) {
+    const bodyText = String(doc?.body?.innerText || '');
+    return bodyText.includes('コース利用中に、別のコースへのアクセスがリクエストされました。')
+      || bodyText.includes('関大LMSの他のウインドウやタブをすべて閉じ');
+  }
+
+  function getHomeRefreshNavigationType() {
+    try {
+      return window.performance?.getEntriesByType?.('navigation')?.[0]?.type || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
   function shouldSuppressRefreshSideEffects(courseHref = '') {
     const payload = readHomeRefreshState();
     if (!isHomeRefreshActive(payload)) return false;
@@ -1978,6 +2106,20 @@
       const raw = window.sessionStorage?.getItem(HOME_REFRESH_STATE_KEY) || '';
       if (!raw) return null;
       const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      const expiresAt = parsed.expiresAt ? Date.parse(parsed.expiresAt) : NaN;
+      const startedAt = parsed.startedAt ? Date.parse(parsed.startedAt) : NaN;
+      const lastProgressAt = parsed.lastProgressAt ? Date.parse(parsed.lastProgressAt) : NaN;
+      const expiredByExpiresAt = Number.isFinite(expiresAt) && expiresAt <= Date.now();
+      const expiredByAge = !Number.isFinite(expiresAt)
+        && Number.isFinite(startedAt)
+        && (Date.now() - startedAt) > HOME_REFRESH_MAX_AGE_MS;
+      const stalledByNoProgress = Number.isFinite(lastProgressAt)
+        && (Date.now() - lastProgressAt) > HOME_REFRESH_STALL_MS;
+      if (expiredByExpiresAt || expiredByAge || stalledByNoProgress) {
+        window.sessionStorage?.removeItem(HOME_REFRESH_STATE_KEY);
+        return null;
+      }
       return parsed && typeof parsed === 'object' ? parsed : null;
     } catch (error) {
       return null;

@@ -34,7 +34,7 @@ function assert(condition, message) {
 }
 
 assert(source.includes("const HOME_REFRESH_STATE_KEY = 'ku-redesign-home-refresh-v1'"), 'Refresh state key should exist');
-assert(extractFunction('startHomeRefresh').includes('getStaleRefreshEntries(view.schedule.entries)'), 'Refresh should narrow targets through stale red-flag cache checks');
+assert(extractFunction('startHomeRefresh').includes('getRefreshEntries(view.schedule.entries)'), 'Refresh should explicitly target current due-flag courses when the user asks for latest data');
 assert(extractFunction('startHomeRefresh').includes("homeUrl: window.location.href"), 'Refresh should snapshot the exact home URL before navigation');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("route.name === 'home'"), 'Refresh state machine should resume on the home route');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("route.name === 'course-materials'"), 'Refresh state machine should resume on course pages');
@@ -56,6 +56,8 @@ const sandbox = {
   console,
   URL,
   HOME_REFRESH_STATE_KEY: 'ku-redesign-home-refresh-v1',
+  HOME_REFRESH_MAX_AGE_MS: 5 * 60 * 1000,
+  HOME_REFRESH_STALL_MS: 45 * 1000,
   window: {
     location: {
       href: 'https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=abc',
@@ -84,8 +86,9 @@ for (const name of [
 const payload = {
   version: 1,
   phase: 'navigating-to-course',
-  startedAt: '2026-05-16T04:30:00.000Z',
-  lastProgressAt: '2026-05-16T04:30:30.000Z',
+  startedAt: new Date().toISOString(),
+  expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  lastProgressAt: new Date().toISOString(),
   currentIndex: 0,
   homeUrl: 'https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=abc',
   homeYear: '2026',
@@ -124,7 +127,7 @@ const report = {
   ok: true,
   checks: [
     'refresh-state-key-and-functions-present',
-    'stale-target-narrowing-hooked',
+    'explicit-refresh-targeting-hooked',
     'home-url-snapshotted-before-navigation',
     'home-and-course-boot-resume-contracts-present',
     'restoration-scope-defined',
