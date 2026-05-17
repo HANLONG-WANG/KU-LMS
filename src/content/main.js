@@ -2148,18 +2148,32 @@
       document.getElementById('ku-home-refresh-overlay')?.remove();
       return;
     }
-    const total = payload.targets?.length || 0;
-    const step = payload.phase === 'restoring-home' ? total : Math.min(total, (payload.currentIndex || 0) + 1);
-    const subtitle = payload.phase === 'restoring-home'
-      ? 'ホームへ戻っています…'
-      : `対象 ${Math.max(0, step)} / ${Math.max(0, total)} を更新中…`;
+    const total = Math.max(0, payload.targets?.length || 0);
+    const currentTarget = payload.phase === 'restoring-home' ? null : getCurrentHomeRefreshTarget(payload);
+    const currentIndex = Number(payload.currentIndex) || 0;
+    const step = payload.phase === 'restoring-home'
+      ? total
+      : total ? Math.min(total, Math.max(1, currentIndex + 1)) : 0;
+    const progressLabel = `${step} / ${total}`;
+    const percent = total ? Math.min(100, Math.max(0, Math.round((step / total) * 100))) : 0;
+    const subtitle = payload.phase === 'arming'
+      ? '更新を開始しています…'
+      : payload.phase === 'restoring-home'
+        ? 'ホームへ戻しています…'
+        : `対象 ${progressLabel} を更新中…`;
+    const note = currentTarget?.title
+      ? `現在: ${truncate(currentTarget.title, 56)}`
+      : payload.phase === 'restoring-home'
+        ? '最終ステップを処理しています'
+        : '';
+    const noteHtml = note ? `<div class="ku-home-refresh-note">${escapeHtml(note)}</div>` : '';
     let overlay = document.getElementById('ku-home-refresh-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'ku-home-refresh-overlay';
       (document.body || document.documentElement).appendChild(overlay);
     }
-    overlay.innerHTML = `<div class="ku-home-refresh-box"><div class="ku-spinner"></div><div><strong>期限が近い課題を更新しています…</strong><div class="ku-home-refresh-subtitle">${escapeHtml(subtitle)}</div></div></div>`;
+    overlay.innerHTML = `<div class="ku-home-refresh-box" role="status" aria-live="polite" aria-busy="true"><div class="ku-spinner"></div><div class="ku-home-refresh-content"><strong class="ku-home-refresh-title">更新しています。しばらくお待ちください。</strong><div class="ku-home-refresh-subtitle">${escapeHtml(subtitle)}</div><div class="ku-home-refresh-progress-head"><span>進捗</span><strong>${progressLabel}</strong></div><div class="ku-home-refresh-progress-track" aria-hidden="true"><span class="ku-home-refresh-progress-value" style="width:${escapeAttr(percent)}%"></span></div>${noteHtml}</div></div>`;
   }
 
   function submitSyllabusSearchForm({ query = '', year = '' } = {}) {

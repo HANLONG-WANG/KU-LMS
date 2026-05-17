@@ -26,8 +26,8 @@ html[data-ku-redesign-state="ready"] {
   overflow: hidden !important;
 }
 
-html[data-ku-redesign-state="booting"] body > *:not(#ku-redesign-root):not(script):not(style):not(link),
-html[data-ku-redesign-state="ready"] body > *:not(#ku-redesign-root):not(script):not(style):not(link) {
+html[data-ku-redesign-state="booting"] body > *:not(#ku-redesign-root):not(#ku-home-refresh-overlay):not(script):not(style):not(link),
+html[data-ku-redesign-state="ready"] body > *:not(#ku-redesign-root):not(#ku-home-refresh-overlay):not(script):not(style):not(link) {
   opacity: 0 !important;
   pointer-events: none !important;
 }
@@ -1145,7 +1145,7 @@ html[data-ku-redesign-state="ready"] body {
 .ku-home-refresh-box {
   width: min(460px, calc(100vw - 32px));
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   padding: 18px 22px;
   border: 1px solid #E6EBF5;
@@ -1159,12 +1159,62 @@ html[data-ku-redesign-state="ready"] body {
   width: 22px;
   height: 22px;
   flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.ku-home-refresh-content {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ku-home-refresh-title {
+  display: block;
 }
 
 .ku-home-refresh-subtitle {
   margin-top: 4px;
   color: var(--ku-text-soft);
   font-size: 14px;
+  font-weight: 700;
+}
+
+.ku-home-refresh-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  color: var(--ku-text-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ku-home-refresh-progress-head strong {
+  color: #1D2940;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ku-home-refresh-progress-track {
+  margin-top: 8px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid #DDE6FB;
+  background: #EFF4FF;
+}
+
+.ku-home-refresh-progress-value {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2F6BFF;
+}
+
+.ku-home-refresh-note {
+  margin-top: 10px;
+  color: var(--ku-text-soft);
+  font-size: 12px;
   font-weight: 700;
 }
 

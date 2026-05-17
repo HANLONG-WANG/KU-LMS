@@ -34,6 +34,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Same-tab session cache is the authoritative homepage source for course-specific near-deadline details; explicit course visits update that cache automatically.
 - Homepage cached course items are shown only when they are still inside their `利用可能期間`, have no `利用回数`, and their due date is within 7 days.
 - Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh must actually re-fetch the latest data for currently red-flagged timetable courses through top-level same-tab navigation, using the native course-entry URLs rather than hidden content-script or service-worker fetches.
+- While that manual refresh is active, the UI must show a full-screen blocking mask with a clear wait message and visible progress so users do not interact with the shell mid-refresh.
+- That refresh overlay must explicitly remain visible through the takeover hide rules; it is not allowed to be hidden as an ordinary `body` sibling during `booting`/`ready` redesign state.
 - The refresh flow is intentionally treated as session-safer rather than proven-safe until live KU-LMS validation confirms the narrowed contract.
 - Course-detail parsing skips `締め切り後提出` items and keeps only real future-due task rows; no `コース内で確認` placeholder is allowed.
 - Final upcoming ordering remains: red-flag course items first, then unknown/no-usage before used, then nearest due date, then title.
