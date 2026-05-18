@@ -180,6 +180,14 @@ html[data-ku-redesign-state="ready"] body {
   justify-content: center;
 }
 
+.ku-logout-page {
+  max-width: 1180px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .ku-footer {
   text-align: center;
   color: #74819d;
@@ -245,8 +253,22 @@ html[data-ku-redesign-state="ready"] body {
   align-items: start;
 }
 
+.ku-logout-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.ku-logout-shell.is-compact {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
 .ku-login-main,
-.ku-login-side {
+.ku-login-side,
+.ku-logout-main,
+.ku-logout-side {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -258,7 +280,19 @@ html[data-ku-redesign-state="ready"] body {
   padding: 22px;
 }
 
+.ku-logout-card,
+.ku-logout-warning-card,
+.ku-logout-summary-card {
+  padding: 24px;
+}
+
 .ku-login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ku-logout-card {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -287,6 +321,13 @@ html[data-ku-redesign-state="ready"] body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ku-logout-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -414,10 +455,56 @@ html[data-ku-redesign-state="ready"] body {
   padding: 8px 20px 0;
 }
 
+.ku-logout-warning-body,
+.ku-logout-summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 20px 0;
+}
+
+.ku-logout-warning-copy,
+.ku-logout-summary-item {
+  margin: 0;
+}
+
+.ku-logout-warning-copy {
+  color: var(--ku-text);
+  line-height: 1.6;
+}
+
+.ku-logout-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ku-logout-summary-item strong {
+  color: #21324f;
+  font-size: 16px;
+  font-weight: 800;
+}
+
 .ku-login-support-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.ku-logout-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ku-logout-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 180px;
+  text-decoration: none;
 }
 
 .ku-home-main,
@@ -1330,6 +1417,7 @@ html[data-ku-redesign-state="ready"] body {
   background: rgba(245, 248, 254, 0.96);
   color: #1D2940;
   pointer-events: all;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .ku-home-refresh-box {
@@ -1343,6 +1431,8 @@ html[data-ku-redesign-state="ready"] body {
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 16px 40px rgba(38, 65, 139, 0.08);
   font-weight: 800;
+  font-size: 16px;
+  line-height: 1.55;
 }
 
 .ku-home-refresh-box .ku-spinner {
@@ -1359,12 +1449,15 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-home-refresh-title {
   display: block;
+  font-size: 16px;
+  line-height: 1.55;
 }
 
 .ku-home-refresh-subtitle {
   margin-top: 4px;
   color: var(--ku-text-soft);
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1.55;
   font-weight: 700;
 }
 
@@ -1375,13 +1468,15 @@ html[data-ku-redesign-state="ready"] body {
   gap: 12px;
   margin-top: 10px;
   color: var(--ku-text-soft);
-  font-size: 12px;
+  font-size: 16px;
+  line-height: 1.55;
   font-weight: 700;
 }
 
 .ku-home-refresh-progress-head strong {
   color: #1D2940;
-  font-size: 13px;
+  font-size: 16px;
+  line-height: 1.55;
   font-weight: 800;
 }
 
@@ -1404,7 +1499,8 @@ html[data-ku-redesign-state="ready"] body {
 .ku-home-refresh-note {
   margin-top: 10px;
   color: var(--ku-text-soft);
-  font-size: 12px;
+  font-size: 16px;
+  line-height: 1.55;
   font-weight: 700;
 }
 
@@ -1414,6 +1510,7 @@ html[data-ku-redesign-state="ready"] body {
 
 @media (max-width: 1180px) {
   .ku-login-shell,
+  .ku-logout-shell,
   .ku-home-layout,
   .ku-sidebar-shell,
   .ku-course-grid,
@@ -1428,7 +1525,8 @@ html[data-ku-redesign-state="ready"] body {
   }
 
   .ku-toplink { height: auto; padding-bottom: 10px; }
-  .ku-login-page {
+  .ku-login-page,
+  .ku-logout-page {
     justify-content: flex-start;
   }
 }
@@ -1436,7 +1534,10 @@ html[data-ku-redesign-state="ready"] body {
 @media (max-width: 900px) {
   .ku-login-card,
   .ku-login-support-card,
-  .ku-login-notice-card {
+  .ku-login-notice-card,
+  .ku-logout-card,
+  .ku-logout-warning-card,
+  .ku-logout-summary-card {
     padding: 18px;
   }
 

@@ -2,7 +2,7 @@
 
 ## Status
 - Active
-- Last refreshed: 2026-05-16
+- Last refreshed: 2026-05-18
 - Purpose: durable reference for future agents about the forced-logout risk around homepage auto-loading and course navigation.
 
 ## Question answered
@@ -60,7 +60,7 @@ Unsafe or unproven homepage strategies:
 - Explicit course visits remain the authoritative cache writer for near-deadline items.
 - Homepage exposes a user-invoked refresh path for currently red-flagged courses, and that path is intentionally described as **session-safer / validation-gated**, not universally safe.
 - That refresh path must use top-level same-tab navigation only; it must not use hidden content-script fetches or service-worker fetches to course login/material pages.
-- If a refresh traversal lands on `login.php` or another auth-invalid route, the refresh workflow must fail closed and stop; it must not attempt endless home restoration while state remains active.
+- If a refresh traversal lands on `login.php`, `logout.php`, or another auth-invalid route, the refresh workflow must fail closed and stop; it must not attempt endless home restoration while state remains active.
 - If the user manually returns home, opens a different course than the current refresh target, or uses browser back/forward during refresh, the workflow must abort instead of continuing to steer navigation.
 - Refresh state must carry an expiry bound so stale `sessionStorage` cannot reactivate itself on a later unrelated home/course visit.
 - Once the user leaves a course/home page, any in-flight same-tab supplemental or timeline fetch that is no longer needed should abort so it does not overlap with the next course navigation and trip KU-LMS cross-course protection.

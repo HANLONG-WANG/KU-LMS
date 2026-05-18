@@ -53,13 +53,17 @@ assert(source.includes("window.addEventListener('pagehide', abortInFlightPageReq
 assert(source.includes("window.addEventListener('beforeunload', abortInFlightPageRequests);"), 'Beforeunload should abort in-flight page requests');
 assert(source.includes("window.addEventListener('pageshow', resetPageLifecycleGuards);"), 'Pageshow should reset page-leaving guards after history restore');
 assert(source.includes("if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };"), 'Route detection should classify login.php as a supported direct login route');
+assert(source.includes("if (normalized === '/webclass/logout.php') return { supported: true, name: 'logout' };"), 'Route detection should classify logout.php as a supported direct logout route');
 assert(extractFunction('detectRoute').includes("(?:\\/login)?$"), 'Route detection should treat native course login URLs as course-materials routes');
 assert(source.includes("abortHomeRefresh(refreshState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);"), 'Unsupported refresh routes should abort instead of restoring home');
 assert(source.includes("abortHomeRefresh(payload, 'manual-home-navigation');"), 'Manual return to home mid-refresh should abort');
 assert(source.includes("abortHomeRefresh(payload, 'target-mismatch');"), 'Target mismatch should abort instead of forcing home restoration');
-assert(initFn.includes("if (courseConflictPage || (authInvalidPage && !intentionalLoginRoute))"), 'Init should have an explicit top-level conflict/auth terminal branch');
+assert(initFn.includes("if ((courseConflictPage && !intentionalLogoutRoute) || (authInvalidPage && !intentionalLoginRoute))"), 'Init should have an explicit top-level conflict/auth terminal branch.');
+assert(initFn.includes("const intentionalLogoutRoute = route.name === 'logout';"), 'Init should explicitly distinguish the direct logout terminal route.');
+assert(initFn.includes("courseConflictPage && !intentionalLogoutRoute"), 'Init should allow direct logout-route rendering while keeping conflict fail-closed elsewhere.');
 assert(initFn.includes("abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');"), 'Init should preserve exact top-level abort reason strings');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("route.name === 'login'"), 'Active refresh should still fail closed when traversal lands on the direct login route');
+assert(extractFunction('continueHomeRefreshIfNeeded').includes("route.name === 'logout'"), 'Active refresh should still fail closed when traversal lands on the direct logout route');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("'auth-invalid-route'"), 'Active refresh should fail closed on auth-invalid routes');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("abortHomeRefresh(payload, 'page-leaving');"), 'Leaving-page guard should stop refresh continuation');
 assert(continueFn.includes("abortHomeRefresh(payload, isCourseConflictPage(document) ? 'course-conflict-page' : 'auth-invalid-route');"), 'Continuation abort taxonomy should preserve conflict/auth-invalid split');
@@ -74,7 +78,7 @@ assert(extractFunction('fetchCourseTimeline').includes('signal: getPageRequestSi
 assert(entrypointDoc.includes('prd-ku-lms-home-refresh-login-loop-safety.md'), 'AI docs entrypoint should point to the login-loop safety PRD');
 assert(entrypointDoc.includes('test-spec-ku-lms-home-refresh-login-loop-safety.md'), 'AI docs entrypoint should point to the login-loop safety test spec');
 assert(architectureDoc.includes('fail closed'), 'Architecture doc should document fail-closed refresh behavior');
-assert(sessionSafetyDoc.includes('must fail closed and stop'), 'Session-safety doc should document auth-invalid fail-closed behavior');
+assert(sessionSafetyDoc.includes('login.php`, `logout.php`, or another auth-invalid route'), 'Session-safety doc should document logout as a refresh fail-closed terminal route');
 
 const storage = new Map();
 const overlayStates = [];
@@ -221,14 +225,14 @@ sandbox.window.location.pathname = '/webclass/logout.php';
 sandbox.window.location.href = 'https://kulms.tl.kansai-u.ac.jp/webclass/logout.php';
 sandbox.document.body.innerText = 'コース利用中に、別のコースへのアクセスがリクエストされました。 関大LMSの他のウインドウやタブをすべて閉じ';
 sandbox.writeHomeRefreshState(activePayload);
-await sandbox.continueHomeRefreshIfNeeded({ name: 'unsupported' }, null);
+await sandbox.continueHomeRefreshIfNeeded({ name: 'logout' }, null);
 assert(sandbox.readHomeRefreshState().abortReason === 'course-conflict-page', 'Top-level course conflict page should abort the refresh state');
 sandbox.window.location.pathname = '/webclass/logout.php';
 sandbox.window.location.href = 'https://kulms.tl.kansai-u.ac.jp/webclass/logout.php';
 sandbox.document.body.innerText = '';
 sandbox.writeHomeRefreshState(activePayload);
-await sandbox.continueHomeRefreshIfNeeded({ name: 'unsupported' }, null);
-assert(sandbox.readHomeRefreshState().abortReason === 'unexpected-route:unsupported', 'Unsupported continue-phase route should preserve the unexpected-route taxonomy');
+await sandbox.continueHomeRefreshIfNeeded({ name: 'logout' }, null);
+assert(sandbox.readHomeRefreshState().abortReason === 'auth-invalid-route', 'Direct logout route should still abort refresh continuation even without explicit conflict copy');
 
 sandbox.window.location.pathname = '/webclass/';
 sandbox.window.location.href = 'https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=abc';

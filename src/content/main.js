@@ -71,7 +71,8 @@
     const authInvalidPage = isAuthInvalidPage(document);
     const courseConflictPage = isCourseConflictPage(document);
     const intentionalLoginRoute = route.name === 'login';
-    if (courseConflictPage || (authInvalidPage && !intentionalLoginRoute)) {
+    const intentionalLogoutRoute = route.name === 'logout';
+    if ((courseConflictPage && !intentionalLogoutRoute) || (authInvalidPage && !intentionalLoginRoute)) {
       if (isHomeRefreshActive(refreshState)) {
         abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');
       }
@@ -190,6 +191,7 @@
     if (normalized === '/webclass') return { supported: true, name: 'home' };
     if (normalized === '/webclass/index.php') return { supported: true, name: 'home' };
     if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };
+    if (normalized === '/webclass/logout.php') return { supported: true, name: 'logout' };
     if (/\/webclass\/course\.php\/[^/]+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
     if (/\/webclass\/course\.php\/[^/]+(?:\/login)?$/.test(normalized)) return { supported: true, name: 'course-materials' };
     if (normalized === '/webclass/information.php' || normalized === '/webclass/information.php/mbl') return { supported: true, name: 'notifications' };
@@ -202,7 +204,7 @@
     const current = document;
     const links = parseTopLinks(current);
     return {
-      userName: route.name === 'login' ? '' : (parseUserName(current) || 'ユーザー'),
+      userName: route.name === 'login' || route.name === 'logout' ? '' : (parseUserName(current) || 'ユーザー'),
       language: route.name === 'login' ? parseLoginLanguageLabel(current) : (parseLanguage(current) || '日本語'),
       links,
       homeDoc: current
@@ -213,6 +215,8 @@
     switch (route.name) {
       case 'login':
         return buildLoginView(document, context);
+      case 'logout':
+        return buildLogoutView(document, context);
       case 'home':
         return buildHomeView(document, context);
       case 'course-materials':
@@ -252,6 +256,14 @@
     const view = parseLoginView(doc);
     if (!view?.form) {
       throw new Error('Login form not found');
+    }
+    return view;
+  }
+
+  async function buildLogoutView(doc, context) {
+    const view = parseLogoutView(doc);
+    if (!view?.actions?.loginHref || !view?.actions?.closeHref) {
+      throw new Error('Logout actions not found');
     }
     return view;
   }
@@ -475,6 +487,44 @@
   function parseLoginVersion(doc) {
     const match = doc.body.textContent.match(/Ver\.[0-9.]+/i);
     return match ? match[0] : '';
+  }
+
+  function parseLogoutView(doc) {
+    const bodyText = cleanText(doc?.body?.innerText || '');
+    const warningTitle = extractFirstMatch(bodyText, /コース利用中に、別のコースへのアクセスがリクエストされました。/);
+    const warningBody = extractFirstMatch(bodyText, /関大LMSの他のウインドウやタブをすべて閉じ、複数同時に開いて操作しないでください。/);
+    const summaryBlock = findShortestMatchingText(doc, /おつかれ様でした。/);
+    const summarySource = summaryBlock || bodyText;
+    const farewellText = extractFirstMatch(summarySource, /.*?おつかれ様でした。/);
+    const durationText = extractFirstMatch(summarySource, /今回の利用時間は .*? でした。/);
+    const loginAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => (anchor.getAttribute('href') || '').includes('/webclass/login.php'));
+    const closeAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => /window\.close\(\)/i.test(anchor.getAttribute('href') || ''));
+    return {
+      heading: farewellText || 'ご利用ありがとうございました。',
+      subtitle: durationText,
+      warningTitle,
+      warningBody,
+      warningTone: warningTitle || warningBody ? 'orange' : 'blue',
+      statusLabel: warningTitle || warningBody ? '多重アクセス警告' : 'ログアウト完了',
+      actions: {
+        loginHref: loginAnchor ? absoluteUrl(loginAnchor.getAttribute('href') || '') : '',
+        loginLabel: loginAnchor ? cleanText(loginAnchor.textContent) : 'ログイン画面に戻る',
+        closeHref: closeAnchor ? absoluteUrl(closeAnchor.getAttribute('href') || '') : '',
+        closeLabel: closeAnchor ? cleanText(closeAnchor.textContent) : 'このウィンドウを閉じる'
+      }
+    };
+  }
+
+  function findShortestMatchingText(doc, pattern, selectors = 'td, div, p, span, li') {
+    return Array.from(doc.querySelectorAll(selectors))
+      .map((node) => cleanText(node.textContent))
+      .filter((text) => text && pattern.test(text))
+      .sort((a, b) => a.length - b.length)[0] || '';
+  }
+
+  function extractFirstMatch(text, pattern) {
+    const match = String(text || '').match(pattern);
+    return match ? cleanText(match[0]) : '';
   }
 
   function parseTopLinks(doc) {
@@ -1064,6 +1114,7 @@
   function renderPage(route, view) {
     switch (route.name) {
       case 'login': return renderLogin(view);
+      case 'logout': return renderLogout(view);
       case 'home': return renderHome(view);
       case 'course-materials': return renderCourseMaterials(view);
       case 'course-myreports': return renderMyReports(view);
@@ -1079,10 +1130,11 @@
   }
 
   function renderShell(route, context, content) {
-    if (route.name === 'login') {
+    if (route.name === 'login' || route.name === 'logout') {
+      const pageClass = route.name === 'logout' ? 'ku-logout-page' : 'ku-login-page';
       return `
       <div class="ku-app ku-route-${route.name}">
-        <main class="ku-page ku-login-page">${content}<div class="ku-footer">Powered by 関大LMS</div></main>
+        <main class="ku-page ${pageClass}">${content}<div class="ku-footer">Powered by 関大LMS</div></main>
       </div>`;
     }
     return `
@@ -1240,6 +1292,42 @@
       return currentCode ? `<span class="ku-chip blue">${escapeHtml(loginLanguageLabel(currentCode))}</span>` : '';
     }
     return `<div class="ku-login-language-list">${items.map((item) => `<a class="ku-chip ${item.active ? 'blue' : 'neutral'} ku-chip-link" href="${escapeAttr(item.href)}">${escapeHtml(item.label)}</a>`).join('')}</div>`;
+  }
+
+  function renderLogout(view) {
+    const warningCard = (view.warningTitle || view.warningBody) ? `
+      <section class="ku-card ku-logout-warning-card">
+        <div class="ku-card-header">
+          <h2 class="ku-card-title">ご利用上の注意</h2>
+        </div>
+        <div class="ku-logout-warning-body">
+          ${view.warningTitle ? `<p class="ku-logout-warning-copy">${escapeHtml(view.warningTitle)}</p>` : ''}
+          ${view.warningBody ? `<p class="ku-logout-warning-copy ku-soft">${escapeHtml(view.warningBody)}</p>` : ''}
+        </div>
+      </section>` : '';
+    return `
+      <section class="ku-logout-shell ${warningCard ? 'has-warning' : 'is-compact'}">
+        <div class="ku-logout-main">
+          <section class="ku-card ku-logout-card">
+            <div class="ku-login-brand">
+              <span class="ku-logo-mark">${icon('wave')}</span>
+              <div>
+                <div class="ku-login-kicker">Kansai University Learning Management System</div>
+                <h1 class="ku-page-title">${escapeHtml(view.heading)}</h1>
+              </div>
+            </div>
+            <div class="ku-logout-meta">
+              <span class="ku-chip ${escapeAttr(view.warningTone)}">${escapeHtml(view.statusLabel)}</span>
+            </div>
+            ${view.subtitle ? `<p class="ku-page-subtitle">${escapeHtml(view.subtitle)}</p>` : ''}
+            <div class="ku-logout-actions">
+              <a class="ku-button primary ku-logout-action" href="${escapeAttr(view.actions.loginHref)}">${escapeHtml(view.actions.loginLabel)}</a>
+              <a class="ku-button ku-logout-action" href="${escapeAttr(view.actions.closeHref)}">${escapeHtml(view.actions.closeLabel)}</a>
+            </div>
+          </section>
+        </div>
+        ${warningCard ? `<aside class="ku-logout-side">${warningCard}</aside>` : ''}
+      </section>`;
   }
 
   function hydrateRouteDom(root, route, view) {
@@ -1811,6 +1899,7 @@
   function routeLabel(name) {
     return ({
       login: 'ログイン',
+      logout: 'ログアウト',
       home: 'ホーム',
       'course-materials': '教材',
       'course-myreports': 'マイレポート',
@@ -2258,7 +2347,7 @@
       abortHomeRefresh(payload, 'page-leaving');
       return;
     }
-    if (route.name === 'login' || isAuthInvalidRoute(route) || isAuthInvalidPage(document) || isCourseConflictPage(document)) {
+    if (route.name === 'login' || route.name === 'logout' || isAuthInvalidRoute(route) || isAuthInvalidPage(document) || isCourseConflictPage(document)) {
       abortHomeRefresh(payload, isCourseConflictPage(document) ? 'course-conflict-page' : 'auth-invalid-route');
       return;
     }

@@ -5,6 +5,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 
 ## Supported routes
 - `/webclass/login.php`
+- `/webclass/logout.php`
 - `/webclass/`
 - `/webclass/index.php`
 - `/webclass/course.php/:courseId/`
@@ -27,6 +28,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 
 ## Data strategy
 - On `login.php`, treat the current page as the only required source of truth for login, inquiry/contact, and notice content; preserve native form action/method/hidden inputs and keep the rendered surface limited to those groups.
+- On `logout.php`, treat the current page as the only required source of truth for the post-session warning/farewell/actions surface; preserve the native login-return href and close-window action exactly while keeping the rendered surface limited to warning/status/next-step content.
 - Prefer current-page DOM parsing for initial render and avoid non-home route background fetches back to `/webclass/` during context boot.
 - Reuse native links and same-origin endpoints for counts/actions where needed.
 - Prefer session-safe same-origin `fetch()` for supplemental documents instead of hidden iframe course preloads.
@@ -59,12 +61,14 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 ## Safety / fallback
 - If route is unsupported or adapter parsing fails, release the suppression and show native KU-LMS.
 - `login.php` is now an intentionally supported route, but only in its direct pre-auth context; during unrelated flows such as homepage refresh traversal, landing on `login.php` still means auth-invalid and must fail closed.
+- `logout.php` is now an intentionally supported auth-terminal route, but only in its direct top-level context; during unrelated flows such as homepage refresh traversal, landing on `logout.php` still means the refresh must fail closed and stop.
 - The redesigned login route must not show authenticated top navigation or perform hidden/background auth probing; it may only preserve native login, inquiry/contact, and notice content.
+- The redesigned logout route must not show authenticated top navigation or invent post-logout dashboard content; it may only preserve native warning/status text and the real next-step actions.
 - Avoid multi-tab analysis assumptions; KU-LMS warns that simultaneous tabs may cause session inconsistency.
 - Avoid multi-course hidden prefetch bursts from the homepage; they risk triggering KU-LMS cross-course/session warnings.
 - Avoid treating service-worker background fetches to `/webclass/course.php/:courseId/login?...` as session-safe just because they are serialized or off-page; live evidence suggests they can still poison session state.
 - Homepage refresh must not use hidden content-script fetches or service-worker fetches to course login/material pages; if refresh is enabled, it must use top-level same-tab navigation only and remain validation-gated.
-- If refresh lands on `login.php`, a conflict page, or any unexpected route while active, it must fail closed, clear or tombstone refresh state, and stop auto-navigation instead of bouncing back to `homeUrl`.
+- If refresh lands on `login.php`, `logout.php`, a conflict page, or any unexpected route while active, it must fail closed, clear or tombstone refresh state, and stop auto-navigation instead of bouncing back to `homeUrl`.
 - If the user manually interrupts refresh by returning home, moving to a non-target course, or traversing browser history, refresh must abort instead of reclaiming navigation control.
 - Persisted refresh state must expire automatically; stale refresh state may not revive itself on a later unrelated navigation.
 - Same-tab supplemental/timeline fetches that are no longer needed after navigation must be abortable so a just-left course page cannot keep competing with the next course navigation.

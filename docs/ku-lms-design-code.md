@@ -7,9 +7,10 @@
 
 ## Source of truth
 - Status: Active
-- Last refreshed: 2026-05-15
+- Last refreshed: 2026-05-18
 - Primary product surfaces:
   - Login page
+  - Logout page
   - Home dashboard
   - Course materials page
   - Course my-reports page
@@ -86,6 +87,7 @@
     5. マニュアル
 - Core routes/screens:
   - Login = pre-auth sign-in + support/notices surface
+  - Logout = post-session confirmation + warning/next-step surface
   - Home = overview / triage surface
   - Course materials = course activity surface
   - My-reports = submission status surface
@@ -252,6 +254,16 @@
 - It must not show authenticated top navigation, fake dashboard metrics, or unrelated decorative content.
 - Brand treatment should stay calm and trustworthy; prioritize form clarity over hero imagery.
 - If the route introduces helper/error/auth-status copy, it should reuse the same neutral/danger token logic as the rest of the redesign.
+
+### Logout-route guidance
+- The logout route is an auth-terminal surface, not an authenticated workspace.
+- It may show only:
+  - post-session warning/conflict text
+  - farewell/session summary
+  - next-step actions such as returning to login or closing the window
+- It must not show authenticated top navigation, fake post-logout recommendations, or unrelated dashboard/course content.
+- Brand treatment should stay calm and conclusive; prioritize state clarity and the next safe action.
+- If the route introduces status chips or summary cards, they should reuse the same neutral/orange emphasis language as the rest of the redesign rather than inventing a new alert system.
 
 ### Token / component ownership
 - Future AI must prefer updating the shared token/component patterns before adding one-off styling.

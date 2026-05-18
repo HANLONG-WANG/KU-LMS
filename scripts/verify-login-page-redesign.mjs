@@ -32,7 +32,7 @@ function record(name, fn) {
 }
 
 record('manifest description mentions login support', () => {
-  assert(/login, home, course, notices, messages, and manual routes/.test(manifest), 'Manifest description was not updated for login support.');
+  assert(/login, logout, home, course, notices, messages, and manual routes/.test(manifest), 'Manifest description was not updated for auth-route support.');
 });
 
 record('detectRoute supports login route', () => {
@@ -68,13 +68,14 @@ record('login form parity fields are preserved in code', () => {
 });
 
 record('refresh logic still treats login route as auth-invalid during active refresh', () => {
-  assert(/if \(route\.name === 'login' \|\| isAuthInvalidRoute\(route\)/.test(main), 'Refresh fail-closed login guard is missing.');
+  assert(/if \(route\.name === 'login' \|\| route\.name === 'logout' \|\| isAuthInvalidRoute\(route\)/.test(main), 'Refresh fail-closed login guard is missing.');
 });
 
 record('login shell keeps scope limited', () => {
   assert(/<h2 class="ku-card-title">お問い合わせ<\/h2>/.test(main), 'Login support card heading is missing.');
   assert(/<h2 class="ku-card-title">通告<\/h2>/.test(main), 'Login notice card heading is missing.');
-  assert(/if \(route\.name === 'login'\) {\s*return `\s*<div class="ku-app ku-route-\$\{route\.name\}">\s*<main class="ku-page ku-login-page">\$\{content\}<div class="ku-footer">Powered by 関大LMS<\/div><\/main>/s.test(main), 'Login shell should use the route-specific unauthenticated shell.');
+  assert(/if \(route\.name === 'login' \|\| route\.name === 'logout'\)/.test(main), 'Auth terminal routes should share the route-specific unauthenticated shell branch.');
+  assert(/const pageClass = route\.name === 'logout' \? 'ku-logout-page' : 'ku-login-page';/.test(main), 'Login route should still resolve to the dedicated ku-login-page shell class.');
 });
 
 record('login follow-up invariants are locked in code', () => {

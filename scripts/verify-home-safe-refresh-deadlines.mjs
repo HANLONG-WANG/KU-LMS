@@ -61,7 +61,8 @@ assert(bootOverlayFn.includes('syncHomeRefreshOverlay(readHomeRefreshState());')
 assert(initFn.includes("const refreshState = readHomeRefreshState();"), 'Init should re-read fresh refresh state after the boot gate');
 assert(initFn.includes("const authInvalidPage = isAuthInvalidPage(document);"), 'Init should classify auth-invalid pages');
 assert(initFn.includes("const courseConflictPage = isCourseConflictPage(document);"), 'Init should classify course-conflict pages');
-assert(initFn.includes("if (courseConflictPage || (authInvalidPage && !intentionalLoginRoute))"), 'Init should treat top-level conflict/auth-invalid as a terminal branch');
+assert(initFn.includes("const intentionalLogoutRoute = route.name === 'logout';"), 'Init should distinguish the direct logout terminal route.');
+assert(initFn.includes("if ((courseConflictPage && !intentionalLogoutRoute) || (authInvalidPage && !intentionalLoginRoute))"), 'Init should treat top-level conflict/auth-invalid as a terminal branch');
 assert(initFn.includes("abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');"), 'Init should preserve exact top-level abort taxonomy');
 assert(syncOverlayFn.includes("let overlay = document.getElementById('ku-home-refresh-overlay');"), 'Overlay sync should reuse the canonical overlay node');
 assert(syncOverlayFn.includes("overlay.id = 'ku-home-refresh-overlay';"), 'Overlay sync should canonicalize the overlay id');
@@ -83,6 +84,11 @@ assertCssRuleIncludes('#ku-home-refresh-overlay', ['position: fixed;', 'inset: 0
 assert(cssSource.includes('.ku-home-refresh-box'), 'Critical CSS should style the refresh overlay shell');
 assert(cssSource.includes('.ku-home-refresh-progress-track'), 'Critical CSS should style the refresh progress track');
 assert(cssSource.includes('.ku-home-refresh-note'), 'Critical CSS should style the refresh progress note');
+assertCssRuleIncludes('#ku-home-refresh-overlay', ['font-family: Inter'], 'Refresh overlay should explicitly use the redesign font family');
+assertCssRuleIncludes('.ku-home-refresh-title', ['font-size: 16px;', 'line-height: 1.55;'], 'Refresh overlay title should explicitly lock the primary wait typography');
+assertCssRuleIncludes('.ku-home-refresh-subtitle', ['font-size: 16px;'], 'Refresh overlay subtitle should stay typographically aligned with the primary wait title');
+assertCssRuleIncludes('.ku-home-refresh-progress-head', ['font-size: 16px;'], 'Refresh overlay progress label row should stay typographically aligned with the primary wait title');
+assertCssRuleIncludes('.ku-home-refresh-note', ['font-size: 16px;'], 'Refresh overlay note should stay typographically aligned with the primary wait title');
 assert(cssSource.includes('.ku-card-actions'), 'Critical CSS should support the due-card refresh actions layout');
 assert(source.includes('更新しています。しばらくお待ちください。'), 'Refresh overlay should explicitly ask the user to wait during manual refresh');
 assert(source.includes('ku-home-refresh-progress-head'), 'Refresh overlay should expose a dedicated progress summary row');
