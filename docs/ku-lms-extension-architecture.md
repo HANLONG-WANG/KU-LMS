@@ -4,6 +4,7 @@
 Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern UI while keeping real KU-LMS navigation, links, and data sources intact.
 
 ## Supported routes
+- `/webclass/login.php`
 - `/webclass/`
 - `/webclass/index.php`
 - `/webclass/course.php/:courseId/`
@@ -24,6 +25,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - On wide desktop screens, allow the redesign content shell to expand beyond the original 1448px cap so the workspace uses available width more effectively.
 
 ## Data strategy
+- On `login.php`, treat the current page as the only required source of truth for login, inquiry/contact, and notice content; preserve native form action/method/hidden inputs and keep the rendered surface limited to those groups.
 - Prefer current-page DOM parsing for initial render and avoid non-home route background fetches back to `/webclass/` during context boot.
 - Reuse native links and same-origin endpoints for counts/actions where needed.
 - Prefer session-safe same-origin `fetch()` for supplemental documents instead of hidden iframe course preloads.
@@ -54,6 +56,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 
 ## Safety / fallback
 - If route is unsupported or adapter parsing fails, release the suppression and show native KU-LMS.
+- `login.php` is now an intentionally supported route, but only in its direct pre-auth context; during unrelated flows such as homepage refresh traversal, landing on `login.php` still means auth-invalid and must fail closed.
+- The redesigned login route must not show authenticated top navigation or perform hidden/background auth probing; it may only preserve native login, inquiry/contact, and notice content.
 - Avoid multi-tab analysis assumptions; KU-LMS warns that simultaneous tabs may cause session inconsistency.
 - Avoid multi-course hidden prefetch bursts from the homepage; they risk triggering KU-LMS cross-course/session warnings.
 - Avoid treating service-worker background fetches to `/webclass/course.php/:courseId/login?...` as session-safe just because they are serialized or off-page; live evidence suggests they can still poison session state.

@@ -37,7 +37,11 @@
     messageSelection: new Set(),
     currentView: null,
     currentContext: null,
-    currentRoute: null
+    currentRoute: null,
+    loginNativeForm: null,
+    loginNativeFormParent: null,
+    loginNativeFormNextSibling: null,
+    loginNativeFormSnapshot: null
   };
 
   if (window.location.hostname === 'syllabus3.jm.kansai-u.ac.jp') {
@@ -62,9 +66,12 @@
   async function init() {
     const route = detectRoute(window.location);
     const refreshState = readHomeRefreshState();
-    if (isAuthInvalidPage(document) || isCourseConflictPage(document)) {
+    const authInvalidPage = isAuthInvalidPage(document);
+    const courseConflictPage = isCourseConflictPage(document);
+    const intentionalLoginRoute = route.name === 'login';
+    if (courseConflictPage || (authInvalidPage && !intentionalLoginRoute)) {
       if (isHomeRefreshActive(refreshState)) {
-        abortHomeRefresh(refreshState, isAuthInvalidPage(document) ? 'auth-invalid-page' : 'course-conflict-page');
+        abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');
       }
       return releaseNative();
     }
@@ -109,6 +116,7 @@
     if (!route || !context || !view) return;
     const root = ensureRoot();
     root.innerHTML = renderShell(route, context, renderPage(route, view));
+    hydrateRouteDom(root, route, view);
     bindInteractiveHandlers(root, route, view);
   }
 
@@ -123,6 +131,7 @@
   }
 
   function releaseNative() {
+    restoreNativeLoginForm();
     delete document.documentElement.dataset.kuRedesignState;
     const root = document.getElementById(ROOT_ID);
     if (root) root.remove();
@@ -173,7 +182,7 @@
     const normalized = pathname.replace(/\/$/, '');
     if (normalized === '/webclass') return { supported: true, name: 'home' };
     if (normalized === '/webclass/index.php') return { supported: true, name: 'home' };
-    if (normalized === '/webclass/login.php') return { supported: false, name: 'auth-invalid' };
+    if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };
     if (/\/webclass\/course\.php\/[^/]+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
     if (/\/webclass\/course\.php\/[^/]+(?:\/login)?$/.test(normalized)) return { supported: true, name: 'course-materials' };
     if (normalized === '/webclass/information.php' || normalized === '/webclass/information.php/mbl') return { supported: true, name: 'notifications' };
@@ -186,8 +195,8 @@
     const current = document;
     const links = parseTopLinks(current);
     return {
-      userName: parseUserName(current) || 'ユーザー',
-      language: parseLanguage(current) || '日本語',
+      userName: route.name === 'login' ? '' : (parseUserName(current) || 'ユーザー'),
+      language: route.name === 'login' ? parseLoginLanguageLabel(current) : (parseLanguage(current) || '日本語'),
       links,
       homeDoc: current
     };
@@ -195,6 +204,8 @@
 
   async function buildView(route, context) {
     switch (route.name) {
+      case 'login':
+        return buildLoginView(document, context);
       case 'home':
         return buildHomeView(document, context);
       case 'course-materials':
@@ -228,6 +239,14 @@
       messages: { loading: true, items: [], total: 0 },
       announcements: { loading: true, items: homeNotices }
     };
+  }
+
+  async function buildLoginView(doc, context) {
+    const view = parseLoginView(doc);
+    if (!view?.form) {
+      throw new Error('Login form not found');
+    }
+    return view;
   }
 
   async function enrichHomeAsync(context, view) {
@@ -300,6 +319,143 @@
     };
   }
 
+  function parseLoginView(doc) {
+    const form = doc.forms.login || doc.querySelector('form[name="login"], form[action*="/webclass/login.php"]');
+    if (!form) return null;
+    const usernameInput = form.querySelector('input[name="username"]');
+    const passwordInput = form.querySelector('input[name="val"], input[type="password"]');
+    const submitInput = form.querySelector('input[type="submit"], button[type="submit"], input[name="login"], button[name="login"]');
+    if (!usernameInput || !passwordInput || !submitInput) return null;
+    const languageCode = parseLoginLanguageCode(doc, form);
+    return {
+      heading: cleanText(doc.querySelector('#welcome, h1, h2, .page-header')?.textContent) || 'Welcome to KU-LMS',
+      intro: parseLoginIntro(doc, form),
+      alert: parseLoginAlert(doc, form),
+      languageCode,
+      languages: parseLoginLanguageOptions(doc, languageCode),
+      form: {
+        action: absoluteUrl(form.getAttribute('action') || window.location.href),
+        method: String(form.getAttribute('method') || 'post').toUpperCase(),
+        username: {
+          name: usernameInput.getAttribute('name') || 'username',
+          type: usernameInput.getAttribute('type') || 'text',
+          autocomplete: usernameInput.getAttribute('autocomplete') || 'username',
+          placeholder: usernameInput.getAttribute('placeholder') || '',
+          value: usernameInput.value || '',
+          maxlength: usernameInput.getAttribute('maxlength') || ''
+        },
+        password: {
+          name: passwordInput.getAttribute('name') || 'val',
+          type: passwordInput.getAttribute('type') || 'password',
+          autocomplete: passwordInput.getAttribute('autocomplete') || 'current-password',
+          placeholder: passwordInput.getAttribute('placeholder') || '',
+          value: passwordInput.value || '',
+          maxlength: passwordInput.getAttribute('maxlength') || ''
+        },
+        submit: {
+          name: submitInput.getAttribute('name') || '',
+          value: submitInput.value || cleanText(submitInput.textContent) || 'ログイン'
+        },
+        hiddenInputs: Array.from(form.querySelectorAll('input[type="hidden"]')).map((input) => ({
+          name: input.getAttribute('name') || '',
+          value: input.value || ''
+        })).filter((item) => item.name)
+      },
+      support: parseLoginSupport(doc),
+      notices: parseLoginNotices(doc),
+      version: parseLoginVersion(doc)
+    };
+  }
+
+  function parseLoginIntro(doc, form) {
+    const scope = form.closest('.col-sm-5, .col-md-4, .container, main') || form.parentElement || doc.body;
+    const candidates = Array.from(scope.querySelectorAll('p, .description'))
+      .map((node) => cleanText(node.textContent))
+      .filter((text) => text.length > 16 && !/問い合わせ|お問い合わ|Powered by|通告|Ver\./i.test(text));
+    return candidates[0] || '';
+  }
+
+  function parseLoginAlert(doc, form) {
+    const scope = form.closest('.col-sm-5, .col-md-4, .container, main') || doc.body;
+    const candidates = Array.from(scope.querySelectorAll('.alert, .text-danger, .text-warning, .error, .loginFeedback, .help-block'))
+      .map((node) => cleanText(node.textContent))
+      .filter((text) => text && /パスワード|ログイン|invalid|wrong|失敗|错误|エラー/i.test(text));
+    return candidates[0] || '';
+  }
+
+  function parseLoginLanguageCode(doc, form = null) {
+    const formElement = form || doc.forms.login;
+    const hiddenValue = formElement?.querySelector('input[name="language"]')?.value || '';
+    const queryValue = new URLSearchParams(window.location.search).get('language') || '';
+    return String(hiddenValue || queryValue || 'JAPANESE').trim().toUpperCase();
+  }
+
+  function parseLoginLanguageLabel(doc) {
+    return loginLanguageLabel(parseLoginLanguageCode(doc));
+  }
+
+  function parseLoginLanguageOptions(doc, currentCode) {
+    const seen = new Set();
+    return Array.from(doc.querySelectorAll('a[href*="login.php?language="]')).map((anchor) => {
+      const href = absoluteUrl(anchor.getAttribute('href') || '');
+      const code = new URL(href, window.location.origin).searchParams.get('language') || '';
+      if (!code || seen.has(code.toUpperCase())) return null;
+      seen.add(code.toUpperCase());
+      return {
+        code: code.toUpperCase(),
+        label: cleanText(anchor.textContent) || loginLanguageLabel(code),
+        href,
+        active: code.toUpperCase() === currentCode
+      };
+    }).filter(Boolean);
+  }
+
+  function parseLoginSupport(doc) {
+    const emailMatch = doc.body.textContent.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const inquiryAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => /問い合わせ|お問い合わ/.test(cleanText(anchor.textContent)));
+    const emailLabel = Array.from(doc.querySelectorAll('div, p, span'))
+      .map((node) => cleanText(node.textContent))
+      .find((text) => text.includes('問い合わせ先')) || '関大LMS問い合わせ先';
+    const inquiryLabel = Array.from(doc.querySelectorAll('div, p, span'))
+      .map((node) => cleanText(node.textContent))
+      .find((text) => text.includes('お問い合わせ受付フォーム')) || '関大LMSお問い合わせ受付フォーム';
+    return {
+      emailLabel,
+      email: emailMatch?.[0] || '',
+      inquiryLabel,
+      inquiryHref: inquiryAnchor ? absoluteUrl(inquiryAnchor.getAttribute('href') || '') : '',
+      inquiryText: inquiryAnchor ? cleanText(inquiryAnchor.textContent) : ''
+    };
+  }
+
+  function parseLoginNotices(doc) {
+    const items = Array.from(doc.querySelectorAll('#AjaxInfoBox li, #AnnounceBlock li')).map((row) => {
+      const link = row.querySelector('a[href]');
+      if (!link) return null;
+      const title = cleanText(row.querySelector('.title')?.textContent) || cleanText(link.textContent);
+      if (!title || /^»\s*通告/.test(title) || title === '通告') return null;
+      const metaText = cleanText(row.querySelector('.data')?.textContent);
+      const [source = '', deadline = ''] = metaText.split(/\s+-\s+/, 2);
+      return {
+        title,
+        href: absoluteUrl(link.getAttribute('href') || ''),
+        source,
+        deadline: deadline || extractPublishDate(metaText),
+        important: !!row.querySelector('.mark1') || /^【重要】/.test(title)
+      };
+    }).filter(Boolean);
+    const moreAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => /^»\s*通告/.test(cleanText(anchor.textContent)));
+    return {
+      items,
+      moreHref: moreAnchor ? absoluteUrl(moreAnchor.getAttribute('href') || '') : ''
+    };
+  }
+
+  function parseLoginVersion(doc) {
+    const match = doc.body.textContent.match(/Ver\.[0-9.]+/i);
+    return match ? match[0] : '';
+  }
+
   function parseTopLinks(doc) {
     const links = {};
     const all = Array.from(doc.querySelectorAll('a[href]'));
@@ -363,7 +519,7 @@
     if (!table) return { entries, weekdays: DAY_NAMES };
     const rows = Array.from(table.querySelectorAll('tbody tr'));
     rows.forEach((row, rowIndex) => {
-      const period = row.querySelector('.schedule-table-class_order')?.textContent.trim() || `${rowIndex + 1}限`;
+      const period = `${rowIndex + 1}限`;
       const cells = Array.from(row.children).slice(1);
       cells.forEach((cell, cellIndex) => {
         const anchor = cell.querySelector('a');
@@ -412,7 +568,7 @@
   }
 
   function isDueFlagNote(note = '') {
-    return /締切が近い課題があります/.test(String(note || ''));
+    return String(note || '').replace(/\s+/g, '').length > 0;
   }
 
   async function loadNotificationFeed(notificationsUrl = '') {
@@ -886,6 +1042,7 @@
 
   function renderPage(route, view) {
     switch (route.name) {
+      case 'login': return renderLogin(view);
       case 'home': return renderHome(view);
       case 'course-materials': return renderCourseMaterials(view);
       case 'course-myreports': return renderMyReports(view);
@@ -901,6 +1058,12 @@
   }
 
   function renderShell(route, context, content) {
+    if (route.name === 'login') {
+      return `
+      <div class="ku-app ku-route-${route.name}">
+        <main class="ku-page ku-login-page">${content}<div class="ku-footer">Powered by 関大LMS</div></main>
+      </div>`;
+    }
     return `
       <div class="ku-app ku-route-${route.name}">
         ${renderTopbar(route, context)}
@@ -999,6 +1162,122 @@
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">メッセージ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.messages)}">すべて見る</a></div>${messagesHtml}</section>
         </aside>
       </div>`;
+  }
+
+  function renderLogin(view) {
+    const noticeItems = view.notices.items.length
+      ? renderPanelList(view.notices.items.map((item) => ({
+          marker: `<span class="ku-badge-dot ${item.important ? 'danger' : ''}"></span>`,
+          title: `<a class="ku-panel-title ${item.important ? 'danger' : ''}" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
+          subtitle: escapeHtml(item.source || ''),
+          trailing: item.deadline ? `<div class="ku-mini-meta">${escapeHtml(item.deadline)}</div>` : ''
+        })))
+      : `<div class="ku-empty">通告はまだ読み込まれていません。</div>`;
+    return `
+      <section class="ku-login-shell">
+        <div class="ku-login-main">
+          <div class="ku-card ku-login-card">
+            <div class="ku-login-brand">
+              <span class="ku-logo-mark">${icon('wave')}</span>
+              <div>
+                <div class="ku-login-kicker">Kansai University Learning Management System</div>
+                <h1 class="ku-page-title">${escapeHtml(view.heading)}</h1>
+              </div>
+            </div>
+            <div class="ku-login-meta">
+              <span class="ku-chip blue">${escapeHtml(loginLanguageLabel(view.languageCode))}</span>
+              ${renderLoginLanguageLinks(view.languages)}
+            </div>
+            ${view.intro ? `<p class="ku-login-copy">${escapeHtml(view.intro)}</p>` : ''}
+            ${view.alert ? `<div class="ku-login-alert">${escapeHtml(view.alert)}</div>` : ''}
+            <div class="ku-login-form-host" data-ku-login-native-form-host="true"></div>
+            ${view.version ? `<div class="ku-login-version">${escapeHtml(view.version)}</div>` : ''}
+          </div>
+        </div>
+        <aside class="ku-login-side">
+          <section class="ku-card ku-login-support-card">
+            <div class="ku-card-header">
+              <h2 class="ku-card-title">お問い合わせ</h2>
+            </div>
+            <div class="ku-login-support-body">
+              ${view.support.email ? `<div class="ku-login-support-item"><span class="ku-login-support-label">${escapeHtml(view.support.emailLabel)}</span><a class="ku-panel-title" href="mailto:${escapeAttr(view.support.email)}">${escapeHtml(view.support.email)}</a></div>` : ''}
+              ${view.support.inquiryHref ? `<div class="ku-login-support-item"><span class="ku-login-support-label">${escapeHtml(view.support.inquiryLabel)}</span><a class="ku-panel-title" href="${escapeAttr(view.support.inquiryHref)}">${escapeHtml(view.support.inquiryText || 'お問い合わせフォーム')}</a></div>` : ''}
+            </div>
+          </section>
+          <section class="ku-card ku-login-notice-card">
+            <div class="ku-card-header">
+              <h2 class="ku-card-title">通告</h2>
+              ${view.notices.moreHref ? `<a class="ku-panel-title" href="${escapeAttr(view.notices.moreHref)}">一覧へ</a>` : ''}
+            </div>
+            ${noticeItems}
+          </section>
+        </aside>
+      </section>`;
+  }
+
+  function renderLoginLanguageLinks(items = []) {
+    if (!items.length) return '';
+    return `<div class="ku-login-language-list">${items.map((item) => `<a class="ku-chip ${item.active ? 'blue' : 'neutral'} ku-chip-link" href="${escapeAttr(item.href)}">${escapeHtml(item.label)}</a>`).join('')}</div>`;
+  }
+
+  function hydrateRouteDom(root, route, view) {
+    if (route.name === 'login') {
+      hydrateLoginForm(root);
+    }
+  }
+
+  function hydrateLoginForm(root) {
+    const host = root.querySelector('[data-ku-login-native-form-host]');
+    if (!host) return;
+    const nativeForm = state.loginNativeForm || document.forms.login || document.querySelector('form[name="login"], form[action*="/webclass/login.php"]');
+    if (!nativeForm) return;
+    state.loginNativeForm = nativeForm;
+    if (!state.loginNativeFormParent) {
+      state.loginNativeFormParent = nativeForm.parentNode || null;
+      state.loginNativeFormNextSibling = nativeForm.nextSibling || null;
+    }
+    if (!state.loginNativeFormSnapshot) {
+      state.loginNativeFormSnapshot = captureLoginFormSnapshot(nativeForm);
+    }
+    nativeForm.classList.add('ku-login-form');
+    nativeForm.removeAttribute('style');
+    nativeForm.querySelectorAll('.form-group').forEach((group) => group.classList.add('ku-login-field'));
+    nativeForm.querySelectorAll('label').forEach((label) => label.classList.add('ku-login-label', 'ku-login-native-label'));
+    nativeForm.querySelectorAll('input[type="text"], input[type="password"]').forEach((input) => {
+      input.classList.add('ku-login-input');
+      input.removeAttribute('style');
+    });
+    nativeForm.querySelectorAll('input[type="submit"], button[type="submit"]').forEach((button) => {
+      button.classList.add('ku-button', 'ku-login-submit');
+      button.classList.remove('btn', 'btn-primary');
+      button.removeAttribute('style');
+    });
+    host.replaceChildren(nativeForm);
+  }
+
+  function restoreNativeLoginForm() {
+    const nativeForm = state.loginNativeForm;
+    const parent = state.loginNativeFormParent;
+    if (!nativeForm || !parent || parent.contains(nativeForm)) return;
+    restoreLoginFormSnapshot(state.loginNativeFormSnapshot);
+    parent.insertBefore(nativeForm, state.loginNativeFormNextSibling);
+  }
+
+  function captureLoginFormSnapshot(form) {
+    return [form, ...form.querySelectorAll('.form-group, label, input[type="text"], input[type="password"], input[type="submit"], button[type="submit"]')].map((element) => ({
+      element,
+      className: element.className,
+      style: element.getAttribute('style')
+    }));
+  }
+
+  function restoreLoginFormSnapshot(snapshot = []) {
+    (snapshot || []).forEach((entry) => {
+      if (!entry?.element) return;
+      entry.element.className = entry.className || '';
+      if (entry.style == null) entry.element.removeAttribute('style');
+      else entry.element.setAttribute('style', entry.style);
+    });
   }
 
   function renderSchedule(schedule, week, year = '') {
@@ -1460,6 +1739,7 @@
 
   function routeLabel(name) {
     return ({
+      login: 'ログイン',
       home: 'ホーム',
       'course-materials': '教材',
       'course-myreports': 'マイレポート',
@@ -1907,7 +2187,7 @@
       abortHomeRefresh(payload, 'page-leaving');
       return;
     }
-    if (isAuthInvalidRoute(route) || isAuthInvalidPage(document) || isCourseConflictPage(document)) {
+    if (route.name === 'login' || isAuthInvalidRoute(route) || isAuthInvalidPage(document) || isCourseConflictPage(document)) {
       abortHomeRefresh(payload, isCourseConflictPage(document) ? 'course-conflict-page' : 'auth-invalid-route');
       return;
     }
@@ -2386,6 +2666,10 @@
     return value.toLowerCase().replace(/[^\w\u3040-\u30ff\u4e00-\u9faf]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
   }
 
+  function cleanText(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
   function pad(number) { return String(number).padStart(2, '0'); }
   function escapeHtml(value) {
     return String(value ?? '')
@@ -2400,6 +2684,17 @@
   function renderUnsupported() {
     return '<div class="ku-card ku-empty">このページはまだリデザイン対象外です。</div>';
   }
+
+  function loginLanguageLabel(code = '') {
+    return ({
+      JAPANESE: '日本語',
+      ENGLISH: 'English',
+      KOREAN: '한국어',
+      CHINESE: '简体中文',
+      'CHINESE-TW': '正體中文'
+    })[String(code || '').toUpperCase()] || '日本語';
+  }
+
 
   function icon(name) {
     const map = {

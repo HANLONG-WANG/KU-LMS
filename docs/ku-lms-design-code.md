@@ -9,6 +9,7 @@
 - Status: Active
 - Last refreshed: 2026-05-15
 - Primary product surfaces:
+  - Login page
   - Home dashboard
   - Course materials page
   - Course my-reports page
@@ -84,6 +85,7 @@
     4. メッセージ
     5. マニュアル
 - Core routes/screens:
+  - Login = pre-auth sign-in + support/notices surface
   - Home = overview / triage surface
   - Course materials = course activity surface
   - My-reports = submission status surface
@@ -205,6 +207,8 @@
 - Sidebar navigation pattern
 
 ### New/changed components
+- Login auth card
+- Login support / notice side stack
 - Weekly schedule matrix card
 - Deadline stack card
 - Notification card list
@@ -238,6 +242,16 @@
   - empty
   - disabled
   - error-safe fallback
+
+### Login-route guidance
+- The login route is intentionally lighter than authenticated routes.
+- It may show only:
+  - login/auth controls
+  - inquiry/contact information
+  - notices
+- It must not show authenticated top navigation, fake dashboard metrics, or unrelated decorative content.
+- Brand treatment should stay calm and trustworthy; prioritize form clarity over hero imagery.
+- If the route introduces helper/error/auth-status copy, it should reuse the same neutral/danger token logic as the rest of the redesign.
 
 ### Token / component ownership
 - Future AI must prefer updating the shared token/component patterns before adding one-off styling.

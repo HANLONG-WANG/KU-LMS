@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KU-LMS Visual Redesign Takeover",
-  "description": "Pre-paint KU-LMS redesign overlay for home, course, notices, and messages routes.",
+  "description": "Pre-paint KU-LMS redesign overlay for login, home, course, notices, messages, and manual routes.",
   "version": "0.1.0",
   "host_permissions": [
     "https://kulms.tl.kansai-u.ac.jp/webclass/*",

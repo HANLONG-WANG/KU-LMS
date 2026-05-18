@@ -55,6 +55,7 @@ Unsafe or unproven homepage strategies:
 - assuming service-worker fetches are safe just because they are not running in page JS
 
 ## Current implementation direction
+- Direct top-level `https://kulms.tl.kansai-u.ac.jp/webclass/login.php` may be intentionally redesigned as a pre-auth route, but that does **not** change the rule that unexpected `login.php` landings during homepage refresh or other authenticated flows remain auth-invalid and fail-closed.
 - Homepage automatic near-deadline rendering is now cache-first and reads only same-tab cached course data for course-specific task details.
 - Explicit course visits remain the authoritative cache writer for near-deadline items.
 - Homepage exposes a user-invoked refresh path for currently red-flagged courses, and that path is intentionally described as **session-safer / validation-gated**, not universally safe.

@@ -44,6 +44,8 @@ assert(!enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements('), 'Home
 
 const renderHomeSource = extractFunction('renderHome');
 assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Home due card should expose an explicit refresh action');
+assert(extractFunction('parseSchedule').includes('const period = `${rowIndex + 1}限`;'), 'Schedule parsing should derive canonical period keys from row order instead of locale-specific labels');
+assert(extractFunction('isDueFlagNote').includes("String(note || '').replace(/\\s+/g, '').length > 0"), 'Due-flag detection should be locale-agnostic and key off the presence of the native note block');
 
 const loadUpcomingSource = extractFunction('loadUpcomingFromDueCourses');
 assert(loadUpcomingSource.includes('loadUpcomingFromCourseCache('), 'Home upcoming should be sourced from the same-tab course cache');

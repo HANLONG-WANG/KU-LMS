@@ -8,8 +8,14 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 2. `docs/ku-lms-extension-architecture.md` — current extension architecture, supported routes, takeover strategy, and design-system notes.
 3. `docs/ku-lms-session-safety-analysis.md` — durable analysis of homepage/session invalidation risk and the binding session-safety rules for future agents.
 4. `DESIGN.md` — repo-root design pointer to the canonical design contract.
-5. `.omx/plans/prd-ku-lms-home-refresh-login-loop-safety.md` — current active-phase PRD for stopping refresh/login bounce loops while preserving the explicit manual refresh affordance under fail-closed, validation-gated rules.
-6. `.omx/plans/test-spec-ku-lms-home-refresh-login-loop-safety.md` — current active-phase verification requirements for terminal auth-invalid handling, loop breakers, cache-safe aborts, and the visible-but-validation-gated refresh posture.
+
+### Current active-phase artifacts
+- `.omx/plans/prd-ku-lms-login-page-redesign.md` — current active-phase PRD for adding a redesigned `login.php` route that keeps only login, inquiry/contact, and notice content while preserving native auth parity.
+- `.omx/plans/test-spec-ku-lms-login-page-redesign.md` — current active-phase verification requirements for login-route support, native form parity, retained-content limits, and fail-open fallback.
+
+### Background planning artifacts
+5. `.omx/plans/prd-ku-lms-home-refresh-login-loop-safety.md` — earlier active-phase PRD for stopping refresh/login bounce loops while preserving the explicit manual refresh affordance under fail-closed, validation-gated rules.
+6. `.omx/plans/test-spec-ku-lms-home-refresh-login-loop-safety.md` — earlier active-phase verification requirements for terminal auth-invalid handling, loop breakers, cache-safe aborts, and the visible-but-validation-gated refresh posture.
 7. `.omx/plans/prd-ku-lms-home-refresh-progress-overlay.md` — focused follow-up PRD for making the validation-gated homepage refresh mask explicitly tell the user to wait and show visible progress.
 8. `.omx/plans/test-spec-ku-lms-home-refresh-progress-overlay.md` — focused verification requirements for that refresh overlay/progress follow-up.
 9. `.omx/plans/prd-ku-lms-home-refresh-overlay-visibility-fix.md` — focused follow-up PRD for ensuring the refresh overlay stays visible through redesign takeover hide rules.

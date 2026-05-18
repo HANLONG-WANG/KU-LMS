@@ -172,6 +172,14 @@ html[data-ku-redesign-state="ready"] body {
   padding: 20px 24px 32px;
 }
 
+.ku-login-page {
+  max-width: 1360px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .ku-footer {
   text-align: center;
   color: #74819d;
@@ -228,6 +236,184 @@ html[data-ku-redesign-state="ready"] body {
   display: grid;
   grid-template-columns: minmax(0, 2.35fr) minmax(420px, 1.05fr);
   gap: 20px;
+}
+
+.ku-login-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.ku-login-main,
+.ku-login-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ku-login-card,
+.ku-login-support-card,
+.ku-login-notice-card {
+  padding: 22px;
+}
+
+.ku-login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ku-login-brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ku-login-kicker {
+  color: var(--ku-text-soft);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.ku-login-card .ku-page-title {
+  margin-top: 8px;
+  font-size: 34px;
+}
+
+.ku-login-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ku-login-language-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ku-login-copy {
+  margin: 0;
+  color: #42506c;
+  font-size: 16px;
+}
+
+.ku-login-alert {
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 77, 79, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 77, 79, 0.08);
+  color: #9f2f35;
+  font-weight: 700;
+}
+
+.ku-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ku-login-form-host {
+  min-height: 220px;
+}
+
+.ku-login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ku-login-label,
+.ku-login-support-label {
+  color: #42506c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ku-login-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--ku-border);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ku-text);
+  font: inherit;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.ku-login-input:focus {
+  border-color: rgba(47, 107, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.12);
+}
+
+.ku-login-form .form-control {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--ku-border);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ku-text);
+  font: inherit;
+  box-shadow: none;
+}
+
+.ku-login-form .form-control:focus {
+  border-color: rgba(47, 107, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.12);
+}
+
+.ku-login-form .form-group {
+  margin: 0;
+}
+
+.ku-login-native-label {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+.ku-login-form br {
+  display: none;
+}
+
+.ku-login-submit {
+  min-height: 52px;
+  width: fit-content;
+  min-width: 180px;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  border: 0;
+}
+
+.ku-login-version {
+  color: var(--ku-text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ku-login-support-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 20px 0;
+}
+
+.ku-login-support-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .ku-home-main,
@@ -1223,6 +1409,7 @@ html[data-ku-redesign-state="ready"] body {
 }
 
 @media (max-width: 1180px) {
+  .ku-login-shell,
   .ku-home-layout,
   .ku-sidebar-shell,
   .ku-course-grid,
@@ -1237,9 +1424,22 @@ html[data-ku-redesign-state="ready"] body {
   }
 
   .ku-toplink { height: auto; padding-bottom: 10px; }
+  .ku-login-page {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 900px) {
+  .ku-login-card,
+  .ku-login-support-card,
+  .ku-login-notice-card {
+    padding: 18px;
+  }
+
+  .ku-login-card .ku-page-title {
+    font-size: 28px;
+  }
+
   .ku-report-head,
   .ku-report-row,
   .ku-message-head,

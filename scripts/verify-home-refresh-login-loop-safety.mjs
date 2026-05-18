@@ -39,11 +39,12 @@ assert(source.includes("const HOME_REFRESH_MAX_RESTORE_ATTEMPTS = 2"), 'Refresh 
 assert(source.includes("window.addEventListener('pagehide', abortInFlightPageRequests);"), 'Pagehide should abort in-flight page requests');
 assert(source.includes("window.addEventListener('beforeunload', abortInFlightPageRequests);"), 'Beforeunload should abort in-flight page requests');
 assert(source.includes("window.addEventListener('pageshow', resetPageLifecycleGuards);"), 'Pageshow should reset page-leaving guards after history restore');
-assert(source.includes("if (normalized === '/webclass/login.php') return { supported: false, name: 'auth-invalid' };"), 'Route detection should classify login.php as auth-invalid');
+assert(source.includes("if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };"), 'Route detection should classify login.php as a supported direct login route');
 assert(extractFunction('detectRoute').includes("(?:\\/login)?$"), 'Route detection should treat native course login URLs as course-materials routes');
 assert(source.includes("abortHomeRefresh(refreshState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);"), 'Unsupported refresh routes should abort instead of restoring home');
 assert(source.includes("abortHomeRefresh(payload, 'manual-home-navigation');"), 'Manual return to home mid-refresh should abort');
 assert(source.includes("abortHomeRefresh(payload, 'target-mismatch');"), 'Target mismatch should abort instead of forcing home restoration');
+assert(extractFunction('continueHomeRefreshIfNeeded').includes("route.name === 'login'"), 'Active refresh should still fail closed when traversal lands on the direct login route');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("'auth-invalid-route'"), 'Active refresh should fail closed on auth-invalid routes');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("abortHomeRefresh(payload, 'page-leaving');"), 'Leaving-page guard should stop refresh continuation');
 assert(source.includes('function isCourseConflictPage(doc = document)'), 'Top-level course conflict pages should be detected explicitly');
@@ -192,7 +193,7 @@ sandbox.window.location.pathname = '/webclass/login.php';
 sandbox.window.location.href = 'https://kulms.tl.kansai-u.ac.jp/webclass/login.php';
 sandbox.window.location.search = '';
 sandbox.document.body.innerText = 'Welcome to KU-LMS 用户 ID 密码';
-await sandbox.continueHomeRefreshIfNeeded({ name: 'auth-invalid' }, null);
+await sandbox.continueHomeRefreshIfNeeded({ name: 'login' }, null);
 assert(sandbox.readHomeRefreshState().phase === 'aborted', 'Auth-invalid route should abort the refresh state');
 assert(sandbox.readHomeRefreshState().abortReason === 'auth-invalid-route', 'Auth-invalid abort reason should be recorded');
 
