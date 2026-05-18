@@ -21,6 +21,8 @@ const designCode = read('docs/ku-lms-design-code.md');
 const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
 const prd = read('.omx/plans/prd-ku-lms-login-page-redesign.md');
 const testSpec = read('.omx/plans/test-spec-ku-lms-login-page-redesign.md');
+const followupPrd = read('.omx/plans/prd-ku-lms-login-page-followups.md');
+const followupTestSpec = read('.omx/plans/test-spec-ku-lms-login-page-followups.md');
 
 const checks = [];
 
@@ -58,7 +60,7 @@ record('login form parity fields are preserved in code', () => {
   assert(/function captureLoginFormSnapshot\(/.test(main), 'native login form snapshot helper is missing.');
   assert(/function restoreNativeLoginForm\(/.test(main), 'native login form restore hook is missing.');
   assert(/function restoreLoginFormSnapshot\(/.test(main), 'native login form snapshot restore helper is missing.');
-  assert(/function releaseNative\(\) {\s*restoreNativeLoginForm\(\);/s.test(main), 'releaseNative() does not restore the native login form before fail-open fallback.');
+  assert(/function releaseNative\(\) {\s*(stopLoginNoticeSync\(\);\s*)?restoreNativeLoginForm\(\);/s.test(main), 'releaseNative() does not restore the native login form before fail-open fallback.');
   assert(/loginNativeFormSnapshot/.test(main), 'login-native snapshot state is missing.');
   assert(/entry\.element\.className = entry\.className \|\| ''/.test(main), 'restore path does not restore original className values.');
   assert(main.includes("if (entry.style == null) entry.element.removeAttribute('style');"), 'restore path does not clear inline style when the original element had none.');
@@ -75,10 +77,21 @@ record('login shell keeps scope limited', () => {
   assert(/if \(route\.name === 'login'\) {\s*return `\s*<div class="ku-app ku-route-\$\{route\.name\}">\s*<main class="ku-page ku-login-page">\$\{content\}<div class="ku-footer">Powered by 関大LMS<\/div><\/main>/s.test(main), 'Login shell should use the route-specific unauthenticated shell.');
 });
 
+record('login follow-up invariants are locked in code', () => {
+  assert(/renderLoginLanguageLinks\(view\.languages, view\.languageCode\)/.test(main), 'Login render does not route language UI through the single language-links presenter.');
+  assert(!/<span class="ku-chip blue">\$\{escapeHtml\(loginLanguageLabel\(view\.languageCode\)\)\}<\/span>\s*\$\{renderLoginLanguageLinks\(view\.languages\)\}/.test(main), 'Login render still duplicates the active language chip and the language list.');
+  assert(/function markHydratedLoginFormDecorations\(/.test(main), 'Hydrated login form decoration cleanup is missing.');
+  assert(/ku-login-native-extra/.test(main), 'Hydrated login form cleanup marker class is missing from JS.');
+  assert(/function syncLoginNotices\(/.test(main), 'Async login notice synchronization helper is missing.');
+  assert(/window\.setTimeout\(trySync, 300\)/.test(main), 'Bounded login notice retry loop is missing.');
+  assert(/function cleanLoginSupportLabel\(/.test(main), 'Support-label cleanup helper is missing.');
+});
+
 record('login route has dedicated CSS classes', () => {
   for (const token of ['.ku-login-page', '.ku-login-shell', '.ku-login-card', '.ku-login-form', '.ku-login-support-card', '.ku-login-notice-card']) {
     assert(css.includes(token), `Missing CSS token: ${token}`);
   }
+  assert(css.includes('.ku-login-form .ku-login-native-extra'), 'Missing CSS token: .ku-login-form .ku-login-native-extra');
 });
 
 record('architecture doc documents login route', () => {
@@ -94,11 +107,15 @@ record('design code documents login-route constraints', () => {
 record('AI docs entrypoint includes login PRD and test spec', () => {
   assert(entrypoint.includes('.omx/plans/prd-ku-lms-login-page-redesign.md'), 'AI docs entrypoint is missing login PRD.');
   assert(entrypoint.includes('.omx/plans/test-spec-ku-lms-login-page-redesign.md'), 'AI docs entrypoint is missing login test spec.');
+  assert(entrypoint.includes('.omx/plans/prd-ku-lms-login-page-followups.md'), 'AI docs entrypoint is missing login follow-up PRD.');
+  assert(entrypoint.includes('.omx/plans/test-spec-ku-lms-login-page-followups.md'), 'AI docs entrypoint is missing login follow-up test spec.');
 });
 
 record('phase artifacts exist', () => {
   assert(prd.includes('KU-LMS Login Page Redesign'), 'Login PRD content missing.');
   assert(testSpec.includes('KU-LMS Login Page Redesign'), 'Login test spec content missing.');
+  assert(followupPrd.includes('KU-LMS Login Page Follow-ups'), 'Login follow-up PRD content missing.');
+  assert(followupTestSpec.includes('KU-LMS Login Page Follow-ups'), 'Login follow-up test spec content missing.');
 });
 
 console.log(JSON.stringify({

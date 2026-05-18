@@ -387,6 +387,10 @@ html[data-ku-redesign-state="ready"] body {
   display: none;
 }
 
+.ku-login-form .ku-login-native-extra {
+  display: none !important;
+}
+
 .ku-login-submit {
   min-height: 52px;
   width: fit-content;

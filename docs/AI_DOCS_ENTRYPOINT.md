@@ -14,6 +14,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 ### Login route subsystem
 - `.omx/plans/prd-ku-lms-login-page-redesign.md` — redesigned `login.php` route that keeps only login, inquiry/contact, and notice content while preserving native auth parity.
 - `.omx/plans/test-spec-ku-lms-login-page-redesign.md` — verification requirements for login-route support, native form parity, retained-content limits, and fail-open fallback.
+- `.omx/plans/prd-ku-lms-login-page-followups.md` — follow-up fix plan for duplicated login-route UI, support-card spillover, and async notice rendering.
+- `.omx/plans/test-spec-ku-lms-login-page-followups.md` — verification requirements for single-source login UI, stripped hydrated form chrome, and DOM-only async notice sync.
 
 ### Homepage refresh safety subsystem
 - `.omx/plans/prd-ku-lms-home-refresh-cross-page-overlay-persistence.md` — current focused PRD for reducing cross-page refresh-mask flicker via boot-time visual-only rehydration.

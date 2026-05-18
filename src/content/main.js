@@ -41,7 +41,8 @@
     loginNativeForm: null,
     loginNativeFormParent: null,
     loginNativeFormNextSibling: null,
-    loginNativeFormSnapshot: null
+    loginNativeFormSnapshot: null,
+    loginNoticeSyncTimer: null
   };
 
   if (window.location.hostname === 'syllabus3.jm.kansai-u.ac.jp') {
@@ -132,6 +133,7 @@
   }
 
   function releaseNative() {
+    stopLoginNoticeSync();
     restoreNativeLoginForm();
     delete document.documentElement.dataset.kuRedesignState;
     const root = document.getElementById(ROOT_ID);
@@ -416,21 +418,35 @@
   }
 
   function parseLoginSupport(doc) {
+    const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
     const emailMatch = doc.body.textContent.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     const inquiryAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => /問い合わせ|お問い合わ/.test(cleanText(anchor.textContent)));
-    const emailLabel = Array.from(doc.querySelectorAll('div, p, span'))
-      .map((node) => cleanText(node.textContent))
-      .find((text) => text.includes('問い合わせ先')) || '関大LMS問い合わせ先';
-    const inquiryLabel = Array.from(doc.querySelectorAll('div, p, span'))
-      .map((node) => cleanText(node.textContent))
-      .find((text) => text.includes('お問い合わせ受付フォーム')) || '関大LMSお問い合わせ受付フォーム';
+    const emailNode = Array.from(doc.querySelectorAll('div, p, span, li'))
+      .map((node) => ({ node, text: cleanText(node.textContent) }))
+      .filter((entry) => emailPattern.test(entry.text))
+      .sort((a, b) => a.text.length - b.text.length)[0]?.node || null;
+    const inquiryText = inquiryAnchor ? cleanText(inquiryAnchor.textContent) : '';
+    const inquiryContainer = inquiryAnchor?.closest('div, p, span, li') || null;
+    const emailLabel = cleanLoginSupportLabel(
+      cleanText(emailNode?.textContent || '').replace(emailMatch?.[0] || '', ''),
+      '関大LMS問い合わせ先'
+    );
+    const inquiryLabel = cleanLoginSupportLabel(
+      cleanText(inquiryContainer?.textContent || '').replace(inquiryText, ''),
+      '関大LMSお問い合わせ受付フォーム'
+    );
     return {
       emailLabel,
       email: emailMatch?.[0] || '',
       inquiryLabel,
       inquiryHref: inquiryAnchor ? absoluteUrl(inquiryAnchor.getAttribute('href') || '') : '',
-      inquiryText: inquiryAnchor ? cleanText(inquiryAnchor.textContent) : ''
+      inquiryText
     };
+  }
+
+  function cleanLoginSupportLabel(text, fallback) {
+    const normalized = cleanText(text).replace(/[：:]\s*$/, '').trim();
+    return normalized || fallback;
   }
 
   function parseLoginNotices(doc) {
@@ -449,7 +465,7 @@
         important: !!row.querySelector('.mark1') || /^【重要】/.test(title)
       };
     }).filter(Boolean);
-    const moreAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => /^»\s*通告/.test(cleanText(anchor.textContent)));
+    const moreAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => /^»\s*(通告|お知らせ画面)/.test(cleanText(anchor.textContent)));
     return {
       items,
       moreHref: moreAnchor ? absoluteUrl(moreAnchor.getAttribute('href') || '') : ''
@@ -1190,8 +1206,7 @@
               </div>
             </div>
             <div class="ku-login-meta">
-              <span class="ku-chip blue">${escapeHtml(loginLanguageLabel(view.languageCode))}</span>
-              ${renderLoginLanguageLinks(view.languages)}
+              ${renderLoginLanguageLinks(view.languages, view.languageCode)}
             </div>
             ${view.intro ? `<p class="ku-login-copy">${escapeHtml(view.intro)}</p>` : ''}
             ${view.alert ? `<div class="ku-login-alert">${escapeHtml(view.alert)}</div>` : ''}
@@ -1220,15 +1235,20 @@
       </section>`;
   }
 
-  function renderLoginLanguageLinks(items = []) {
-    if (!items.length) return '';
+  function renderLoginLanguageLinks(items = [], currentCode = '') {
+    if (!items.length) {
+      return currentCode ? `<span class="ku-chip blue">${escapeHtml(loginLanguageLabel(currentCode))}</span>` : '';
+    }
     return `<div class="ku-login-language-list">${items.map((item) => `<a class="ku-chip ${item.active ? 'blue' : 'neutral'} ku-chip-link" href="${escapeAttr(item.href)}">${escapeHtml(item.label)}</a>`).join('')}</div>`;
   }
 
   function hydrateRouteDom(root, route, view) {
     if (route.name === 'login') {
       hydrateLoginForm(root);
+      syncLoginNotices(view);
+      return;
     }
+    stopLoginNoticeSync();
   }
 
   function hydrateLoginForm(root) {
@@ -1244,6 +1264,7 @@
     if (!state.loginNativeFormSnapshot) {
       state.loginNativeFormSnapshot = captureLoginFormSnapshot(nativeForm);
     }
+    markHydratedLoginFormDecorations(nativeForm);
     nativeForm.classList.add('ku-login-form');
     nativeForm.removeAttribute('style');
     nativeForm.querySelectorAll('.form-group').forEach((group) => group.classList.add('ku-login-field'));
@@ -1260,6 +1281,51 @@
     host.replaceChildren(nativeForm);
   }
 
+  function markHydratedLoginFormDecorations(form) {
+    form.querySelectorAll('img').forEach((image) => image.classList.add('ku-login-native-extra'));
+    form.querySelectorAll('p, .description').forEach((node) => {
+      const text = cleanText(node.textContent);
+      const hasInteractiveContent = !!node.querySelector('input, button, select, textarea, label, a');
+      if (!hasInteractiveContent && (node.querySelector('img') || /ようこそWebClassへ|Welcome to KU-LMS|ユーザIDとパスワード/.test(text))) {
+        node.classList.add('ku-login-native-extra');
+      }
+    });
+  }
+
+  function syncLoginNotices(view) {
+    stopLoginNoticeSync();
+    if (state.currentRoute?.name !== 'login' || view?.notices?.items?.length) return;
+    let attempts = 0;
+    const trySync = () => {
+      if (state.currentRoute?.name !== 'login') {
+        stopLoginNoticeSync();
+        return;
+      }
+      const notices = parseLoginNotices(document);
+      const previous = state.currentView?.notices || { items: [], moreHref: '' };
+      const noticeChanged = previous.items.length !== notices.items.length || previous.moreHref !== notices.moreHref;
+      if ((notices.items.length || notices.moreHref) && noticeChanged) {
+        state.currentView = { ...state.currentView, notices };
+        rerender();
+        return;
+      }
+      attempts += 1;
+      if (attempts >= 20) {
+        stopLoginNoticeSync();
+        return;
+      }
+      state.loginNoticeSyncTimer = window.setTimeout(trySync, 300);
+    };
+    state.loginNoticeSyncTimer = window.setTimeout(trySync, 300);
+  }
+
+  function stopLoginNoticeSync() {
+    if (state.loginNoticeSyncTimer) {
+      window.clearTimeout(state.loginNoticeSyncTimer);
+      state.loginNoticeSyncTimer = null;
+    }
+  }
+
   function restoreNativeLoginForm() {
     const nativeForm = state.loginNativeForm;
     const parent = state.loginNativeFormParent;
@@ -1269,7 +1335,7 @@
   }
 
   function captureLoginFormSnapshot(form) {
-    return [form, ...form.querySelectorAll('.form-group, label, input[type="text"], input[type="password"], input[type="submit"], button[type="submit"]')].map((element) => ({
+    return [form, ...form.querySelectorAll('*')].map((element) => ({
       element,
       className: element.className,
       style: element.getAttribute('style')
