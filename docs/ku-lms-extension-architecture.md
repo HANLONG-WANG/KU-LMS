@@ -8,6 +8,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - `/webclass/`
 - `/webclass/index.php`
 - `/webclass/course.php/:courseId/`
+- `/webclass/course.php/:courseId/login` is treated as an internal same-tab refresh-transport alias for the course-materials route, not as a separate user-facing surface.
 - `/webclass/course.php/:courseId/my-reports`
 - `/webclass/course.php/:courseId/contents/*`, `/history`, and `/info` are intentionally left native so original KU-LMS detail-style pages remain usable.
 - `/webclass/information.php/`
@@ -38,6 +39,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh must actually re-fetch the latest data for currently red-flagged timetable courses through top-level same-tab navigation, using the native course-entry URLs rather than hidden content-script or service-worker fetches.
 - While that manual refresh is active, the UI must show a full-screen blocking mask with a clear wait message and visible progress so users do not interact with the shell mid-refresh.
 - That refresh overlay must explicitly remain visible through the takeover hide rules; it is not allowed to be hidden as an ordinary `body` sibling during `booting`/`ready` redesign state.
+- To reduce cross-page flicker during that manual refresh, the overlay should be rehydrated during `document_start` boot immediately after `dataset='booting'` and before the generic boot shell mounts; this early sync is visual-only, while route/auth decisions still belong to the later `init()` path after the existing `DOMContentLoaded` gate.
 - The refresh flow is intentionally treated as session-safer rather than proven-safe until live KU-LMS validation confirms the narrowed contract.
 - Course-detail parsing skips `締め切り後提出` items and keeps only real future-due task rows; no `コース内で確認` placeholder is allowed.
 - Final upcoming ordering remains: red-flag course items first, then unknown/no-usage before used, then nearest due date, then title.

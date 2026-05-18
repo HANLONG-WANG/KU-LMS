@@ -36,6 +36,19 @@ function assert(condition, message) {
 assert(source.includes("const HOME_REFRESH_MAX_AGE_MS = 5 * 60 * 1000"), 'Refresh state should expire automatically');
 assert(source.includes("const HOME_REFRESH_STALL_MS = 45 * 1000"), 'Refresh state should bound stalled progress');
 assert(source.includes("const HOME_REFRESH_MAX_RESTORE_ATTEMPTS = 2"), 'Refresh restore attempts should be bounded');
+const bootingIndex = source.indexOf("document.documentElement.dataset.kuRedesignState = 'booting';");
+const earlyReadIndex = source.indexOf('syncBootRefreshOverlay();');
+const bootShellIndex = source.indexOf('mountBootShell();');
+const initFn = extractFunction('init');
+const bootOverlayFn = extractFunction('syncBootRefreshOverlay');
+const continueFn = extractFunction('continueHomeRefreshIfNeeded');
+const abortFn = extractFunction('abortHomeRefresh');
+assert(bootingIndex !== -1, 'Booting state assignment should exist');
+assert(earlyReadIndex !== -1, 'Refresh overlay should be rehydrated during boot');
+assert(bootShellIndex !== -1, 'Boot shell mount should exist');
+assert(bootingIndex < earlyReadIndex, 'Early overlay sync should happen only after the booting state is set');
+assert(earlyReadIndex < bootShellIndex, 'Early overlay sync should happen before the boot shell mount');
+assert(bootOverlayFn.includes('syncHomeRefreshOverlay(readHomeRefreshState());'), 'Boot overlay helper should remain visual-only and state-derived');
 assert(source.includes("window.addEventListener('pagehide', abortInFlightPageRequests);"), 'Pagehide should abort in-flight page requests');
 assert(source.includes("window.addEventListener('beforeunload', abortInFlightPageRequests);"), 'Beforeunload should abort in-flight page requests');
 assert(source.includes("window.addEventListener('pageshow', resetPageLifecycleGuards);"), 'Pageshow should reset page-leaving guards after history restore');
@@ -44,9 +57,16 @@ assert(extractFunction('detectRoute').includes("(?:\\/login)?$"), 'Route detecti
 assert(source.includes("abortHomeRefresh(refreshState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);"), 'Unsupported refresh routes should abort instead of restoring home');
 assert(source.includes("abortHomeRefresh(payload, 'manual-home-navigation');"), 'Manual return to home mid-refresh should abort');
 assert(source.includes("abortHomeRefresh(payload, 'target-mismatch');"), 'Target mismatch should abort instead of forcing home restoration');
+assert(initFn.includes("if (courseConflictPage || (authInvalidPage && !intentionalLoginRoute))"), 'Init should have an explicit top-level conflict/auth terminal branch');
+assert(initFn.includes("abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');"), 'Init should preserve exact top-level abort reason strings');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("route.name === 'login'"), 'Active refresh should still fail closed when traversal lands on the direct login route');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("'auth-invalid-route'"), 'Active refresh should fail closed on auth-invalid routes');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("abortHomeRefresh(payload, 'page-leaving');"), 'Leaving-page guard should stop refresh continuation');
+assert(continueFn.includes("abortHomeRefresh(payload, isCourseConflictPage(document) ? 'course-conflict-page' : 'auth-invalid-route');"), 'Continuation abort taxonomy should preserve conflict/auth-invalid split');
+assert(continueFn.includes("abortHomeRefresh(payload, `unexpected-route:${route.name}`);"), 'Continuation abort taxonomy should preserve unexpected-route reasons');
+assert(abortFn.includes('const nextPayload = writeHomeRefreshState('), 'Abort should write terminal state first');
+assert(abortFn.includes('syncHomeRefreshOverlay(nextPayload);'), 'Abort flow should still resync the overlay immediately after recording terminal state');
+assert(extractFunction('syncHomeRefreshOverlay').includes("document.getElementById('ku-home-refresh-overlay')?.remove();"), 'Overlay sync should remove the blocking overlay when refresh becomes inactive');
 assert(source.includes('function isCourseConflictPage(doc = document)'), 'Top-level course conflict pages should be detected explicitly');
 assert(extractFunction('renderHome').includes('検証中'), 'Visible refresh affordance should honestly signal the validation-gated state');
 assert(extractFunction('loadSupplementalDocument').includes('signal: getPageRequestSignal()'), 'Supplemental home fetches should be abortable on navigation');
@@ -203,6 +223,12 @@ sandbox.document.body.innerText = 'コース利用中に、別のコースへの
 sandbox.writeHomeRefreshState(activePayload);
 await sandbox.continueHomeRefreshIfNeeded({ name: 'unsupported' }, null);
 assert(sandbox.readHomeRefreshState().abortReason === 'course-conflict-page', 'Top-level course conflict page should abort the refresh state');
+sandbox.window.location.pathname = '/webclass/logout.php';
+sandbox.window.location.href = 'https://kulms.tl.kansai-u.ac.jp/webclass/logout.php';
+sandbox.document.body.innerText = '';
+sandbox.writeHomeRefreshState(activePayload);
+await sandbox.continueHomeRefreshIfNeeded({ name: 'unsupported' }, null);
+assert(sandbox.readHomeRefreshState().abortReason === 'unexpected-route:unsupported', 'Unsupported continue-phase route should preserve the unexpected-route taxonomy');
 
 sandbox.window.location.pathname = '/webclass/';
 sandbox.window.location.href = 'https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=abc';
@@ -267,11 +293,16 @@ const report = {
   ok: true,
   checks: [
     'auth-invalid-route-classification-present',
+    'boot-overlay-sync-occurs-before-shell-mount',
+    'boot-overlay-helper-remains-visual-only',
+    'init-preserves-top-level-abort-taxonomy',
     'course-conflict-page-detection-present',
     'unsupported-routes-abort-not-restore',
+    'continue-phase-unexpected-route-taxonomy-preserved',
     'manual-home-return-aborts-refresh',
     'target-mismatch-aborts-refresh',
     'restore-attempt-loop-breaker-aborts',
+    'abort-contract-resyncs-and-clears-overlay',
     'navigation-aborts-inflight-page-requests',
     'pageshow-resets-page-leaving-guards',
     'visible-refresh-affordance-signals-validation-gated-state',

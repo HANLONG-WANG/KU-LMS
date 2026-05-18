@@ -43,6 +43,30 @@ function assertCssRuleIncludes(selector, declarations, message) {
 }
 
 assert(source.includes("const HOME_REFRESH_STATE_KEY = 'ku-redesign-home-refresh-v1'"), 'Refresh state key should exist');
+const bootingIndex = source.indexOf("document.documentElement.dataset.kuRedesignState = 'booting';");
+const earlyReadIndex = source.indexOf('syncBootRefreshOverlay();');
+const bootShellIndex = source.indexOf('mountBootShell();');
+const initGateIndex = source.indexOf("if (document.readyState === 'loading') {");
+const initFn = extractFunction('init');
+const bootOverlayFn = extractFunction('syncBootRefreshOverlay');
+const syncOverlayFn = extractFunction('syncHomeRefreshOverlay');
+assert(bootingIndex !== -1, 'Booting state assignment should exist');
+assert(earlyReadIndex !== -1, 'Boot should visually rehydrate the refresh overlay before shell mount');
+assert(bootShellIndex !== -1, 'Boot shell mount should exist');
+assert(initGateIndex !== -1, 'DOMContentLoaded init gate should exist');
+assert(bootingIndex < earlyReadIndex, 'Boot overlay sync should happen after the booting state is set');
+assert(earlyReadIndex < bootShellIndex, 'Boot overlay sync should happen before boot shell mount');
+assert(bootShellIndex < initGateIndex, 'Boot shell should still mount before the init gate is evaluated');
+assert(bootOverlayFn.includes('syncHomeRefreshOverlay(readHomeRefreshState());'), 'Boot overlay helper should remain a visual-only refresh-state rehydration boundary');
+assert(initFn.includes("const refreshState = readHomeRefreshState();"), 'Init should re-read fresh refresh state after the boot gate');
+assert(initFn.includes("const authInvalidPage = isAuthInvalidPage(document);"), 'Init should classify auth-invalid pages');
+assert(initFn.includes("const courseConflictPage = isCourseConflictPage(document);"), 'Init should classify course-conflict pages');
+assert(initFn.includes("if (courseConflictPage || (authInvalidPage && !intentionalLoginRoute))"), 'Init should treat top-level conflict/auth-invalid as a terminal branch');
+assert(initFn.includes("abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');"), 'Init should preserve exact top-level abort taxonomy');
+assert(syncOverlayFn.includes("let overlay = document.getElementById('ku-home-refresh-overlay');"), 'Overlay sync should reuse the canonical overlay node');
+assert(syncOverlayFn.includes("overlay.id = 'ku-home-refresh-overlay';"), 'Overlay sync should canonicalize the overlay id');
+assert(syncOverlayFn.includes("(document.body || document.documentElement).appendChild(overlay);"), 'Overlay sync should stay safe before body exists');
+assert(syncOverlayFn.includes("document.getElementById('ku-home-refresh-overlay')?.remove();"), 'Overlay sync should clear the overlay when refresh becomes inactive');
 assert(extractFunction('startHomeRefresh').includes('getRefreshEntries(view.schedule.entries)'), 'Refresh should explicitly target current due-flag courses when the user asks for latest data');
 assert(extractFunction('startHomeRefresh').includes("homeUrl: window.location.href"), 'Refresh should snapshot the exact home URL before navigation');
 assert(extractFunction('continueHomeRefreshIfNeeded').includes("route.name === 'home'"), 'Refresh state machine should resume on the home route');
@@ -141,6 +165,7 @@ const sandbox = {
 };
 vm.createContext(sandbox);
 for (const name of [
+  'syncBootRefreshOverlay',
   'readHomeRefreshState',
   'writeHomeRefreshState',
   'clearHomeRefreshState',
@@ -201,6 +226,8 @@ assert(!armingOverlay.innerHTML.includes('最終ステップを処理してい�
 sandbox.syncHomeRefreshOverlay(sandbox.readHomeRefreshState());
 const activeOverlay = domNodes.get('ku-home-refresh-overlay');
 assert(activeOverlay, 'Active refresh should mount the overlay');
+sandbox.syncHomeRefreshOverlay(sandbox.readHomeRefreshState());
+assert(domNodes.get('ku-home-refresh-overlay') === activeOverlay, 'Overlay sync should reuse a single canonical overlay node');
 assert(activeOverlay.innerHTML.includes('更新しています。しばらくお待ちください。'), 'Overlay should render the explicit wait copy');
 assert(activeOverlay.innerHTML.includes('進捗'), 'Overlay should render a visible progress label');
 assert(activeOverlay.innerHTML.includes('1 / 2'), 'Overlay should render the current numeric progress');
@@ -219,11 +246,31 @@ sandbox.syncHomeRefreshOverlay(null);
 assert(!domNodes.has('ku-home-refresh-overlay'), 'Inactive refresh should clear the overlay');
 sandbox.clearHomeRefreshState();
 assert(sandbox.readHomeRefreshState() === null, 'Refresh state should clear cleanly');
+sandbox.document.body = null;
+sandbox.writeHomeRefreshState({
+  ...payload,
+  phase: 'arming',
+  currentIndex: 0
+});
+sandbox.syncBootRefreshOverlay();
+const preBodyOverlay = domNodes.get('ku-home-refresh-overlay');
+assert(preBodyOverlay, 'Boot overlay sync should still mount without a body element');
+assert(preBodyOverlay.innerHTML.includes('更新を開始しています…'), 'Boot overlay sync should preserve the same overlay contract before body exists');
+sandbox.syncHomeRefreshOverlay(null);
+assert(!domNodes.has('ku-home-refresh-overlay'), 'Pre-body boot overlay should still clear cleanly');
+sandbox.document.body = {
+  appendChild(node) {
+    if (node?.id) domNodes.set(node.id, node);
+  }
+};
 
 const report = {
   ok: true,
   checks: [
     'refresh-state-key-and-functions-present',
+    'boot-overlay-sync-happens-before-shell-mount',
+    'boot-overlay-helper-preserves-visual-only-boundary',
+    'init-rereads-fresh-state-and-preserves-top-level-abort-taxonomy',
     'explicit-refresh-targeting-hooked',
     'home-url-snapshotted-before-navigation',
     'home-and-course-boot-resume-contracts-present',
@@ -232,6 +279,8 @@ const report = {
     'overlay-above-redesign-root',
     'overlay-and-header-action-styles-present',
     'overlay-progress-ui-present',
+    'overlay-singleton-contract-preserved',
+    'overlay-prebody-boot-sync-safe',
     'overlay-render-behavior-executed',
     'docs-frame-refresh-as-validation-gated'
   ]

@@ -55,6 +55,7 @@
   window.addEventListener('pageshow', resetPageLifecycleGuards);
 
   document.documentElement.dataset.kuRedesignState = 'booting';
+  syncBootRefreshOverlay();
   mountBootShell();
 
   if (document.readyState === 'loading') {
@@ -168,6 +169,10 @@
   function mountBootShell() {
     const root = ensureRoot();
     root.innerHTML = `<div class="ku-app"><div class="ku-loading" style="min-height:100vh"><div class="ku-spinner"></div><div>KU-LMS を再構築しています…</div></div></div>`;
+  }
+
+  function syncBootRefreshOverlay() {
+    syncHomeRefreshOverlay(readHomeRefreshState());
   }
 
   function getAvatarInitial(name) {
