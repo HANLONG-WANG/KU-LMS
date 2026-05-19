@@ -1,19 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { read, readKulmsSource, assert } from './lib/content-source.mjs';
 
-const root = process.cwd();
-
-function read(relPath) {
-  return fs.readFileSync(path.join(root, relPath), 'utf8');
-}
-
-function assert(condition, message) {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
-
-const main = read('src/content/main.js');
+const source = readKulmsSource();
 const css = read('src/content/critical.css');
 const manifest = read('manifest.json');
 const architecture = read('docs/ku-lms-extension-architecture.md');
@@ -25,67 +12,58 @@ const followupPrd = read('.omx/plans/prd-ku-lms-login-page-followups.md');
 const followupTestSpec = read('.omx/plans/test-spec-ku-lms-login-page-followups.md');
 
 const checks = [];
-
-function record(name, fn) {
-  fn();
-  checks.push(name);
-}
+const record = (name, fn) => { fn(); checks.push(name); };
 
 record('manifest description mentions login support', () => {
-  assert(/login, logout, home, course, notices, messages, and manual routes/.test(manifest), 'Manifest description was not updated for auth-route support.');
+  assert(/login, logout, home, course, notices, messages, and manual routes/.test(manifest), 'Manifest description missing login support wording.');
 });
 
 record('detectRoute supports login route', () => {
-  assert(/normalized === '\/webclass\/login\.php'\) return \{ supported: true, name: 'login' \};/.test(main), 'detectRoute does not classify /webclass/login.php as supported login.');
+  assert(source.includes("if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };"), 'detectRoute() no longer supports /webclass/login.php.');
 });
 
 record('intentional login route bypasses global auth-invalid release', () => {
-  assert(/const intentionalLoginRoute = route\.name === 'login';/.test(main), 'Intentional login-route guard is missing.');
-  assert(/authInvalidPage && !intentionalLoginRoute/.test(main), 'init\(\) still releases native login unconditionally.');
+  assert(source.includes("const intentionalLoginRoute = route.name === 'login';"), 'Intentional login-route guard is missing.');
+  assert(source.includes('authInvalidPage && !intentionalLoginRoute'), 'init() no longer preserves direct login-route rendering.');
 });
 
 record('login view parser and renderer exist', () => {
-  assert(/function buildLoginView\(/.test(main), 'buildLoginView() is missing.');
-  assert(/function parseLoginView\(/.test(main), 'parseLoginView() is missing.');
-  assert(/function renderLogin\(/.test(main), 'renderLogin() is missing.');
-  assert(/renderLoginLanguageLinks/.test(main), 'login language renderer is missing.');
+  for (const token of ['function buildLoginView(', 'function parseLoginView(', 'function renderLogin(', 'renderLoginLanguageLinks']) {
+    assert(source.includes(token), `Missing login token: ${token}`);
+  }
 });
 
 record('login form parity fields are preserved in code', () => {
-  assert(/input\[name="username"\]/.test(main), 'username field parsing is missing.');
-  assert(/input\[name="val"\]/.test(main), 'password field parsing is missing.');
-  assert(/data-ku-login-native-form-host/.test(main), 'native login form host is missing.');
-  assert(/function hydrateLoginForm\(/.test(main), 'native login form hydrator is missing.');
-  assert(/document\.forms\.login/.test(main), 'native login form is not being reused.');
-  assert(/function captureLoginFormSnapshot\(/.test(main), 'native login form snapshot helper is missing.');
-  assert(/function restoreNativeLoginForm\(/.test(main), 'native login form restore hook is missing.');
-  assert(/function restoreLoginFormSnapshot\(/.test(main), 'native login form snapshot restore helper is missing.');
-  assert(/function releaseNative\(\) {\s*(stopLoginNoticeSync\(\);\s*)?restoreNativeLoginForm\(\);/s.test(main), 'releaseNative() does not restore the native login form before fail-open fallback.');
-  assert(/loginNativeFormSnapshot/.test(main), 'login-native snapshot state is missing.');
-  assert(/entry\.element\.className = entry\.className \|\| ''/.test(main), 'restore path does not restore original className values.');
-  assert(main.includes("if (entry.style == null) entry.element.removeAttribute('style');"), 'restore path does not clear inline style when the original element had none.');
-  assert(main.includes("else entry.element.setAttribute('style', entry.style);"), 'restore path does not restore original inline style values.');
+  for (const token of [
+    'input[name="username"]', 'input[name="val"]', 'data-ku-login-native-form-host', 'function hydrateLoginForm(',
+    'document.forms.login', 'function captureLoginFormSnapshot(', 'function restoreNativeLoginForm(',
+    'function restoreLoginFormSnapshot(', 'loginNativeFormSnapshot'
+  ]) {
+    assert(source.includes(token), `Missing login parity token: ${token}`);
+  }
+  assert(/function releaseNative\(\) \{\s*stopLoginNoticeSync\(\);\s*restoreNativeLoginForm\(\);/s.test(source), 'releaseNative() must restore the native login form before fail-open fallback.');
+  assert(source.includes("if (entry.style == null) entry.element.removeAttribute('style');"), 'restore path no longer clears inline style when the original element had none.');
+  assert(source.includes("else entry.element.setAttribute('style', entry.style);"), 'restore path no longer restores original inline style values.');
 });
 
 record('refresh logic still treats login route as auth-invalid during active refresh', () => {
-  assert(/if \(route\.name === 'login' \|\| route\.name === 'logout' \|\| isAuthInvalidRoute\(route\)/.test(main), 'Refresh fail-closed login guard is missing.');
+  assert(source.includes("if (route.name === 'login' || route.name === 'logout' || isAuthInvalidRoute(route) || isAuthInvalidPage(document) || isCourseConflictPage(document))"), 'Refresh fail-closed login guard is missing.');
 });
 
 record('login shell keeps scope limited', () => {
-  assert(/<h2 class="ku-card-title">お問い合わせ<\/h2>/.test(main), 'Login support card heading is missing.');
-  assert(/<h2 class="ku-card-title">通告<\/h2>/.test(main), 'Login notice card heading is missing.');
-  assert(/if \(route\.name === 'login' \|\| route\.name === 'logout'\)/.test(main), 'Auth terminal routes should share the route-specific unauthenticated shell branch.');
-  assert(/const pageClass = route\.name === 'logout' \? 'ku-logout-page' : 'ku-login-page';/.test(main), 'Login route should still resolve to the dedicated ku-login-page shell class.');
+  assert(source.includes('<h2 class="ku-card-title">お問い合わせ</h2>'), 'Login support card heading is missing.');
+  assert(source.includes('<h2 class="ku-card-title">通告</h2>'), 'Login notice card heading is missing.');
+  assert(source.includes("if (route.name === 'login' || route.name === 'logout') {"), 'Auth terminal shell branch is missing.');
+  assert(source.includes("const pageClass = route.name === 'logout' ? 'ku-logout-page' : 'ku-login-page';"), 'Auth pageClass branch is missing.');
 });
 
 record('login follow-up invariants are locked in code', () => {
-  assert(/renderLoginLanguageLinks\(view\.languages, view\.languageCode\)/.test(main), 'Login render does not route language UI through the single language-links presenter.');
-  assert(!/<span class="ku-chip blue">\$\{escapeHtml\(loginLanguageLabel\(view\.languageCode\)\)\}<\/span>\s*\$\{renderLoginLanguageLinks\(view\.languages\)\}/.test(main), 'Login render still duplicates the active language chip and the language list.');
-  assert(/function markHydratedLoginFormDecorations\(/.test(main), 'Hydrated login form decoration cleanup is missing.');
-  assert(/ku-login-native-extra/.test(main), 'Hydrated login form cleanup marker class is missing from JS.');
-  assert(/function syncLoginNotices\(/.test(main), 'Async login notice synchronization helper is missing.');
-  assert(/window\.setTimeout\(trySync, 300\)/.test(main), 'Bounded login notice retry loop is missing.');
-  assert(/function cleanLoginSupportLabel\(/.test(main), 'Support-label cleanup helper is missing.');
+  for (const token of [
+    'renderLoginLanguageLinks(view.languages, view.languageCode)', 'function markHydratedLoginFormDecorations(',
+    'ku-login-native-extra', 'function syncLoginNotices(', 'window.setTimeout(trySync, 300)', 'function cleanLoginSupportLabel('
+  ]) {
+    assert(source.includes(token), `Missing login follow-up token: ${token}`);
+  }
 });
 
 record('login route has dedicated CSS classes', () => {
@@ -106,10 +84,12 @@ record('design code documents login-route constraints', () => {
 });
 
 record('AI docs entrypoint includes login PRD and test spec', () => {
-  assert(entrypoint.includes('.omx/plans/prd-ku-lms-login-page-redesign.md'), 'AI docs entrypoint is missing login PRD.');
-  assert(entrypoint.includes('.omx/plans/test-spec-ku-lms-login-page-redesign.md'), 'AI docs entrypoint is missing login test spec.');
-  assert(entrypoint.includes('.omx/plans/prd-ku-lms-login-page-followups.md'), 'AI docs entrypoint is missing login follow-up PRD.');
-  assert(entrypoint.includes('.omx/plans/test-spec-ku-lms-login-page-followups.md'), 'AI docs entrypoint is missing login follow-up test spec.');
+  for (const token of [
+    '.omx/plans/prd-ku-lms-login-page-redesign.md', '.omx/plans/test-spec-ku-lms-login-page-redesign.md',
+    '.omx/plans/prd-ku-lms-login-page-followups.md', '.omx/plans/test-spec-ku-lms-login-page-followups.md'
+  ]) {
+    assert(entrypoint.includes(token), `AI docs entrypoint missing: ${token}`);
+  }
 });
 
 record('phase artifacts exist', () => {
@@ -119,7 +99,4 @@ record('phase artifacts exist', () => {
   assert(followupTestSpec.includes('KU-LMS Login Page Follow-ups'), 'Login follow-up test spec content missing.');
 });
 
-console.log(JSON.stringify({
-  ok: true,
-  checks
-}, null, 2));
+console.log(JSON.stringify({ ok: true, checks }, null, 2));

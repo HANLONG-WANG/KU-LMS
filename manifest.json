@@ -12,14 +12,76 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://kulms.tl.kansai-u.ac.jp/webclass/*"],
-      "css": ["src/content/critical.css"],
-      "js": ["src/content/main.js"],
+      "matches": [
+        "https://kulms.tl.kansai-u.ac.jp/webclass/*"
+      ],
+      "css": [
+        "src/content/critical.css"
+      ],
+      "js": [
+        "src/content/runtime/constants.js",
+        "src/content/runtime/state.js",
+        "src/content/runtime/routes.js",
+        "src/content/utils/core.js",
+        "src/content/parsers/auth.js",
+        "src/content/parsers/shared.js",
+        "src/content/parsers/home.js",
+        "src/content/parsers/course.js",
+        "src/content/parsers/notifications.js",
+        "src/content/parsers/messages.js",
+        "src/content/parsers/manual.js",
+        "src/content/render/shared.js",
+        "src/content/render/auth.js",
+        "src/content/render/home.js",
+        "src/content/render/course.js",
+        "src/content/render/notifications.js",
+        "src/content/render/messages.js",
+        "src/content/render/manual.js",
+        "src/content/hydrate/auth.js",
+        "src/content/hydrate/shared.js",
+        "src/content/services/documents.js",
+        "src/content/services/cache.js",
+        "src/content/services/timeline.js",
+        "src/content/services/syllabus.js",
+        "src/content/services/refresh.js",
+        "src/content/runtime/boot-kulms.js",
+        "src/content/main.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://syllabus3.jm.kansai-u.ac.jp/syllabus/*"],
-      "js": ["src/content/main.js"],
+      "matches": [
+        "https://syllabus3.jm.kansai-u.ac.jp/syllabus/*"
+      ],
+      "js": [
+        "src/content/runtime/constants.js",
+        "src/content/runtime/state.js",
+        "src/content/runtime/routes.js",
+        "src/content/utils/core.js",
+        "src/content/parsers/auth.js",
+        "src/content/parsers/shared.js",
+        "src/content/parsers/home.js",
+        "src/content/parsers/course.js",
+        "src/content/parsers/notifications.js",
+        "src/content/parsers/messages.js",
+        "src/content/parsers/manual.js",
+        "src/content/render/shared.js",
+        "src/content/render/auth.js",
+        "src/content/render/home.js",
+        "src/content/render/course.js",
+        "src/content/render/notifications.js",
+        "src/content/render/messages.js",
+        "src/content/render/manual.js",
+        "src/content/hydrate/auth.js",
+        "src/content/hydrate/shared.js",
+        "src/content/services/documents.js",
+        "src/content/services/cache.js",
+        "src/content/services/timeline.js",
+        "src/content/services/syllabus.js",
+        "src/content/services/refresh.js",
+        "src/content/runtime/boot-syllabus.js",
+        "src/content/syllabus-main.js"
+      ],
       "run_at": "document_start"
     }
   ]

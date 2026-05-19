@@ -6,8 +6,9 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 ## Read first
 1. `docs/ku-lms-design-code.md` — binding UI design code for all future AI/frontend work.
 2. `docs/ku-lms-extension-architecture.md` — current extension architecture, supported routes, takeover strategy, and design-system notes.
-3. `docs/ku-lms-session-safety-analysis.md` — durable analysis of homepage/session invalidation risk and the binding session-safety rules for future agents.
-4. `DESIGN.md` — repo-root design pointer to the canonical design contract.
+3. `docs/ku-lms-content-subsystem-map.md` — current content-script file map, manifest load order, and safety-sensitive ownership boundaries after modularization.
+4. `docs/ku-lms-session-safety-analysis.md` — durable analysis of homepage/session invalidation risk and the binding session-safety rules for future agents.
+5. `DESIGN.md` — repo-root design pointer to the canonical design contract.
 
 ## Durable subsystem map
 
@@ -44,6 +45,11 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `.omx/plans/test-spec-ku-lms-course-materials-syllabus-fixes.md` — corresponding verification requirements.
 - `.omx/plans/prd-ku-lms-width-deadlines-materials.md` — prior width/deadline/materials PRD.
 - `.omx/plans/test-spec-ku-lms-width-deadlines-materials.md` — corresponding verification requirements.
+
+### Content subsystem modularization
+- `.omx/plans/prd-ku-lms-content-script-modularization.md` — modularization program for splitting the content script into domain bootstraps plus runtime/parsers/render/hydrate/services/utils layers.
+- `.omx/plans/test-spec-ku-lms-content-script-modularization.md` — verification requirements for modularized load order, route coverage, safety ownership, and verifier migration.
+- `docs/ku-lms-content-subsystem-map.md` — durable content-subsystem ownership and load-order map for future agents.
 
 ### Redesign baseline / maintenance subsystem
 - `.omx/plans/prd-ku-lms-refactor-fixes.md` — previous bug-fix / route-completion PRD.

@@ -75,6 +75,20 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Until fresh live validation proves that same-tab refresh no longer falls into `login.php`/conflict, the refresh control may remain visible only as an explicit user-invoked, validation-gated path with fail-closed behavior and no “proven-safe” claim.
 - Preferred future direction: homepage automatic enrichment should stay on current-page DOM, `information.php`, `msg_editor.php?msgappmode=inbox`, and same-tab cache written after explicit user course visits. Any cross-course refresh remains subject to live go/no-go validation.
 
+## Content subsystem map
+- KU-LMS routes now boot through `src/content/main.js`, which is a thin manifest-facing bootstrap shim.
+- Syllabus routes now boot through `src/content/syllabus-main.js`, which is a thin assist-only bootstrap shim.
+- Files loaded before those final bootstrap shims are definition-only and must not perform top-level DOM mutation, fetch, navigation, listener registration, or timer registration.
+- Current content ownership layers are:
+  - `runtime/*` — boot sequence, shared state, route detection
+  - `parsers/*` — DOM parsing only
+  - `render/*` — string-generation/view rendering only
+  - `hydrate/*` — event binding and native-form hydration
+  - `services/*` — fetch/cache/refresh/syllabus flows
+  - `utils/*` — pure shared helpers
+- The refresh FSM remains owned by `src/content/services/refresh.js`; it is still the only content-side owner of refresh sessionStorage state and overlay synchronization.
+- The syllabus assist flow remains owned by `src/content/services/syllabus.js`; syllabus pages must stay assist-only and must not render the KU-LMS redesign shell.
+
 ## Design system direction
 - Desktop-first layout tuned to the approved references, with 1448x1086 as the baseline reference and wider desktop expansion allowed when it improves information density.
 - Shared top nav, white cards, blue active accents, subtle borders/shadows, and route-specific content panels.

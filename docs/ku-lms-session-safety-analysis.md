@@ -65,6 +65,7 @@ Unsafe or unproven homepage strategies:
 - Refresh state must carry an expiry bound so stale `sessionStorage` cannot reactivate itself on a later unrelated home/course visit.
 - Once the user leaves a course/home page, any in-flight same-tab supplemental or timeline fetch that is no longer needed should abort so it does not overlap with the next course navigation and trip KU-LMS cross-course protection.
 - The refresh flow must block user interaction with a full-screen mask while active and restore the supported home state when it completes or aborts.
+- The current modularized codebase keeps this contract owned inside `src/content/services/refresh.js`; future agents should not scatter refresh-state writes across unrelated modules.
 
 ## Relationship to current architecture docs
 `docs/ku-lms-extension-architecture.md` describes the current implementation shape. This analysis remains the reason the codebase forbids homepage auto-fetching of course login pages and treats any cross-course refresh path as validation-gated until live KU-LMS evidence says otherwise.
