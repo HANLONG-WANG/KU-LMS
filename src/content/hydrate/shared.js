@@ -54,6 +54,7 @@ function bindInteractiveHandlers(root, route, view) {
       event.preventDefault();
       executeMessageHref(anchor.dataset.messageJs, view);
     }));
+    root.querySelectorAll('[data-action="message-detail-forward"]').forEach((button) => button.addEventListener('click', () => triggerMessageDetailForward(root, view)));
     root.querySelectorAll('.ku-rightnav-link[href^="#"]').forEach((anchor) => anchor.addEventListener('click', (event) => {
       event.preventDefault();
       const target = document.getElementById(anchor.getAttribute('href').slice(1));
@@ -112,4 +113,15 @@ function syncNativeMessageSelection(view) {
     });
     const master = view.form.elements.autochecker;
     if (master) master.checked = allSelected(view.rows);
+  }
+
+function triggerMessageDetailForward(root, view) {
+    if (!view?.forward?.form) return;
+    const input = root.querySelector('[data-action="message-detail-forward-input"]');
+    const nativeInput = view.forward.form.querySelector(`input[name="${view.forward.inputName}"]`);
+    const nativeButton = view.forward.form.querySelector(`input[type="submit"][name="${view.forward.buttonName}"]`);
+    if (nativeInput) nativeInput.value = input?.value || '';
+    if (nativeButton) nativeButton.click();
+    else if (typeof view.forward.form.requestSubmit === 'function') view.forward.form.requestSubmit();
+    else view.forward.form.submit();
   }

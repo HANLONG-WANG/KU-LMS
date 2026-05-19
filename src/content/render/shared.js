@@ -12,6 +12,7 @@ function renderPage(route, view) {
       case 'messages-inbox': return renderMessages(view);
       case 'messages-outbox': return renderMessages(view);
       case 'messages-recyclebox': return renderMessages(view);
+      case 'messages-detail': return renderMessages(view);
       case 'manual': return renderManual(view);
       default: return renderUnsupported();
     }

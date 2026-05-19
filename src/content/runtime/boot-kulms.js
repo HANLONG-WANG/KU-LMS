@@ -158,6 +158,7 @@ async function buildView(route, context) {
       case 'messages-inbox':
       case 'messages-outbox':
       case 'messages-recyclebox':
+      case 'messages-detail':
         return buildMessagesView(document, context, route);
       case 'manual':
         return buildManualView(document, context);
@@ -259,6 +260,9 @@ function buildNotificationsView(doc, context, route) {
   }
 
 function buildMessagesView(doc, context, route) {
+    if (route?.name === 'messages-detail') {
+      return parseMessageDetail(doc);
+    }
     return parseMessagesTable(doc, route?.name);
   }
 

@@ -15,6 +15,7 @@ function detectRoute(locationObj) {
     if (normalized === '/webclass/msg_editor.php' && query.get('msgappmode') === 'inbox') return { supported: true, name: 'messages-inbox' };
     if (normalized === '/webclass/msg_editor.php' && query.get('msgappmode') === 'outbox') return { supported: true, name: 'messages-outbox' };
     if (normalized === '/webclass/msg_editor.php' && query.get('msgappmode') === 'recyclebox') return { supported: true, name: 'messages-recyclebox' };
+    if (normalized === '/webclass/msg_viewer.php') return { supported: true, name: 'messages-detail' };
     if (normalized === '/webclass/user.php/manual') return { supported: true, name: 'manual' };
     return { supported: false, name: 'unsupported' };
   }
@@ -31,6 +32,7 @@ function routeLabel(name) {
       'messages-inbox': 'メッセージ',
       'messages-outbox': '送信済箱',
       'messages-recyclebox': 'ゴミ箱',
+      'messages-detail': 'メッセージ詳細',
       manual: 'マニュアル'
     })[name] || 'ページ';
   }
@@ -39,6 +41,7 @@ function isActiveNav(routeName, itemKey) {
     if (routeName === 'course-materials' || routeName === 'course-myreports') return itemKey === 'courses';
     if (routeName === 'manual') return itemKey === 'manual';
     if (routeName === 'notifications-detail') return itemKey === 'notifications';
+    if (routeName === 'messages-detail') return itemKey === 'messages-inbox';
     if (routeName === 'messages-outbox' || routeName === 'messages-recyclebox') return itemKey === 'messages-inbox';
     return routeName === itemKey;
   }

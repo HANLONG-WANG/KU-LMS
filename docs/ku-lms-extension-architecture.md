@@ -18,6 +18,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - `/webclass/msg_editor.php?msgappmode=inbox`
 - `/webclass/msg_editor.php?msgappmode=outbox`
 - `/webclass/msg_editor.php?msgappmode=recyclebox`
+- `/webclass/msg_viewer.php`
 - `/webclass/user.php/manual`
 - `https://syllabus3.jm.kansai-u.ac.jp/syllabus/*` is not visually redesigned, but the same content script is allowed to run there in assist-only mode for syllabus-result auto-resolution.
 
@@ -35,6 +36,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Prefer current-page DOM parsing for initial render and avoid non-home route background fetches back to `/webclass/` during context boot.
 - On notice detail routes, treat the current detail page DOM as the authoritative source for metadata, body content, and prev/list/next navigation; preserve native author/list/detail links.
 - On message folder routes (`inbox`, `outbox`, `recyclebox`), treat the current page form, native submit button names, folder links, sort links, pagination links, and checkbox names as the authoritative action contract; do not synthesize folder semantics.
+- On message detail routes (`msg_viewer.php`), treat the current detail DOM as the authoritative source for mode label, navigation controls, forward/download/reply actions, metadata fields, and message body; preserve native action links/forms and infer folder context from the page content rather than the URL alone.
+- Bare relative KU-LMS PHP links (for example `msg_editor.php?...`) should normalize back under `/webclass/` so message-detail return/navigation links do not escape the supported route tree.
 - Reuse native links and same-origin endpoints for counts/actions where needed.
 - Prefer session-safe same-origin `fetch()` for supplemental documents instead of hidden iframe course preloads.
 - On the homepage, render immediately from the current page DOM (`schedule`, `homeNotices`, filters, and course links), then asynchronously enrich the three right-column panels (`announcements`, `messages`, `upcoming`).

@@ -17,6 +17,7 @@
   - Notifications list page
   - Notice detail page
   - Messages inbox page
+  - Messages detail page
   - Messages sent box page
   - Messages recycle box page
 - Evidence reviewed:
@@ -264,7 +265,9 @@
 
 ### Communication-route guidance
 - Notice detail pages should feel editorial but still operational: metadata first, readable body second, return/navigation actions third.
+- Message detail pages should feel like a calm record view inside the same shell: mode cue first, metadata second, body third, follow-up actions last.
 - Sent box and recycle box should reuse the inbox workspace language, but their headings, warnings, actions, and columns must match the true folder semantics.
+- Sent box rows should behave like a dense mail ledger: recipient first, subject visually dominant, attachment status compact, sent time compact and right-aligned.
 - Recycle box warning copy must be clearly visible and must visually outrank passive metadata.
 - Folder navigation must preserve active-state orientation across inbox / sent / trash.
 

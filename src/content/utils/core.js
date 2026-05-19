@@ -285,7 +285,10 @@ function absoluteUrl(path) {
     if (!path) return '';
     if (/^https?:/i.test(path)) return path;
     if (path.startsWith('javascript:')) return path;
-    return new URL(path, window.location.origin).toString();
+    if (/^[^/][^?#]*\.php(?:[?#].*)?$/i.test(path)) {
+      return new URL(`/webclass/${path.replace(/^\.?\//, '')}`, window.location.origin).toString();
+    }
+    return new URL(path, window.location.href || window.location.origin).toString();
   }
 
 function normalizeNotificationsUrl(path) {
