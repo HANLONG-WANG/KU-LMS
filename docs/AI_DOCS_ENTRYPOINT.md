@@ -52,6 +52,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `docs/ku-lms-content-subsystem-map.md` — durable content-subsystem ownership and load-order map for future agents.
 
 ### Redesign baseline / maintenance subsystem
+- `.omx/plans/prd-ku-lms-notice-detail-outbox-recyclebox-redesign.md` — PRD for redesigning notice detail, sent box, and recycle box as first-class supported communication routes.
+- `.omx/plans/test-spec-ku-lms-notice-detail-outbox-recyclebox-redesign.md` — verification requirements for those three communication surfaces, including route coverage, native action parity, and fixture evidence.
 - `.omx/plans/prd-ku-lms-refactor-fixes.md` — previous bug-fix / route-completion PRD.
 - `.omx/plans/test-spec-ku-lms-refactor-fixes.md` — corresponding verification requirements.
 - `.omx/plans/prd-ku-lms-redesign.md` — original redesign baseline PRD.

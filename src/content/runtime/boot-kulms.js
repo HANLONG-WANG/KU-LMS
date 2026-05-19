@@ -35,7 +35,7 @@ async function init() {
       }
       return releaseNative();
     }
-    if (route.name === 'notifications' && window.location.pathname.replace(/\/$/, '') === '/webclass/information.php/mbl') {
+    if ((route.name === 'notifications' || route.name === 'notifications-detail') && window.location.pathname.includes('/webclass/information.php/mbl')) {
       window.location.replace(normalizeNotificationsUrl(window.location.href));
       return;
     }
@@ -153,9 +153,12 @@ async function buildView(route, context) {
       case 'course-myreports':
         return buildMyReportsView(document, context);
       case 'notifications':
-        return buildNotificationsView(document, context);
+      case 'notifications-detail':
+        return buildNotificationsView(document, context, route);
       case 'messages-inbox':
-        return buildMessagesView(document, context);
+      case 'messages-outbox':
+      case 'messages-recyclebox':
+        return buildMessagesView(document, context, route);
       case 'manual':
         return buildManualView(document, context);
       default:
@@ -248,12 +251,15 @@ function buildMyReportsView(doc, context) {
     return { course, reports, currentTab: 'myreports' };
   }
 
-function buildNotificationsView(doc, context) {
+function buildNotificationsView(doc, context, route) {
+    if (route?.name === 'notifications-detail') {
+      return parseNotificationDetail(doc);
+    }
     return parseNotificationsList(doc);
   }
 
-function buildMessagesView(doc, context) {
-    return parseMessagesTable(doc);
+function buildMessagesView(doc, context, route) {
+    return parseMessagesTable(doc, route?.name);
   }
 
 function buildManualView(doc, context) {

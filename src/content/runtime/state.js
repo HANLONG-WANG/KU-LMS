@@ -15,6 +15,7 @@ var state = {
   supplementalCache: new Map(),
   weekOffset: 0,
   messageSelection: new Set(),
+  messageSelectionScopes: new Map(),
   currentView: null,
   currentContext: null,
   currentRoute: null,

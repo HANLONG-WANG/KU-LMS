@@ -1,0 +1,136 @@
+uid=3_0 RootWebArea "メッセージ - 関大LMS" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=outbox"
+  uid=3_1 ignored
+    uid=3_2 generic
+      uid=3_3 link "» このウィンドウを閉じる" url="javascript:window.close();"
+        uid=3_4 StaticText "» このウィンドウを閉じる"
+          uid=3_5 InlineTextBox "» このウィンドウを閉じる"
+      uid=3_6 heading "メッセージ" level="1"
+        uid=3_7 StaticText "メッセージ"
+          uid=3_5 InlineTextBox "メッセージ"
+      uid=3_8 generic
+        uid=3_9 DescriptionList
+          uid=3_10 term "メッセージ"
+            uid=3_11 StaticText "メッセージ"
+              uid=3_5 InlineTextBox "メッセージ"
+          uid=3_12 definition
+            uid=3_13 link "» メッセージ作成" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=editmsg&acs_=5740eaff"
+              uid=3_14 StaticText "» メッセージ作成"
+                uid=3_5 InlineTextBox "» メッセージ作成"
+          uid=3_15 definition
+            uid=3_16 link "» 受信箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=5740eaff"
+              uid=3_17 StaticText "» 受信箱"
+                uid=3_5 InlineTextBox "» 受信箱"
+          uid=3_18 definition
+            uid=3_19 link "» 送信済箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=outbox&acs_=5740eaff"
+              uid=3_20 StaticText "» 送信済箱"
+                uid=3_5 InlineTextBox "» 送信済箱"
+          uid=3_21 definition
+            uid=3_22 link "» ゴミ箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=recyclebox&acs_=5740eaff"
+              uid=3_23 StaticText "» ゴミ箱"
+                uid=3_5 InlineTextBox "» ゴミ箱"
+          uid=3_24 term "お知らせ"
+            uid=3_25 StaticText "お知らせ"
+              uid=3_5 InlineTextBox "お知らせ"
+          uid=3_26 definition
+            uid=3_27 link "» 一覧" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=5740eaff"
+              uid=3_28 StaticText "» 一覧"
+                uid=3_5 InlineTextBox "» 一覧"
+      uid=3_29 ignored
+        uid=3_30 ignored
+        uid=3_31 ignored
+          uid=3_32 heading "送信済箱" level="3"
+            uid=3_33 StaticText "送信済箱"
+              uid=3_5 InlineTextBox "送信済箱"
+          uid=3_34 ignored
+          uid=3_35 LineBreak "
+"
+            uid=3_5 InlineTextBox "
+"
+          uid=3_36 generic
+            uid=3_37 table
+              uid=3_38 ignored
+                uid=3_39 row
+                  uid=3_40 cell "削除      ダウンロード  "
+                    uid=3_41 button "削除"
+                      uid=3_42 StaticText "削除"
+                        uid=3_5 InlineTextBox "削除"
+                    uid=3_43 StaticText "    "
+                      uid=3_5 InlineTextBox "    "
+                    uid=3_44 button "ダウンロード"
+                      uid=3_45 StaticText "ダウンロード"
+                        uid=3_5 InlineTextBox "ダウンロード"
+                    uid=3_46 StaticText " "
+                      uid=3_5 InlineTextBox " "
+                  uid=3_47 cell "<<  <前へ   1 /1   次へ>  >>"
+                    uid=3_48 StaticText "<<  <前へ"
+                      uid=3_5 InlineTextBox "<<  <前へ"
+                    uid=3_49 StaticText "   "
+                      uid=3_5 InlineTextBox "   "
+                    uid=3_50 StaticText "1"
+                      uid=3_5 InlineTextBox "1"
+                    uid=3_51 StaticText " /1   "
+                      uid=3_5 InlineTextBox " /1   "
+                    uid=3_52 StaticText "次へ>  >>"
+                      uid=3_5 InlineTextBox "次へ>  >>"
+            uid=3_53 LayoutTable
+              uid=3_54 ignored
+                uid=3_55 LayoutTableRow
+                  uid=3_56 LayoutTableCell
+                    uid=3_57 table
+                      uid=3_58 rowgroup
+                        uid=3_59 row
+                          uid=3_60 columnheader
+                            uid=3_61 checkbox
+                          uid=3_62 columnheader "宛先▲▼"
+                            uid=3_63 StaticText "宛先"
+                              uid=3_5 InlineTextBox "宛先"
+                            uid=3_64 link "▲" description="昇順にソート" url="javascript:sortMessageListTable('to')"
+                              uid=3_65 StaticText "▲"
+                                uid=3_5 InlineTextBox "▲"
+                            uid=3_66 link "▼" description="降順でソート" url="javascript:sortMessageListTable('to_desc')"
+                              uid=3_67 StaticText "▼"
+                                uid=3_5 InlineTextBox "▼"
+                          uid=3_68 columnheader "件名▲▼"
+                            uid=3_69 StaticText "件名"
+                              uid=3_5 InlineTextBox "件名"
+                            uid=3_70 link "▲" description="昇順にソート" url="javascript:sortMessageListTable('subject')"
+                              uid=3_71 StaticText "▲"
+                                uid=3_5 InlineTextBox "▲"
+                            uid=3_72 link "▼" description="降順でソート" url="javascript:sortMessageListTable('subject_desc')"
+                              uid=3_73 StaticText "▼"
+                                uid=3_5 InlineTextBox "▼"
+                          uid=3_74 columnheader "添付ファイル▲▼"
+                            uid=3_75 StaticText "添付ファイル"
+                              uid=3_5 InlineTextBox "添付ファイル"
+                            uid=3_76 link "▲" description="昇順にソート" url="javascript:sortMessageListTable('attachment')"
+                              uid=3_77 StaticText "▲"
+                                uid=3_5 InlineTextBox "▲"
+                            uid=3_78 link "▼" description="降順でソート" url="javascript:sortMessageListTable('attachment_desc')"
+                              uid=3_79 StaticText "▼"
+                                uid=3_5 InlineTextBox "▼"
+                          uid=3_80 columnheader "日付▲▼"
+                            uid=3_81 StaticText "日付"
+                              uid=3_5 InlineTextBox "日付"
+                            uid=3_82 link "▲" description="昇順にソート" url="javascript:sortMessageListTable('date')"
+                              uid=3_83 StaticText "▲"
+                                uid=3_5 InlineTextBox "▲"
+                            uid=3_84 link "▼" description="降順でソート" url="javascript:sortMessageListTable('date_desc')"
+                              uid=3_85 StaticText "▼"
+                                uid=3_5 InlineTextBox "▼"
+                      uid=3_86 ignored
+                        uid=3_87 row
+                          uid=3_88 cell
+                            uid=3_89 checkbox
+                          uid=3_90 cell "王　漢隆 (情25-0507)"
+                            uid=3_91 StaticText "王　漢隆 (情25-0507)"
+                              uid=3_5 InlineTextBox "王　漢隆 (情25-0507)"
+                          uid=3_92 cell "レポートを受け取りました [言語学 (2026-春学期-木曜日-1限-70340) / 第四回授業課題 / 言語学第四回課題.docx / 24.42 KB]"
+                            uid=3_93 link "レポートを受け取りました [言語学 (2026-春学期-木曜日-1限-70340) / 第四回授業課題 / 言語学第四回課題.docx / 24.42 KB]" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_viewer.php?uomsgid=fc67b4004553f471888494a9d995c0a9&acs_=5740eaff"
+                              uid=3_94 StaticText "レポートを受け取りました [言語学 (2026-春学期-木曜日-1限-70340) / 第四回授業課題 / 言語学第四回課題.docx / 24.42 KB]"
+                                uid=3_5 InlineTextBox "レポートを受け取りました [言語学 (2026-春学期-木曜日-1限-70340) / 第四回授業課題 / 言語学第四回課題.docx / 24.42 KB]"
+                          uid=3_95 cell " "
+                            uid=3_96 StaticText " "
+                              uid=3_5 InlineTextBox " "
+                          uid=3_97 cell "26/05/06 20:12"
+                            uid=3_98 StaticText "26/05/06 20:12"
+                              uid=3_5 InlineTextBox "26/05/06 20:12"

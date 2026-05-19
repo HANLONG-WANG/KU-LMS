@@ -1,10 +1,41 @@
 {
-  "capturedAt": "2026-05-15T02:46:42Z",
+  "capturedAt": "2026-05-19T02:55:00Z",
   "routes": [
-    {"route": "home", "html": "artifacts/fixtures/home.network-response"},
-    {"route": "course-materials", "html": "artifacts/fixtures/course-materials-26170340.network-response"},
-    {"route": "course-myreports", "html": "artifacts/fixtures/course-myreports-26170340.network-response"},
-    {"route": "notifications", "html": "artifacts/fixtures/notifications.network-response"},
-    {"route": "messages-inbox", "html": "artifacts/fixtures/messages-inbox.network-response"}
+    {
+      "route": "home",
+      "html": "artifacts/fixtures/home.network-response"
+    },
+    {
+      "route": "course-materials",
+      "html": "artifacts/fixtures/course-materials-26170340.network-response"
+    },
+    {
+      "route": "course-myreports",
+      "html": "artifacts/fixtures/course-myreports-26170340.network-response"
+    },
+    {
+      "route": "notifications",
+      "html": "artifacts/fixtures/notifications.network-response"
+    },
+    {
+      "route": "messages-inbox",
+      "html": "artifacts/fixtures/messages-inbox.network-response"
+    },
+    {
+      "route": "notifications-detail",
+      "html": "artifacts/fixtures/notifications-detail-valid.json"
+    },
+    {
+      "route": "messages-outbox",
+      "html": "artifacts/fixtures/messages-outbox.json"
+    },
+    {
+      "route": "messages-recyclebox",
+      "html": "artifacts/fixtures/messages-recyclebox.json"
+    },
+    {
+      "route": "notifications-detail-missing",
+      "html": "artifacts/fixtures/notifications-detail-missing.json"
+    }
   ]
 }

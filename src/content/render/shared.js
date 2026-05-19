@@ -8,7 +8,10 @@ function renderPage(route, view) {
       case 'course-materials': return renderCourseMaterials(view);
       case 'course-myreports': return renderMyReports(view);
       case 'notifications': return renderNotifications(view);
+      case 'notifications-detail': return renderNotifications(view);
       case 'messages-inbox': return renderMessages(view);
+      case 'messages-outbox': return renderMessages(view);
+      case 'messages-recyclebox': return renderMessages(view);
       case 'manual': return renderManual(view);
       default: return renderUnsupported();
     }
@@ -79,10 +82,14 @@ function renderScheduleCard(entry, year = '') {
   }
 
 function renderSidebar(active) {
+    const folderLinks = resolveMessageFolderLinks();
+    const inboxBadge = state.currentView?.folder === 'inbox'
+      ? state.currentView?.rows?.length || 0
+      : state.currentView?.messages?.total || 0;
     const messageLinks = [
-      { key: 'messages', label: '受信箱', href: state.currentContext.links.messages, badge: state.currentView?.rows?.length || state.currentView?.messages?.total || 0 },
-      { key: 'messages-out', label: '送信済箱', href: absoluteUrl('/webclass/msg_editor.php?msgappmode=outbox') },
-      { key: 'messages-trash', label: 'ゴミ箱', href: absoluteUrl('/webclass/msg_editor.php?msgappmode=recyclebox') }
+      { key: 'messages-inbox', label: '受信箱', href: folderLinks.inbox, badge: inboxBadge },
+      { key: 'messages-outbox', label: '送信済箱', href: folderLinks.outbox },
+      { key: 'messages-recyclebox', label: 'ゴミ箱', href: folderLinks.recyclebox }
     ];
     const noticeLinks = [
       { key: 'notifications', label: '一覧', href: state.currentContext.links.notifications }
@@ -90,10 +97,10 @@ function renderSidebar(active) {
     return `
       <aside class="ku-card ku-sidebar-card">
         <h2 class="ku-card-title">メッセージ</h2>
-        <ul class="ku-sidebar-nav">${messageLinks.map((item) => `<li><a class="ku-sidebar-link ${active === 'messages' && item.key === 'messages' ? 'active' : ''}" href="${escapeAttr(item.href)}"><span>${icon(item.key === 'messages' ? 'mail' : item.key === 'messages-out' ? 'send' : 'trash')}</span><span style="flex:1">${escapeHtml(item.label)}</span>${item.key === 'messages' && item.badge ? `<span class="ku-mini-badge">${item.badge}</span>` : ''}</a></li>`).join('')}</ul>
+        <ul class="ku-sidebar-nav">${messageLinks.map((item) => `<li><a class="ku-sidebar-link ${active === item.key ? 'active' : ''}" href="${escapeAttr(item.href)}"><span>${icon(item.key === 'messages-inbox' ? 'mail' : item.key === 'messages-outbox' ? 'send' : 'trash')}</span><span style="flex:1">${escapeHtml(item.label)}</span>${item.key === 'messages-inbox' && item.badge ? `<span class="ku-mini-badge">${item.badge}</span>` : ''}</a></li>`).join('')}</ul>
         <div class="ku-sidebar-section">
           <h2 class="ku-card-title">お知らせ</h2>
-          <ul class="ku-sidebar-nav">${noticeLinks.map((item) => `<li><a class="ku-sidebar-link ${active === 'notifications' ? 'active' : ''}" href="${escapeAttr(item.href)}"><span>${icon('list')}</span><span style="flex:1">${escapeHtml(item.label)}</span></a></li>`).join('')}</ul>
+          <ul class="ku-sidebar-nav">${noticeLinks.map((item) => `<li><a class="ku-sidebar-link ${active === 'notifications' || active === 'notifications-detail' ? 'active' : ''}" href="${escapeAttr(item.href)}"><span>${icon('list')}</span><span style="flex:1">${escapeHtml(item.label)}</span></a></li>`).join('')}</ul>
         </div>
       </aside>`;
   }
@@ -119,6 +126,15 @@ function renderMessagePagination(pagination) {
 
 function renderUnsupported() {
     return '<div class="ku-card ku-empty">このページはまだリデザイン対象外です。</div>';
+  }
+
+function resolveMessageFolderLinks() {
+    const folderMap = Object.fromEntries((state.currentView?.folders || []).map((item) => [item.title, item.href]));
+    return {
+      inbox: folderMap['受信箱'] || state.currentContext.links.messages,
+      outbox: folderMap['送信済箱'] || absoluteUrl('/webclass/msg_editor.php?msgappmode=outbox'),
+      recyclebox: folderMap['ゴミ箱'] || absoluteUrl('/webclass/msg_editor.php?msgappmode=recyclebox')
+    };
   }
 
 function renderSyllabusChip({ title = '', href = '', year = '' } = {}) {

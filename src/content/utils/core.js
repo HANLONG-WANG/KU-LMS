@@ -116,8 +116,23 @@ function filterOtherCourses(groups, query) {
     })).filter((group) => group.items.length);
   }
 
-function allSelected(rows) {
-    return rows.length > 0 && rows.every((row) => state.messageSelection.has(row.id));
+function allSelected(rows, view = state.currentView) {
+    const selection = getMessageSelection(view);
+    return rows.length > 0 && rows.every((row) => selection.has(row.id));
+  }
+
+function getMessageSelectionScope(view = state.currentView) {
+    return view?.selectionScope || state.currentRoute?.name || 'messages-inbox';
+  }
+
+function getMessageSelection(view = state.currentView) {
+    const scope = getMessageSelectionScope(view);
+    if (!state.messageSelectionScopes.has(scope)) {
+      state.messageSelectionScopes.set(scope, new Set());
+    }
+    const selection = state.messageSelectionScopes.get(scope);
+    state.messageSelection = selection;
+    return selection;
   }
 
 function pickPalette(text) {
@@ -277,7 +292,7 @@ function normalizeNotificationsUrl(path) {
     if (!path) return '';
     const url = new URL(absoluteUrl(path));
     if (url.pathname.includes('/webclass/information.php/mbl')) {
-      url.pathname = '/webclass/information.php/';
+      url.pathname = url.pathname.replace('/webclass/information.php/mbl', '/webclass/information.php');
     }
     if (url.pathname === '/webclass/information.php') {
       url.pathname = '/webclass/information.php/';

@@ -22,3 +22,40 @@ function parseNotificationsList(doc) {
     const metaText = doc.querySelector('.info-list .head, li.head')?.textContent.replace(/\s+/g, ' ').trim() || Array.from(doc.querySelectorAll('body *')).find((el) => /ページ\s+\d+\s*\//.test(el.textContent))?.textContent.trim() || '';
     return { items, pagination, metaText };
   }
+
+function parseNotificationDetail(doc) {
+    const errorMessage = cleanText(doc.querySelector('.autoreportmsg td')?.textContent || '');
+    const navLinks = Array.from(doc.querySelectorAll('.pager a, .iterator a')).map((a) => ({
+      text: cleanText(a.textContent),
+      href: absoluteUrl(a.getAttribute('href')),
+      title: cleanText(a.getAttribute('title') || '')
+    }));
+    const detailHead = doc.querySelector('.info-detail-head');
+    const title = cleanText(detailHead?.querySelector('h4')?.textContent || doc.querySelector('.infopkg h4')?.textContent || '');
+    const body = doc.querySelector('.info-detail-body');
+    const issuer = cleanText(Array.from(detailHead?.querySelectorAll('.postBy') || []).find((node) => node.textContent.includes('発行元'))?.textContent || '');
+    const publishedAt = cleanText(Array.from(detailHead?.querySelectorAll('.postBy') || []).find((node) => node.textContent.includes('発行日'))?.textContent || '');
+    const deadline = cleanText(detailHead?.querySelector('.closedAt')?.textContent || '');
+    const audience = cleanText(Array.from(detailHead?.querySelectorAll('.data > div') || []).find((node) => node.textContent.includes('発行先'))?.textContent || '');
+    const authorLink = detailHead?.querySelector('.postBy a[href]');
+    return {
+      kind: body ? 'detail' : 'error',
+      title,
+      navigation: {
+        prev: navLinks.find((item) => item.text.includes('前へ')) || null,
+        list: navLinks.find((item) => item.text.includes('一覧に戻る') || item.text === '一覧に戻る') || null,
+        next: navLinks.find((item) => item.text.includes('次へ')) || null
+      },
+      metadata: {
+        issuer,
+        publishedAt,
+        deadline,
+        audience,
+        authorLabel: cleanText(authorLink?.textContent || ''),
+        authorHref: absoluteUrl(authorLink?.getAttribute('href') || '')
+      },
+      bodyHtml: body?.innerHTML?.trim() || '',
+      errorMessage: errorMessage || '',
+      pageTitle: cleanText(doc.querySelector('.infopkg h3')?.textContent || 'お知らせ')
+    };
+  }

@@ -14,7 +14,10 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - `/webclass/course.php/:courseId/contents/*`, `/history`, and `/info` are intentionally left native so original KU-LMS detail-style pages remain usable.
 - `/webclass/information.php/`
 - `/webclass/information.php/mbl/` (canonicalized to `/webclass/information.php/` before redesigned rendering)
+- `/webclass/information.php/post/:noticeId`
 - `/webclass/msg_editor.php?msgappmode=inbox`
+- `/webclass/msg_editor.php?msgappmode=outbox`
+- `/webclass/msg_editor.php?msgappmode=recyclebox`
 - `/webclass/user.php/manual`
 - `https://syllabus3.jm.kansai-u.ac.jp/syllabus/*` is not visually redesigned, but the same content script is allowed to run there in assist-only mode for syllabus-result auto-resolution.
 
@@ -30,6 +33,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - On `login.php`, treat the current page as the only required source of truth for login, inquiry/contact, and notice content; preserve native form action/method/hidden inputs and keep the rendered surface limited to those groups.
 - On `logout.php`, treat the current page as the only required source of truth for the post-session warning/farewell/actions surface; preserve the native login-return href and close-window action exactly while keeping the rendered surface limited to warning/status/next-step content.
 - Prefer current-page DOM parsing for initial render and avoid non-home route background fetches back to `/webclass/` during context boot.
+- On notice detail routes, treat the current detail page DOM as the authoritative source for metadata, body content, and prev/list/next navigation; preserve native author/list/detail links.
+- On message folder routes (`inbox`, `outbox`, `recyclebox`), treat the current page form, native submit button names, folder links, sort links, pagination links, and checkbox names as the authoritative action contract; do not synthesize folder semantics.
 - Reuse native links and same-origin endpoints for counts/actions where needed.
 - Prefer session-safe same-origin `fetch()` for supplemental documents instead of hidden iframe course preloads.
 - On the homepage, render immediately from the current page DOM (`schedule`, `homeNotices`, filters, and course links), then asynchronously enrich the three right-column panels (`announcements`, `messages`, `upcoming`).

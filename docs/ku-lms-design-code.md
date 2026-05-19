@@ -15,7 +15,10 @@
   - Course materials page
   - Course my-reports page
   - Notifications list page
+  - Notice detail page
   - Messages inbox page
+  - Messages sent box page
+  - Messages recycle box page
 - Evidence reviewed:
   - `UI-Image/*.png`
   - `docs/ku-lms-extension-architecture.md`
@@ -92,7 +95,8 @@
   - Course materials = course activity surface
   - My-reports = submission status surface
   - Notifications = system/course notice browsing surface
-  - Messages = inbox/work queue surface
+  - Notice detail = notice reading/detail surface
+  - Messages = inbox/work queue + sent/trash management surface
 - Content hierarchy:
   - Level 1: page title / route identity
   - Level 2: route-specific navigation or filters
@@ -214,7 +218,9 @@
 - Weekly schedule matrix card
 - Deadline stack card
 - Notification card list
+- Notice detail article shell
 - Message inbox table shell
+- Message folder warning banner
 - Course section accordion/timeline hybrid
 - My-report display settings popover
 - Compact syllabus jump chip (`シ`) that sits immediately after course names and reuses the shared chip language
@@ -254,6 +260,13 @@
 - It must not show authenticated top navigation, fake dashboard metrics, or unrelated decorative content.
 - Brand treatment should stay calm and trustworthy; prioritize form clarity over hero imagery.
 - If the route introduces helper/error/auth-status copy, it should reuse the same neutral/danger token logic as the rest of the redesign.
+
+
+### Communication-route guidance
+- Notice detail pages should feel editorial but still operational: metadata first, readable body second, return/navigation actions third.
+- Sent box and recycle box should reuse the inbox workspace language, but their headings, warnings, actions, and columns must match the true folder semantics.
+- Recycle box warning copy must be clearly visible and must visually outrank passive metadata.
+- Folder navigation must preserve active-state orientation across inbox / sent / trash.
 
 ### Logout-route guidance
 - The logout route is an auth-terminal surface, not an authenticated workspace.

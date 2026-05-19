@@ -1,0 +1,455 @@
+uid=1_0 RootWebArea "お知らせ - 関大LMS" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=8640ea1f"
+  uid=1_1 ignored
+    uid=1_2 generic
+      uid=1_3 ignored
+        uid=1_4 banner
+          uid=1_5 ignored
+            uid=1_6 ignored
+              uid=1_7 image
+            uid=1_8 ignored
+              uid=1_9 StaticText "関大LMS"
+                uid=1_10 InlineTextBox "関大LMS"
+          uid=1_11 navigation
+            uid=1_12 link "ホーム" url="https://kulms.tl.kansai-u.ac.jp/webclass/"
+              uid=1_13 ignored
+                uid=1_14 image
+              uid=1_15 ignored
+                uid=1_16 StaticText "ホーム"
+                  uid=1_10 InlineTextBox "ホーム"
+            uid=1_17 link "コース" url="https://kulms.tl.kansai-u.ac.jp/webclass/"
+              uid=1_18 ignored
+                uid=1_19 image
+              uid=1_20 ignored
+                uid=1_21 StaticText "コース"
+                  uid=1_10 InlineTextBox "コース"
+            uid=1_22 link "お知らせ" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/"
+              uid=1_23 ignored
+                uid=1_24 image
+              uid=1_25 ignored
+                uid=1_26 StaticText "お知らせ"
+                  uid=1_10 InlineTextBox "お知らせ"
+            uid=1_27 link "メッセージ" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=5e3210aa"
+              uid=1_28 ignored
+                uid=1_29 image
+              uid=1_30 ignored
+                uid=1_31 StaticText "メッセージ"
+                  uid=1_10 InlineTextBox "メッセージ"
+            uid=1_32 link "マニュアル" url="https://kulms.tl.kansai-u.ac.jp/webclass/user.php/manual"
+              uid=1_33 ignored
+                uid=1_34 image
+              uid=1_35 ignored
+                uid=1_36 StaticText "マニュアル"
+                  uid=1_10 InlineTextBox "マニュアル"
+          uid=1_37 ignored
+            uid=1_38 ignored
+              uid=1_39 image
+              uid=1_40 ignored
+                uid=1_41 StaticText "日本語"
+                  uid=1_10 InlineTextBox "日本語"
+            uid=1_42 ignored
+            uid=1_43 ignored
+              uid=1_44 ignored
+                uid=1_45 StaticText "» このウィンドウを閉じる"
+                  uid=1_10 InlineTextBox "» このウィンドウを閉じる"
+              uid=1_46 ignored
+                uid=1_47 StaticText "»"
+                  uid=1_10 InlineTextBox "»"
+            uid=1_48 link "ログアウト" url="https://kulms.tl.kansai-u.ac.jp/webclass/logout.php"
+              uid=1_49 image
+              uid=1_50 ignored
+                uid=1_51 StaticText "ログアウト"
+                  uid=1_10 InlineTextBox "ログアウト"
+        uid=1_52 main
+          uid=1_53 ignored
+            uid=1_54 complementary
+              uid=1_55 heading "メッセージ" level="2"
+                uid=1_56 StaticText "メッセージ"
+                  uid=1_10 InlineTextBox "メッセージ"
+              uid=1_57 list
+                uid=1_58 listitem level="1"
+                  uid=1_59 link "受信箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=5e3210aa"
+                    uid=1_60 ignored
+                      uid=1_61 image
+                    uid=1_62 ignored
+                      uid=1_63 StaticText "受信箱"
+                        uid=1_10 InlineTextBox "受信箱"
+                uid=1_64 listitem level="1"
+                  uid=1_65 link "送信済箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=outbox"
+                    uid=1_66 ignored
+                      uid=1_67 image
+                    uid=1_68 ignored
+                      uid=1_69 StaticText "送信済箱"
+                        uid=1_10 InlineTextBox "送信済箱"
+                uid=1_70 listitem level="1"
+                  uid=1_71 link "ゴミ箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=recyclebox"
+                    uid=1_72 ignored
+                      uid=1_73 image
+                    uid=1_74 ignored
+                      uid=1_75 StaticText "ゴミ箱"
+                        uid=1_10 InlineTextBox "ゴミ箱"
+              uid=1_76 ignored
+                uid=1_77 heading "お知らせ" level="2"
+                  uid=1_78 StaticText "お知らせ"
+                    uid=1_10 InlineTextBox "お知らせ"
+                uid=1_79 list
+                  uid=1_80 listitem level="1"
+                    uid=1_81 link "一覧" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/"
+                      uid=1_82 ignored
+                        uid=1_83 image
+                      uid=1_84 ignored
+                        uid=1_85 StaticText "一覧"
+                          uid=1_10 InlineTextBox "一覧"
+            uid=1_86 generic
+              uid=1_87 ignored
+                uid=1_88 ignored
+                  uid=1_89 heading "お知らせ一覧" level="1"
+                    uid=1_90 StaticText "お知らせ一覧"
+                      uid=1_10 InlineTextBox "お知らせ一覧"
+                  uid=1_91 generic
+                    uid=1_92 StaticText "ページ 1 / 1 ( No.1 - No.10 : 全 10 件)"
+                      uid=1_10 InlineTextBox "ページ 1 / 1 ( No.1 - No.10 : 全 10 件)"
+                uid=1_93 ignored
+                  uid=1_94 link "|<" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=5e3210aa&page=1"
+                    uid=1_95 StaticText "|<"
+                      uid=1_10 InlineTextBox "|<"
+                  uid=1_96 link ">|" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=5e3210aa&page=1"
+                    uid=1_97 StaticText ">|"
+                      uid=1_10 InlineTextBox ">|"
+              uid=1_98 ignored
+                uid=1_99 generic
+                  uid=1_100 StaticText "お知らせ"
+                    uid=1_10 InlineTextBox "お知らせ"
+                uid=1_101 ignored
+                  uid=1_102 link "関大LMSから授業動画が見られない時は" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/69849/?acs_=5e3210aa"
+                    uid=1_103 StaticText "関大LMSから授業動画が見られない時は"
+                      uid=1_10 InlineTextBox "関大LMSから授業動画が見られない時は"
+                  uid=1_104 generic
+                    uid=1_105 StaticText "システム管理者 - 2026/04/20 12:12 - 公開期限 : 2026/08/10 23:59"
+                      uid=1_10 InlineTextBox "システム管理者 - 2026/04/20 12:12 - 公開期限 : 2026/08/10 23:59"
+                uid=1_106 ignored
+                  uid=1_107 generic
+                    uid=1_108 StaticText "2026/04/20 12:12"
+                      uid=1_10 InlineTextBox "2026/04/20 12:12"
+                  uid=1_109 strong
+                    uid=1_110 StaticText "公開期限 : 2026/08/10 23:59"
+                      uid=1_10 InlineTextBox "公開期限 : 2026/08/10 23:59"
+              uid=1_111 ignored
+                uid=1_112 generic
+                  uid=1_113 StaticText "重要"
+                    uid=1_10 InlineTextBox "重要"
+                uid=1_114 ignored
+                  uid=1_115 link "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/68585/?acs_=5e3210aa"
+                    uid=1_116 StaticText "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                      uid=1_10 InlineTextBox "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                  uid=1_117 generic
+                    uid=1_118 StaticText "システム管理者 - 2026/04/13 16:52 - 公開期限 : 2026/08/11 23:59"
+                      uid=1_10 InlineTextBox "システム管理者 - 2026/04/13 16:52 - 公開期限 : 2026/08/11 23:59"
+                uid=1_119 ignored
+                  uid=1_120 generic
+                    uid=1_121 StaticText "2026/04/13 16:52"
+                      uid=1_10 InlineTextBox "2026/04/13 16:52"
+                  uid=1_122 strong
+                    uid=1_123 StaticText "公開期限 : 2026/08/11 23:59"
+                      uid=1_10 InlineTextBox "公開期限 : 2026/08/11 23:59"
+              uid=1_124 ignored
+                uid=1_125 generic
+                  uid=1_126 StaticText "お知らせ"
+                    uid=1_10 InlineTextBox "お知らせ"
+                uid=1_127 ignored
+                  uid=1_128 link "【学生の皆さんへ】メールで質問する前に、必ず確認してください。" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/54911/?acs_=5e3210aa"
+                    uid=1_129 StaticText "【学生の皆さんへ】メールで質問する前に、必ず確認してください。"
+                      uid=1_10 InlineTextBox "【学生の皆さんへ】メールで質問する前に、必ず確認してください。"
+                  uid=1_130 generic
+                    uid=1_131 StaticText "システム管理者 - 2026/04/13 16:18 - 公開期限 : 2027/03/31 23:59"
+                      uid=1_10 InlineTextBox "システム管理者 - 2026/04/13 16:18 - 公開期限 : 2027/03/31 23:59"
+                uid=1_132 ignored
+                  uid=1_133 generic
+                    uid=1_134 StaticText "2026/04/13 16:18"
+                      uid=1_10 InlineTextBox "2026/04/13 16:18"
+                  uid=1_135 strong
+                    uid=1_136 StaticText "公開期限 : 2027/03/31 23:59"
+                      uid=1_10 InlineTextBox "公開期限 : 2027/03/31 23:59"
+              uid=1_137 ignored
+                uid=1_138 generic
+                  uid=1_139 StaticText "重要"
+                    uid=1_10 InlineTextBox "重要"
+                uid=1_140 ignored
+                  uid=1_141 link "【重要】Panoptoで動画を視聴するための設定について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/53176/?acs_=5e3210aa"
+                    uid=1_142 StaticText "【重要】Panoptoで動画を視聴するための設定について"
+                      uid=1_10 InlineTextBox "【重要】Panoptoで動画を視聴するための設定について"
+                  uid=1_143 generic
+                    uid=1_144 StaticText "システム管理者 - 2026/04/11 14:26 - 公開期限 : 2026/09/09 23:59"
+                      uid=1_10 InlineTextBox "システム管理者 - 2026/04/11 14:26 - 公開期限 : 2026/09/09 23:59"
+                uid=1_145 ignored
+                  uid=1_146 generic
+                    uid=1_147 StaticText "2026/04/11 14:26"
+                      uid=1_10 InlineTextBox "2026/04/11 14:26"
+                  uid=1_148 strong
+                    uid=1_149 StaticText "公開期限 : 2026/09/09 23:59"
+                      uid=1_10 InlineTextBox "公開期限 : 2026/09/09 23:59"
+              uid=1_150 ignored
+                uid=1_151 generic
+                  uid=1_152 StaticText "お知らせ"
+                    uid=1_10 InlineTextBox "お知らせ"
+                uid=1_153 ignored
+                  uid=1_154 link "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/58881/?acs_=5e3210aa"
+                    uid=1_155 StaticText "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！"
+                      uid=1_10 InlineTextBox "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！"
+                  uid=1_156 generic
+                    uid=1_157 StaticText "システム管理者 - 2026/04/06 09:11 - 公開期限 : 2026/09/08 23:59"
+                      uid=1_10 InlineTextBox "システム管理者 - 2026/04/06 09:11 - 公開期限 : 2026/09/08 23:59"
+                uid=1_158 ignored
+                  uid=1_159 generic
+                    uid=1_160 StaticText "2026/04/06 09:11"
+                      uid=1_10 InlineTextBox "2026/04/06 09:11"
+                  uid=1_161 strong
+                    uid=1_162 StaticText "公開期限 : 2026/09/08 23:59"
+                      uid=1_10 InlineTextBox "公開期限 : 2026/09/08 23:59"
+              uid=1_163 ignored
+                uid=1_164 generic
+                  uid=1_165 StaticText "重要"
+                    uid=1_10 InlineTextBox "重要"
+                uid=1_166 ignored
+                  uid=1_167 link "[注意喚起] 同一ブラウザを利用した複数画面での同時操作について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/1484/?acs_=5e3210aa"
+                    uid=1_168 StaticText "[注意喚起] 同一ブラウザを利用した複数画面での同時操作について"
+                      uid=1_10 InlineTextBox "[注意喚起] 同一ブラウザを利用した複数画面での同時操作について"
+                  uid=1_169 generic
+                    uid=1_170 StaticText "システム管理者 - 2025/04/18 13:55"
+                      uid=1_10 InlineTextBox "システム管理者 - 2025/04/18 13:55"
+                uid=1_171 ignored
+                  uid=1_172 generic
+                    uid=1_173 StaticText "2025/04/18 13:55"
+                      uid=1_10 InlineTextBox "2025/04/18 13:55"
+              uid=1_174 ignored
+                uid=1_175 generic
+                  uid=1_176 StaticText "重要"
+                    uid=1_10 InlineTextBox "重要"
+                uid=1_177 ignored
+                  uid=1_178 link "【macOS】や【iOS】からのPanopto動画視聴について（ご注意） / About watching Panopto video from [macOS] and [iOS] (Caution)" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/51362/?acs_=5e3210aa"
+                    uid=1_179 StaticText "【macOS】や【iOS】からのPanopto動画視聴について（ご注意） / About watching Panopto video from [macOS] and [iOS] (Caution)"
+                      uid=1_10 InlineTextBox "【macOS】や【iOS】からのPanopto動画視聴について（ご注意） / About watching Panopto video from [macOS] and [iOS] (Caution)"
+                  uid=1_180 generic
+                    uid=1_181 StaticText "システム管理者 - 2023/08/28 09:27"
+                      uid=1_10 InlineTextBox "システム管理者 - 2023/08/28 09:27"
+                uid=1_182 ignored
+                  uid=1_183 generic
+                    uid=1_184 StaticText "2023/08/28 09:27"
+                      uid=1_10 InlineTextBox "2023/08/28 09:27"
+              uid=1_185 ignored
+                uid=1_186 generic
+                  uid=1_187 StaticText "重要"
+                    uid=1_10 InlineTextBox "重要"
+                uid=1_188 ignored
+                  uid=1_189 link "[学生の皆さんへ] 担当教員へメッセージを送る時、ご注意ください。" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/25665/?acs_=5e3210aa"
+                    uid=1_190 StaticText "[学生の皆さんへ] 担当教員へメッセージを送る時、ご注意ください。"
+                      uid=1_10 InlineTextBox "[学生の皆さんへ] 担当教員へメッセージを送る時、ご注意ください。"
+                  uid=1_191 generic
+                    uid=1_192 StaticText "システム管理者 - 2023/04/15 15:49"
+                      uid=1_10 InlineTextBox "システム管理者 - 2023/04/15 15:49"
+                uid=1_193 ignored
+                  uid=1_194 generic
+                    uid=1_195 StaticText "2023/04/15 15:49"
+                      uid=1_10 InlineTextBox "2023/04/15 15:49"
+              uid=1_196 ignored
+                uid=1_197 generic
+                  uid=1_198 StaticText "お知らせ"
+                    uid=1_10 InlineTextBox "お知らせ"
+                uid=1_199 ignored
+                  uid=1_200 link "教材にリンク先の動画について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/9237/?acs_=5e3210aa"
+                    uid=1_201 StaticText "教材にリンク先の動画について"
+                      uid=1_10 InlineTextBox "教材にリンク先の動画について"
+                  uid=1_202 generic
+                    uid=1_203 StaticText "システム管理者 - 2020/07/22"
+                      uid=1_10 InlineTextBox "システム管理者 - 2020/07/22"
+                uid=1_204 ignored
+                  uid=1_205 generic
+                    uid=1_206 StaticText "システム管理者 - 2020/07/22"
+                      uid=1_10 InlineTextBox "システム管理者 - 2020/07/22"
+              uid=1_207 ignored
+                uid=1_208 generic
+                  uid=1_209 StaticText "重要"
+                    uid=1_10 InlineTextBox "重要"
+                uid=1_210 ignored
+                  uid=1_211 link "【学生の皆さんへ】 [回答を保存する] ボタンを押す時はご注意ください。" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/5104/?acs_=5e3210aa"
+                    uid=1_212 StaticText "【学生の皆さんへ】 [回答を保存する] ボタンを押す時はご注意ください。"
+                      uid=1_10 InlineTextBox "【学生の皆さんへ】 [回答を保存する] ボタンを押す時はご注意ください。"
+                  uid=1_213 generic
+                    uid=1_214 StaticText "システム管理者 - 2020/05/15"
+                      uid=1_10 InlineTextBox "システム管理者 - 2020/05/15"
+                uid=1_215 ignored
+                  uid=1_216 generic
+                    uid=1_217 StaticText "システム管理者 - 2020/05/15"
+                      uid=1_10 InlineTextBox "システム管理者 - 2020/05/15"
+          uid=1_218 generic
+            uid=1_219 StaticText "Powered by 関大LMS"
+              uid=1_10 InlineTextBox "Powered by 関大LMS"
+    uid=1_220 generic
+      uid=1_221 link "» このウィンドウを閉じる" url="javascript:window.close();"
+        uid=1_222 StaticText "» このウィンドウを閉じる"
+          uid=1_10 InlineTextBox "» このウィンドウを閉じる"
+      uid=1_223 heading "お知らせ" level="1"
+        uid=1_224 StaticText "お知らせ"
+          uid=1_10 InlineTextBox "お知らせ"
+      uid=1_225 generic
+        uid=1_226 DescriptionList
+          uid=1_227 term "メッセージ"
+            uid=1_228 StaticText "メッセージ"
+              uid=1_10 InlineTextBox "メッセージ"
+          uid=1_229 definition
+            uid=1_230 link "» メッセージ作成" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=editmsg&acs_=5e3210aa"
+              uid=1_231 StaticText "» メッセージ作成"
+                uid=1_10 InlineTextBox "» メッセージ作成"
+          uid=1_232 definition
+            uid=1_233 link "» 受信箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=5e3210aa"
+              uid=1_234 StaticText "» 受信箱"
+                uid=1_10 InlineTextBox "» 受信箱"
+          uid=1_235 definition
+            uid=1_236 link "» 送信済箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=outbox&acs_=5e3210aa"
+              uid=1_237 StaticText "» 送信済箱"
+                uid=1_10 InlineTextBox "» 送信済箱"
+          uid=1_238 definition
+            uid=1_239 link "» ゴミ箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=recyclebox&acs_=5e3210aa"
+              uid=1_240 StaticText "» ゴミ箱"
+                uid=1_10 InlineTextBox "» ゴミ箱"
+          uid=1_241 term "お知らせ"
+            uid=1_242 StaticText "お知らせ"
+              uid=1_10 InlineTextBox "お知らせ"
+          uid=1_243 definition
+            uid=1_244 link "» 一覧" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/"
+              uid=1_245 StaticText "» 一覧"
+                uid=1_10 InlineTextBox "» 一覧"
+      uid=1_246 ignored
+        uid=1_247 ignored
+          uid=1_248 heading "お知らせ一覧" level="3"
+            uid=1_249 StaticText "お知らせ一覧"
+              uid=1_10 InlineTextBox "お知らせ一覧"
+          uid=1_250 list
+            uid=1_251 listitem level="1"
+              uid=1_252 link "|<" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=5e3210aa&page=1"
+                uid=1_253 StaticText "|<"
+                  uid=1_10 InlineTextBox "|<"
+            uid=1_254 StaticText " "
+              uid=1_10 InlineTextBox " "
+            uid=1_255 listitem level="1"
+              uid=1_256 StaticText "<"
+                uid=1_10 InlineTextBox "<"
+            uid=1_257 StaticText " "
+              uid=1_10 InlineTextBox " "
+            uid=1_258 listitem level="1"
+              uid=1_259 StaticText "1"
+                uid=1_10 InlineTextBox "1"
+            uid=1_260 StaticText " "
+              uid=1_10 InlineTextBox " "
+            uid=1_261 listitem level="1"
+              uid=1_262 StaticText ">"
+                uid=1_10 InlineTextBox ">"
+            uid=1_263 StaticText " "
+              uid=1_10 InlineTextBox " "
+            uid=1_264 listitem level="1"
+              uid=1_265 link ">|" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/?acs_=5e3210aa&page=1"
+                uid=1_266 StaticText ">|"
+                  uid=1_10 InlineTextBox ">|"
+          uid=1_267 list
+            uid=1_268 listitem level="1"
+              uid=1_269 StaticText "ページ 1 / 1 ( No.1 - No.10 : 全 10 件)"
+                uid=1_10 InlineTextBox "ページ 1 / 1 ( No.1 - No.10 : 全 10 件)"
+            uid=1_270 listitem level="1"
+              uid=1_271 link "関大LMSから授業動画が見られない時は" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/69849/?acs_=5e3210aa"
+                uid=1_272 StaticText "関大LMSから授業動画が見られない時は"
+                  uid=1_10 InlineTextBox "関大LMSから授業動画が見られない時は"
+              uid=1_273 generic
+                uid=1_274 generic
+                  uid=1_275 StaticText "システム管理者 - 2026/04/20 12:12 - "
+                    uid=1_10 InlineTextBox "システム管理者 - 2026/04/20 12:12 - "
+                  uid=1_276 StaticText "公開期限 : 2026/08/10 23:59"
+                    uid=1_10 InlineTextBox "公開期限 : 2026/08/10 23:59"
+                uid=1_277 ignored
+            uid=1_278 listitem level="1"
+              uid=1_279 link "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/68585/?acs_=5e3210aa"
+                uid=1_280 StaticText "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+                  uid=1_10 InlineTextBox "【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点"
+              uid=1_281 generic
+                uid=1_282 generic
+                  uid=1_283 StaticText "システム管理者 - 2026/04/13 16:52 - "
+                    uid=1_10 InlineTextBox "システム管理者 - 2026/04/13 16:52 - "
+                  uid=1_284 StaticText "公開期限 : 2026/08/11 23:59"
+                    uid=1_10 InlineTextBox "公開期限 : 2026/08/11 23:59"
+                uid=1_285 ignored
+            uid=1_286 listitem level="1"
+              uid=1_287 link "【学生の皆さんへ】メールで質問する前に、必ず確認してください。" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/54911/?acs_=5e3210aa"
+                uid=1_288 StaticText "【学生の皆さんへ】メールで質問する前に、必ず確認してください。"
+                  uid=1_10 InlineTextBox "【学生の皆さんへ】メールで質問する前に、必ず確認してください。"
+              uid=1_289 generic
+                uid=1_290 generic
+                  uid=1_291 StaticText "システム管理者 - 2026/04/13 16:18 - "
+                    uid=1_10 InlineTextBox "システム管理者 - 2026/04/13 16:18 - "
+                  uid=1_292 StaticText "公開期限 : 2027/03/31 23:59"
+                    uid=1_10 InlineTextBox "公開期限 : 2027/03/31 23:59"
+                uid=1_293 ignored
+            uid=1_294 listitem level="1"
+              uid=1_295 link "【重要】Panoptoで動画を視聴するための設定について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/53176/?acs_=5e3210aa"
+                uid=1_296 StaticText "【重要】Panoptoで動画を視聴するための設定について"
+                  uid=1_10 InlineTextBox "【重要】Panoptoで動画を視聴するための設定について"
+              uid=1_297 generic
+                uid=1_298 generic
+                  uid=1_299 StaticText "システム管理者 - 2026/04/11 14:26 - "
+                    uid=1_10 InlineTextBox "システム管理者 - 2026/04/11 14:26 - "
+                  uid=1_300 StaticText "公開期限 : 2026/09/09 23:59"
+                    uid=1_10 InlineTextBox "公開期限 : 2026/09/09 23:59"
+                uid=1_301 ignored
+            uid=1_302 listitem level="1"
+              uid=1_303 link "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/58881/?acs_=5e3210aa"
+                uid=1_304 StaticText "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！"
+                  uid=1_10 InlineTextBox "【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！"
+              uid=1_305 generic
+                uid=1_306 generic
+                  uid=1_307 StaticText "システム管理者 - 2026/04/06 09:11 - "
+                    uid=1_10 InlineTextBox "システム管理者 - 2026/04/06 09:11 - "
+                  uid=1_308 StaticText "公開期限 : 2026/09/08 23:59"
+                    uid=1_10 InlineTextBox "公開期限 : 2026/09/08 23:59"
+                uid=1_309 ignored
+            uid=1_310 listitem level="1"
+              uid=1_311 link "[注意喚起] 同一ブラウザを利用した複数画面での同時操作について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/1484/?acs_=5e3210aa"
+                uid=1_312 StaticText "[注意喚起] 同一ブラウザを利用した複数画面での同時操作について"
+                  uid=1_10 InlineTextBox "[注意喚起] 同一ブラウザを利用した複数画面での同時操作について"
+              uid=1_313 generic
+                uid=1_314 generic
+                  uid=1_315 StaticText "システム管理者 - 2025/04/18 13:55"
+                    uid=1_10 InlineTextBox "システム管理者 - 2025/04/18 13:55"
+                uid=1_316 ignored
+            uid=1_317 listitem level="1"
+              uid=1_318 link "【macOS】や【iOS】からのPanopto動画視聴について（ご注意） / About watching Panopto video from [macOS] and [iOS] (Caution)" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/51362/?acs_=5e3210aa"
+                uid=1_319 StaticText "【macOS】や【iOS】からのPanopto動画視聴について（ご注意） / About watching Panopto video from [macOS] and [iOS] (Caution)"
+                  uid=1_10 InlineTextBox "【macOS】や【iOS】からのPanopto動画視聴について（ご注意） / About watching Panopto video from [macOS] and [iOS] (Caution)"
+              uid=1_320 generic
+                uid=1_321 generic
+                  uid=1_322 StaticText "システム管理者 - 2023/08/28 09:27"
+                    uid=1_10 InlineTextBox "システム管理者 - 2023/08/28 09:27"
+                uid=1_323 ignored
+            uid=1_324 listitem level="1"
+              uid=1_325 link "[学生の皆さんへ] 担当教員へメッセージを送る時、ご注意ください。" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/25665/?acs_=5e3210aa"
+                uid=1_326 StaticText "[学生の皆さんへ] 担当教員へメッセージを送る時、ご注意ください。"
+                  uid=1_10 InlineTextBox "[学生の皆さんへ] 担当教員へメッセージを送る時、ご注意ください。"
+              uid=1_327 generic
+                uid=1_328 generic
+                  uid=1_329 StaticText "システム管理者 - 2023/04/15 15:49"
+                    uid=1_10 InlineTextBox "システム管理者 - 2023/04/15 15:49"
+                uid=1_330 ignored
+            uid=1_331 listitem level="1"
+              uid=1_332 link "教材にリンク先の動画について" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/9237/?acs_=5e3210aa"
+                uid=1_333 StaticText "教材にリンク先の動画について"
+                  uid=1_10 InlineTextBox "教材にリンク先の動画について"
+              uid=1_334 generic
+                uid=1_335 generic
+                  uid=1_336 StaticText "システム管理者 - 2020/07/22"
+                    uid=1_10 InlineTextBox "システム管理者 - 2020/07/22"
+                uid=1_337 ignored
+            uid=1_338 listitem level="1"
+              uid=1_339 link "【学生の皆さんへ】 [回答を保存する] ボタンを押す時はご注意ください。" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/5104/?acs_=5e3210aa"
+                uid=1_340 StaticText "【学生の皆さんへ】 [回答を保存する] ボタンを押す時はご注意ください。"
+                  uid=1_10 InlineTextBox "【学生の皆さんへ】 [回答を保存する] ボタンを押す時はご注意ください。"
+              uid=1_341 generic
+                uid=1_342 generic
+                  uid=1_343 StaticText "システム管理者 - 2020/05/15"
+                    uid=1_10 InlineTextBox "システム管理者 - 2020/05/15"
+                uid=1_344 ignored

@@ -1,0 +1,54 @@
+uid=2_0 RootWebArea "お知らせ - 関大LMS" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/post/69868/?acs_=6016a2fc"
+  uid=2_1 ignored
+    uid=2_2 generic
+      uid=2_3 link "» このウィンドウを閉じる" url="javascript:window.close();"
+        uid=2_4 StaticText "» このウィンドウを閉じる"
+          uid=2_5 InlineTextBox "» このウィンドウを閉じる"
+      uid=2_6 heading "お知らせ" level="1"
+        uid=2_7 StaticText "お知らせ"
+          uid=2_5 InlineTextBox "お知らせ"
+      uid=2_8 generic
+        uid=2_9 DescriptionList
+          uid=2_10 term "メッセージ"
+            uid=2_11 StaticText "メッセージ"
+              uid=2_5 InlineTextBox "メッセージ"
+          uid=2_12 definition
+            uid=2_13 link "» メッセージ作成" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=editmsg&acs_=0d6db755"
+              uid=2_14 StaticText "» メッセージ作成"
+                uid=2_5 InlineTextBox "» メッセージ作成"
+          uid=2_15 definition
+            uid=2_16 link "» 受信箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=inbox&acs_=0d6db755"
+              uid=2_17 StaticText "» 受信箱"
+                uid=2_5 InlineTextBox "» 受信箱"
+          uid=2_18 definition
+            uid=2_19 link "» 送信済箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=outbox&acs_=0d6db755"
+              uid=2_20 StaticText "» 送信済箱"
+                uid=2_5 InlineTextBox "» 送信済箱"
+          uid=2_21 definition
+            uid=2_22 link "» ゴミ箱" url="https://kulms.tl.kansai-u.ac.jp/webclass/msg_editor.php?msgappmode=recyclebox&acs_=0d6db755"
+              uid=2_23 StaticText "» ゴミ箱"
+                uid=2_5 InlineTextBox "» ゴミ箱"
+          uid=2_24 term "お知らせ"
+            uid=2_25 StaticText "お知らせ"
+              uid=2_5 InlineTextBox "お知らせ"
+          uid=2_26 definition
+            uid=2_27 link "» 一覧" url="https://kulms.tl.kansai-u.ac.jp/webclass/information.php/"
+              uid=2_28 StaticText "» 一覧"
+                uid=2_5 InlineTextBox "» 一覧"
+      uid=2_29 ignored
+        uid=2_30 ignored
+          uid=2_31 heading "お知らせ" level="3"
+            uid=2_32 StaticText "お知らせ"
+              uid=2_5 InlineTextBox "お知らせ"
+          uid=2_33 table
+            uid=2_34 ignored
+              uid=2_35 row
+                uid=2_36 cell "Error : 指定されたIDのお知らせは見つかりませんでした"
+                  uid=2_37 StaticText "Error : 指定されたIDのお知らせは見つかりませんでした"
+                    uid=2_5 InlineTextBox "Error : 指定されたIDのお知らせは見つかりませんでした"
+              uid=2_38 row
+                uid=2_39 cell
+          uid=2_40 LineBreak "
+"
+            uid=2_5 InlineTextBox "
+"

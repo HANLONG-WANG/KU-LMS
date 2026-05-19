@@ -32,24 +32,24 @@ function bindInteractiveHandlers(root, route, view) {
       rerender();
     }));
     root.querySelectorAll('[data-action="message-select"]').forEach((checkbox) => checkbox.addEventListener('change', (event) => {
+      const selection = getMessageSelection(view);
       const id = event.target.dataset.id;
-      if (event.target.checked) state.messageSelection.add(id); else state.messageSelection.delete(id);
+      if (event.target.checked) selection.add(id); else selection.delete(id);
       syncNativeMessageSelection(view);
       rerender();
     }));
     root.querySelectorAll('[data-action="message-select-all"]').forEach((checkbox) => checkbox.addEventListener('change', (event) => {
+      const selection = getMessageSelection(view);
       const checked = event.target.checked;
       if (checked) {
-        view.rows.forEach((row) => state.messageSelection.add(row.id));
+        view.rows.forEach((row) => selection.add(row.id));
       } else {
-        state.messageSelection.clear();
+        selection.clear();
       }
       syncNativeMessageSelection(view);
       rerender();
     }));
-    root.querySelectorAll('[data-action="message-delete"]').forEach((button) => button.addEventListener('click', () => triggerNativeMessageAction('COMFIRM_SELECTED', view)));
-    root.querySelectorAll('[data-action="message-read"]').forEach((button) => button.addEventListener('click', () => triggerNativeMessageAction('UNSET_UNREADFLAG', view)));
-    root.querySelectorAll('[data-action="message-download"]').forEach((button) => button.addEventListener('click', () => triggerNativeMessageAction('downloadmsg', view)));
+    root.querySelectorAll('[data-action="message-native-action"]').forEach((button) => button.addEventListener('click', () => triggerNativeMessageAction(button.dataset.nativeActionName, view)));
     root.querySelectorAll('[data-message-js]').forEach((anchor) => anchor.addEventListener('click', (event) => {
       event.preventDefault();
       executeMessageHref(anchor.dataset.messageJs, view);
@@ -71,7 +71,7 @@ function triggerNativeMessageAction(name, view) {
     if (!form) return;
     const button = form.querySelector(`[name="${name}"]`);
     if (!button) return;
-    if (!state.messageSelection.size) {
+    if (!getMessageSelection(view).size) {
       window.alert('メッセージを選択してください');
       return;
     }
@@ -105,9 +105,10 @@ function submitHomeFilters(year, semester) {
 
 function syncNativeMessageSelection(view) {
     if (!view.form) return;
+    const selection = getMessageSelection(view);
     view.rows.forEach((row) => {
       const input = view.form.elements[row.inputName];
-      if (input) input.checked = state.messageSelection.has(row.id);
+      if (input) input.checked = selection.has(row.id);
     });
     const master = view.form.elements.autochecker;
     if (master) master.checked = allSelected(view.rows);

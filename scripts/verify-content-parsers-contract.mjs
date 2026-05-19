@@ -3,7 +3,7 @@ import { readKulmsSource, extractFunction, assert } from './lib/content-source.m
 const source = readKulmsSource();
 const required = [
   'parseLoginView', 'parseLogoutView', 'parseHomeFilters', 'parseSchedule', 'parseHomeAnnouncements',
-  'parseCourseMeta', 'parseCourseDocument', 'parseUpcomingFromCourse', 'parseMyReports', 'parseNotificationsList',
+  'parseCourseMeta', 'parseCourseDocument', 'parseUpcomingFromCourse', 'parseMyReports', 'parseNotificationsList', 'parseNotificationDetail',
   'parseMessagesTable', 'parseMessagePreview', 'parseManualSections', 'parseTopLinks', 'parseUserName', 'parseLanguage'
 ];
 for (const name of required) {
