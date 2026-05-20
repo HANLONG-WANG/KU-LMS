@@ -17,6 +17,8 @@ assert(!enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements('), 'Home
 
 const renderHomeSource = extractFunction(source, 'renderHome');
 assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Home due card should expose an explicit refresh action.');
+assert(renderHomeSource.includes('loadDisplayUpcomingFromOtherCourses('), 'Home render should use a display-only other-course cache path.');
+assert(renderHomeSource.includes('同一タブキャッシュ'), 'Home render should explain that other-course hints depend on same-tab cache availability.');
 assert(extractFunction(source, 'parseSchedule').includes('const period = `${rowIndex + 1}限`;'), 'Schedule parsing should derive canonical period keys from row order.');
 assert(extractFunction(source, 'isDueFlagNote').includes("normalized === '締切が近い課題があります。'"), 'Due-flag detection should only key off the explicit native red-flag note.');
 
@@ -24,6 +26,10 @@ const loadUpcomingSource = extractFunction(source, 'loadUpcomingFromDueCourses')
 assert(loadUpcomingSource.includes('loadUpcomingFromCourseCache('), 'Home upcoming should be sourced from the same-tab course cache.');
 assert(!loadUpcomingSource.includes('loadUpcomingFromDueCoursesViaBackground('), 'Home upcoming must not call background course fetches.');
 assert(!loadUpcomingSource.includes('requestBackgroundUpcomingCourseFetch('), 'Home upcoming must not call the removed worker bridge.');
+const displayUpcomingSource = extractFunction(source, 'loadDisplayUpcomingFromOtherCourses');
+assert(displayUpcomingSource.includes('loadDisplayUpcomingFromCourses('), 'Other-course display hints should flow through a dedicated display-only helper.');
+assert(!displayUpcomingSource.includes('isDueFlagNote('), 'Other-course display hints must not inherit red-flag-only refresh targeting.');
+assert(!displayUpcomingSource.includes('getRefreshEntries('), 'Other-course display hints must remain separate from refresh targeting.');
 
 assert(entrypointDoc.includes('prd-ku-lms-home-safe-refresh-deadlines.md'), 'AI docs entrypoint should point to the active safe-refresh PRD.');
 assert(entrypointDoc.includes('test-spec-ku-lms-home-safe-refresh-deadlines.md'), 'AI docs entrypoint should point to the active safe-refresh test spec.');
@@ -44,14 +50,40 @@ const sandbox = {
   },
   absoluteUrl: (value = '') => value,
   canonicalizeCourseMaterialsHref: (value = '') => value,
-  state: { messageSelection: new Set() }
+  state: {
+    messageSelection: new Set(),
+    homeSearch: '',
+    currentContext: {
+      links: {
+        courses: '/webclass/course/list',
+        notifications: '/webclass/information.php/',
+        messages: '/webclass/msg_editor.php?msgappmode=inbox'
+      }
+    }
+  },
+  filterOtherCourses(groups = []) { return groups; },
+  normalizeHomeAnnouncementItems(items = []) { return items; },
+  renderPanelList(items = []) { return JSON.stringify(items); },
+  materialTypeTone() { return 'neutral'; },
+  escapeHtml(value = '') { return String(value); },
+  escapeAttr(value = '') { return String(value); },
+  buildUpcomingSubtitle(item = {}) { return item.courseTitle || ''; },
+  formatDate(date) { return date instanceof Date ? `DATE:${date.toISOString().slice(0, 10)}` : '—'; },
+  truncate(value = '') { return String(value); },
+  icon() { return ''; },
+  renderWeekLabel() { return '2026/05/18 〜 05/24'; },
+  renderSchedule() { return '<div>schedule</div>'; },
+  renderSyllabusChip() { return ''; },
+  readHomeRefreshState() { return null; },
+  isHomeRefreshActive() { return false; }
 };
 vm.createContext(sandbox);
 for (const name of [
   'extractCourseId', 'buildCourseCacheKey', 'isDueFlagNote', 'parseAvailabilityRange', 'isUpcomingDueSoonUnused',
   'readCourseUpcomingCache', 'writeCourseUpcomingCache', 'serializeCourseUpcomingItem', 'pruneUpcomingItems',
   'hydrateCourseUpcomingItem', 'areUpcomingCacheEntriesEqual', 'shortenCourseTitle', 'rememberCourseUpcoming',
-  'loadUpcomingFromCourseCache', 'getRefreshEntries'
+  'loadUpcomingFromCourseCache', 'loadDisplayUpcomingFromCourses', 'loadDisplayUpcomingFromOtherCourses',
+  'mergeUpcomingSources', 'buildUpcomingIdentityKey', 'upcomingPriorityRank', 'compareUpcomingItems', 'renderHome', 'getRefreshEntries'
 ]) {
   vm.runInContext(extractFunction(source, name), sandbox, { filename: 'kulms-source.js' });
 }
@@ -88,6 +120,33 @@ sandbox.rememberCourseUpcoming(scheduleEntry.href, [{ title: '利用済みのみ
 const refreshAfterUsedOnly = sandbox.getRefreshEntries([scheduleEntry]);
 assert(refreshAfterUsedOnly.length === 1, 'Red-flag courses whose cache prunes to empty should remain refresh-targetable.');
 
-const report = { ok: true, checks: ['home-enrich-retired-worker-fetch-path', 'home-upcoming-cache-first', 'refresh-button-exposed-on-home-card', 'due-flag-contract-explicit-redflag-only', 'cache-pruning-persists-valid-items-only', 'refresh-targets-all-redflag-courses-for-live-latest-data', 'docs-point-to-safe-refresh-phase'] };
+const otherCourseEntry = { href: '/webclass/course.php/99112233/?acs_=456', title: '情報社会学 (2026-春学期-火曜日-3限-11223)', meta: '火曜3限' };
+sandbox.rememberCourseUpcoming(otherCourseEntry.href, [
+  { title: '他コース課題', type: '課題', availability: activeAvailability, dueDate: new Date(now + 2 * 86_400_000), href: '/detail-other', detailHref: '/detail-other', historyHref: '', usageText: '', usageCount: 0, hasUsage: false, usageKnown: true, courseHref: otherCourseEntry.href, courseTitle: '情報社会学', courseNote: '', hasCourseDueFlag: false, scheduleIndex: Number.MAX_SAFE_INTEGER }
+]);
+const otherCourseHints = sandbox.loadDisplayUpcomingFromOtherCourses([{ title: 'その他', items: [otherCourseEntry] }], [scheduleEntry]);
+assert(otherCourseHints.length === 1, 'Display-only other-course hint loader should surface cache-backed items from other courses.');
+assert(otherCourseHints[0].title === '他コース課題', 'Display-only other-course hint loader should preserve cached item identity.');
+
+const renderedHome = sandbox.renderHome({
+  upcoming: { loading: false, items: prunedUpcoming.map((item) => ({ ...item, daysLeft: 1 })) },
+  announcements: { loading: false, items: [] },
+  homeNotices: [],
+  messages: { loading: false, items: [], total: 0 },
+  filters: {
+    yearOptions: [{ value: '2026', label: '2026', selected: true }],
+    semesterOptions: [{ value: '1', label: '春学期', selected: true }],
+    label: '2026 春学期',
+    year: '2026',
+    semester: '1'
+  },
+  week: [{ date: new Date(now), monthDay: '5/19' }],
+  schedule: { entries: [scheduleEntry] },
+  otherCourses: [{ title: 'その他', items: [otherCourseEntry] }]
+});
+assert(renderedHome.includes('他コース課題'), 'Rendered home should include cache-backed other-course items in the upcoming card and/or hint rows.');
+assert(renderedHome.includes('同一タブキャッシュ'), 'Rendered home should document that missing other-course hints reflect cache availability, not guaranteed deadline absence.');
+
+const report = { ok: true, checks: ['home-enrich-retired-worker-fetch-path', 'home-upcoming-cache-first', 'home-display-only-other-course-hints-separated-from-refresh-targeting', 'refresh-button-exposed-on-home-card', 'due-flag-contract-explicit-redflag-only', 'cache-pruning-persists-valid-items-only', 'refresh-targets-all-redflag-courses-for-live-latest-data', 'other-course-cache-hints-render-with-cache-availability-copy', 'docs-point-to-safe-refresh-phase'] };
 writeArtifact('.omx/artifacts/home-upcoming-session-safety', 'verification-report.json', report);
 console.log(JSON.stringify(report));

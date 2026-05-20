@@ -12,6 +12,7 @@ function renderMessages(view) {
     });
     const gridTemplate = messageGridTemplate(view.columns || [], view);
     const isOutbox = view.folder === 'outbox';
+    const layout = isOutbox ? 'outbox-ledger' : view.folder === 'recyclebox' ? 'recyclebox-grid' : 'inbox-grid';
     return `
       <div class="ku-sidebar-shell">
         ${renderSidebar(`messages-${view.folder}`)}
@@ -27,7 +28,7 @@ function renderMessages(view) {
               <div class="ku-pagination">${renderMessagePagination(view.pagination)}</div>
             </div>
           </div>
-          <div class="ku-message-table ${isOutbox ? 'ku-message-table-outbox' : ''}" data-message-layout="${isOutbox ? 'outbox-ledger' : 'grid'}">
+          <div class="ku-message-table ${isOutbox ? 'ku-message-table-outbox' : ''}" data-message-layout="${layout}">
             <div class="ku-message-head ${isOutbox ? 'ku-message-head-outbox' : ''}" style="grid-template-columns:${escapeAttr(gridTemplate)}">${view.columns.map((column) => renderMessageHeaderCell(column, filteredRows, view)).join('')}</div>
             ${filteredRows.length ? filteredRows.map((row) => `<div class="ku-message-row ${isOutbox ? 'ku-message-row-outbox' : ''}" style="grid-template-columns:${escapeAttr(gridTemplate)}">${row.cells.map((cell) => renderMessageBodyCell(cell, row, selection, view)).join('')}</div>`).join('') : `<div class="ku-empty">表示できるメッセージがありません。</div>`}
           </div>
@@ -54,11 +55,38 @@ function renderMessageBodyCell(cell, row, selection, view) {
     if (view?.folder === 'outbox') {
       return renderOutboxMessageBodyCell(cell);
     }
-    const text = cell.text || (cell.key === 'attachments' ? '—' : '');
-    if (cell.href) {
-      return `<div class="ku-message-cell ku-message-cell-${cell.key}"><a class="ku-table-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(text, cell.key === 'subject' ? 96 : 78))}</a></div>`;
+    return renderStandardMessageBodyCell(cell, row, view);
+  }
+
+function renderStandardMessageBodyCell(cell, row, view) {
+    const text = cell.text || '';
+    const rowMeta = getMessageRowMeta(row);
+    if (cell.key === 'subject') {
+      const subject = text || row.subject || '—';
+      const subjectHtml = cell.href
+        ? `<a class="ku-table-link ku-message-subject-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(subject, 120))}</a>`
+        : escapeHtml(truncate(subject, 120));
+      const secondary = rowMeta.length ? `<div class="ku-mini-meta">${rowMeta.map((item) => escapeHtml(item)).join(' · ')}</div>` : '';
+      return `<div class="ku-message-cell ku-message-cell-subject ku-message-cell-subject-primary">${subjectHtml}${secondary}</div>`;
     }
-    return `<div class="ku-message-cell ku-message-cell-${cell.key}">${escapeHtml(text || '—')}</div>`;
+    if (cell.key === 'attachments') {
+      return `<div class="ku-message-cell ku-message-cell-attachments">${text ? `<span class="ku-chip neutral ku-message-attachment-chip">${escapeHtml(truncate(text, 28))}</span>` : `<span class="ku-mini-meta">なし</span>`}</div>`;
+    }
+    if (cell.key === 'date') {
+      const parts = splitMessageDateTime(text);
+      return `<div class="ku-message-cell ku-message-cell-date ku-message-date-stack"><strong>${escapeHtml(parts.date)}</strong>${parts.time ? `<span class="ku-mini-meta">${escapeHtml(parts.time)}</span>` : ''}</div>`;
+    }
+    if (cell.key === 'sender' || cell.key === 'recipient') {
+      return `<div class="ku-message-cell ku-message-cell-${cell.key}"><strong>${escapeHtml(text || '—')}</strong></div>`;
+    }
+    if (cell.key === 'userId') {
+      return `<div class="ku-message-cell ku-message-cell-${cell.key}"><span class="ku-mini-meta">${escapeHtml(text || '—')}</span></div>`;
+    }
+    const fallbackText = cell.text || (cell.key === 'attachments' ? '—' : '');
+    if (cell.href) {
+      return `<div class="ku-message-cell ku-message-cell-${cell.key}"><a class="ku-table-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(fallbackText, cell.key === 'subject' ? 96 : 78))}</a></div>`;
+    }
+    return `<div class="ku-message-cell ku-message-cell-${cell.key}">${escapeHtml(fallbackText || '—')}</div>`;
   }
 
 function renderOutboxMessageBodyCell(cell) {
@@ -112,9 +140,26 @@ function splitMessageDateTime(text = '') {
     };
   }
 
+function getMessageRowMeta(row) {
+    const sender = findMessageRowCellText(row, 'sender');
+    const userId = findMessageRowCellText(row, 'userId');
+    const recipient = findMessageRowCellText(row, 'recipient');
+    const date = findMessageRowCellText(row, 'date');
+    const meta = [];
+    if (sender) meta.push(sender);
+    if (userId) meta.push(userId);
+    if (recipient && recipient !== sender) meta.push(`宛先 ${recipient}`);
+    if (date) meta.push(date);
+    return meta;
+  }
+
+function findMessageRowCellText(row, key) {
+    return cleanText(row?.cells?.find((cell) => cell.key === key)?.text || '');
+  }
+
 function renderMessageDetail(view) {
     const tone = view.folder === 'outbox' ? 'blue' : view.folder === 'recyclebox' ? 'orange' : 'green';
-    const metadata = view.metadata || [];
+    const metadata = (view.metadata || []).filter((item) => item.key !== 'subject');
     return `
       <div class="ku-sidebar-shell">
         ${renderSidebar(`messages-${view.folder}`)}
@@ -133,6 +178,7 @@ function renderMessageDetail(view) {
                 ${view.folderHref ? `<a class="ku-button" href="${escapeAttr(view.folderHref)}">${escapeHtml(view.folder === 'outbox' ? '送信済箱へ戻る' : view.folder === 'recyclebox' ? 'ゴミ箱へ戻る' : '受信箱へ戻る')}</a>` : ''}
               </div>
               <h2 class="ku-notice-article-title">${escapeHtml(view.headline || view.title || 'メッセージ')}</h2>
+              ${view.excerpt ? `<p class="ku-page-subtitle">${escapeHtml(view.excerpt)}</p>` : ''}
               <div class="ku-message-detail-toolbar">
                 ${view.downloadHref ? `<a class="ku-button" href="${escapeAttr(view.downloadHref)}">ダウンロード</a>` : ''}
                 ${view.replyHref ? `<a class="ku-button" href="${escapeAttr(view.replyHref)}">返事を書く</a>` : ''}

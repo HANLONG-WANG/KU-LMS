@@ -37,6 +37,10 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - On notice detail routes, treat the current detail page DOM as the authoritative source for metadata, body content, and prev/list/next navigation; preserve native author/list/detail links.
 - On message folder routes (`inbox`, `outbox`, `recyclebox`), treat the current page form, native submit button names, folder links, sort links, pagination links, and checkbox names as the authoritative action contract; do not synthesize folder semantics.
 - On message detail routes (`msg_viewer.php`), treat the current detail DOM as the authoritative source for mode label, navigation controls, forward/download/reply actions, metadata fields, and message body; preserve native action links/forms and infer folder context from the page content rather than the URL alone.
+- Message detail rendering is subject-first: the native `件名` is the primary title, body-derived copy is secondary only, and the secondary metadata grid must not repeat the subject once the hero already expresses it.
+- Message navigation distinguishes a stable global inbox destination for topbar/home IA from a same-tab contextual inbox destination used only for supported course-originated message flows.
+- That contextual message destination is same-tab-scoped runtime state; it may survive supported `course -> msg_editor.php -> msg_viewer.php` flows, but it must reset on global surfaces and direct-open/global message entry so course context does not bleed.
+- Observed `mbl.php` / mobile message routes are non-canonical for redesigned message navigation and must never become the authoritative source of contextual message state.
 - Bare relative KU-LMS PHP links (for example `msg_editor.php?...`) should normalize back under `/webclass/` so message-detail return/navigation links do not escape the supported route tree.
 - Reuse native links and same-origin endpoints for counts/actions where needed.
 - Prefer session-safe same-origin `fetch()` for supplemental documents instead of hidden iframe course preloads.
@@ -44,6 +48,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Homepage announcements enrichment fetches `/webclass/information.php/`, parses notification rows across pagination, and uses that full feed for the visible `最新のお知らせ` panel.
 - The concrete `期限が近い課題` card now focuses on timetable courses already marked with `締切が近い課題があります`.
 - Homepage automatic near-deadline rendering is now cache-first: it reads same-tab course cache only and does not fetch course login/material pages during automatic homepage enrichment.
+- Homepage `その他のコース` deadline hints and card inclusion are display-only same-tab-cache-backed extensions on top of that cache-first model.
+- Those display-only hints must stay separate from refresh targeting; refresh targeting remains red-flag-only even when display coverage grows.
 - Same-tab session cache is the authoritative homepage source for course-specific near-deadline details; explicit course visits update that cache automatically.
 - Homepage cached course items are shown only when they are still inside their `利用可能期間`, have no `利用回数`, and their due date is within 7 days.
 - Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh must actually re-fetch the latest data for currently red-flagged timetable courses through top-level same-tab navigation, using the native course-entry URLs rather than hidden content-script or service-worker fetches.

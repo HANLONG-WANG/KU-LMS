@@ -84,7 +84,8 @@ function parseMessageDetail(doc) {
     const folderTitle = folder === 'outbox' ? '送信済箱' : folder === 'recyclebox' ? 'ゴミ箱' : '受信箱';
     const folderHref = folders.find((item) => item.title.includes(folderTitle))?.href || '';
     const title = subjectMeta?.text || cleanText((doc.title || '').replace(/\s*-\s*メッセージ\s*$/, ''));
-    const headline = deriveMessageDetailHeadline(bodyCell, title);
+    const headline = deriveMessageDetailHeadline(title);
+    const excerpt = deriveMessageDetailExcerpt(bodyCell, title);
     return {
       kind: 'detail',
       folder,
@@ -95,6 +96,7 @@ function parseMessageDetail(doc) {
       pageTitle: 'メッセージ詳細',
       title,
       headline,
+      excerpt,
       subtitle: courseMeta?.text || dateMeta?.text || '',
       navigation: {
         prev: pagerItems.find((item) => item.text.includes('前へ')) || null,
@@ -173,15 +175,20 @@ function getMessageDetailMetaKey(label = '') {
     return label;
   }
 
-function deriveMessageDetailHeadline(bodyCell, fallbackTitle = '') {
+function deriveMessageDetailHeadline(subject = '') {
+    return cleanText(subject);
+  }
+
+function deriveMessageDetailExcerpt(bodyCell, subject = '') {
+    const title = cleanText(subject);
+    const subjectLead = cleanText(title.split('[')[0]);
     const lines = String(bodyCell?.textContent || '')
       .split(/\n+/)
       .map((line) => cleanText(line))
-      .filter(Boolean);
-    const preferred = lines.find((line) => !/^(提出日|提出者|コース\s*名|課題名|設問番号|提出ファイル名)\s*:/.test(line));
-    if (preferred) return preferred;
-    const subjectLead = cleanText(String(fallbackTitle || '').split('[')[0]);
-    return subjectLead || fallbackTitle;
+      .filter(Boolean)
+      .filter((line) => !/^(提出日|提出者|コース\s*名|課題名|設問番号|提出ファイル名)\s*:/.test(line));
+    const preferred = lines.find((line) => line !== title && line !== subjectLead);
+    return preferred || '';
   }
 
 function parseMessageColumns(table) {

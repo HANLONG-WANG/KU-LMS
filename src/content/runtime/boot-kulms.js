@@ -131,13 +131,85 @@ function syncBootRefreshOverlay() {
 
 async function collectContext(route) {
     const current = document;
-    const links = parseTopLinks(current);
+    const links = parseTopLinks(current, route);
+    const messageContext = resolveMessageContext(route, links, current);
+    links.globalInboxHref = messageContext.globalInboxHref;
+    links.contextualInboxHref = messageContext.contextualInboxHref;
+    links.contextSourceRoute = messageContext.contextSourceRoute;
+    links.canonicalMessageHref = messageContext.canonicalMessageHref;
+    links.observedMobileMessageHref = messageContext.observedMobileMessageHref;
+    links.messages = messageContext.globalInboxHref;
     return {
       userName: route.name === 'login' || route.name === 'logout' ? '' : (parseUserName(current) || 'ユーザー'),
       language: route.name === 'login' ? parseLoginLanguageLabel(current) : (parseLanguage(current) || '日本語'),
       links,
+      messageContext,
       homeDoc: current
     };
+  }
+
+function resolveMessageContext(route, links, doc) {
+    const globalInboxHref = normalizeInboxHref(links.globalInboxHref || links.messages, getDefaultGlobalInboxHref()) || getDefaultGlobalInboxHref();
+    const contextualInboxHref = normalizeInboxHref(links.contextualInboxHref);
+    const observedMobileMessageHref = isObservedMobileMessageHref(links.observedMobileMessageHref) ? links.observedMobileMessageHref : '';
+    if (isSupportedMessageContextSourceRoute(route?.name) && contextualInboxHref) {
+      return setActiveMessageContext({
+        globalInboxHref,
+        contextualInboxHref,
+        contextSourceRoute: route.name,
+        canonicalMessageHref: contextualInboxHref,
+        observedMobileMessageHref
+      });
+    }
+    if (isGlobalMessageResetRoute(route?.name)) {
+      return resetActiveMessageContext(globalInboxHref);
+    }
+    if (!isMessageRouteName(route?.name)) {
+      return setActiveMessageContext({
+        globalInboxHref,
+        contextualInboxHref: '',
+        contextSourceRoute: '',
+        canonicalMessageHref: globalInboxHref,
+        observedMobileMessageHref
+      }, { persist: false });
+    }
+    return resolveMessageRouteContext(route, {
+      globalInboxHref,
+      currentPageInboxHref: links.currentPageInboxHref,
+      observedMobileMessageHref
+    }, doc);
+  }
+
+function resolveMessageRouteContext(route, linkState, doc) {
+    const globalInboxHref = normalizeInboxHref(linkState?.globalInboxHref, getDefaultGlobalInboxHref()) || getDefaultGlobalInboxHref();
+    const currentPageInboxHref = normalizeInboxHref(linkState?.currentPageInboxHref, globalInboxHref) || globalInboxHref;
+    const observedMobileMessageHref = linkState?.observedMobileMessageHref || '';
+    const persisted = readPersistedMessageContext();
+    const hasPersistedContext = !!(persisted?.contextualInboxHref && persisted?.contextSourceRoute);
+    const referrerRoute = detectRouteFromHref(doc?.referrer || '');
+    const cameFromSupportedFlow = isSupportedMessageContextSourceRoute(referrerRoute.name) || isMessageRouteName(referrerRoute.name);
+    const currentHref = normalizeMessageUrlForComparison(window.location.href);
+    const globalHref = normalizeMessageUrlForComparison(globalInboxHref);
+    const currentMatchesPersistedContext = hasPersistedContext && areMessageHrefsEqual(currentPageInboxHref, persisted.contextualInboxHref);
+    if (!hasPersistedContext) {
+      return resetActiveMessageContext(globalInboxHref);
+    }
+    if (route?.name === 'messages-inbox' && currentHref === globalHref && !currentMatchesPersistedContext) {
+      return resetActiveMessageContext(globalInboxHref);
+    }
+    if (route?.name === 'messages-inbox' && !cameFromSupportedFlow && !currentMatchesPersistedContext) {
+      return resetActiveMessageContext(globalInboxHref);
+    }
+    if (route?.name !== 'messages-inbox' && !cameFromSupportedFlow) {
+      return resetActiveMessageContext(globalInboxHref);
+    }
+    return setActiveMessageContext({
+      globalInboxHref,
+      contextualInboxHref: persisted.contextualInboxHref,
+      contextSourceRoute: persisted.contextSourceRoute,
+      canonicalMessageHref: persisted.contextualInboxHref || currentPageInboxHref || globalInboxHref,
+      observedMobileMessageHref: persisted.observedMobileMessageHref || observedMobileMessageHref
+    });
   }
 
 async function buildView(route, context) {

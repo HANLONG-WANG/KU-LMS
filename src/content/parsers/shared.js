@@ -1,15 +1,32 @@
 /* src/content/parsers/shared.js */
 
-function parseTopLinks(doc) {
+function parseTopLinks(doc, route = null) {
     const links = {};
     const all = Array.from(doc.querySelectorAll('a[href]'));
     const get = (matcher) => {
       const anchor = all.find((a) => matcher(a));
       return anchor ? absoluteUrl(anchor.getAttribute('href')) : '';
     };
+    const inboxLinks = all
+      .map((anchor) => absoluteUrl(anchor.getAttribute('href') || ''))
+      .filter((href) => isCanonicalInboxHref(href));
+    const contextualInboxCandidate = inboxLinks[0] || '';
+    const currentPageInboxHref = absoluteUrl(Array.from(doc.querySelectorAll('.navi a[href]'))
+      .find((a) => cleanText(a.textContent).includes('受信箱'))?.getAttribute('href') || '');
+    const observedMobileMessageHref = get((a) => isObservedMobileMessageHref(a.getAttribute('href') || ''));
+    const globalInboxHref = getDefaultGlobalInboxHref();
+    const contextualInboxHref = isSupportedMessageContextSourceRoute(route?.name)
+      ? (currentPageInboxHref || contextualInboxCandidate)
+      : '';
     links.home = absoluteUrl('/webclass/');
     links.courses = absoluteUrl('/webclass/');
-    links.messages = get((a) => (a.getAttribute('href') || '').includes('msg_editor.php?msgappmode=inbox')) || absoluteUrl('/webclass/msg_editor.php?msgappmode=inbox');
+    links.messages = globalInboxHref;
+    links.globalInboxHref = globalInboxHref;
+    links.contextualInboxHref = contextualInboxHref;
+    links.contextSourceRoute = contextualInboxHref ? route?.name || '' : '';
+    links.canonicalMessageHref = contextualInboxHref || globalInboxHref;
+    links.currentPageInboxHref = currentPageInboxHref || contextualInboxCandidate || globalInboxHref;
+    links.observedMobileMessageHref = observedMobileMessageHref;
     links.notifications = normalizeNotificationsUrl(get((a) => (a.getAttribute('href') || '').includes('information.php')) || absoluteUrl('/webclass/information.php/'));
     links.manual = normalizeManualUrl(
       get((a) => {

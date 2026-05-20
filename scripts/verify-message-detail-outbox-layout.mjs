@@ -5,9 +5,8 @@ import { read, readKulmsSource, assert, writeArtifact } from './lib/content-sour
 const source = readKulmsSource();
 const architecture = read('docs/ku-lms-extension-architecture.md');
 const designCode = read('docs/ku-lms-design-code.md');
-const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
-const prd = read('.omx/plans/prd-ku-lms-message-detail-outbox-layout.md');
-const testSpec = read('.omx/plans/test-spec-ku-lms-message-detail-outbox-layout.md');
+const prd = read('.omx/plans/prd-ku-lms-message-home-context-followups.md');
+const testSpec = read('.omx/plans/test-spec-ku-lms-message-home-context-followups.md');
 const fixtureManifest = JSON.parse(read('artifacts/fixtures/fixture-manifest.json'));
 
 const checks = [];
@@ -211,6 +210,7 @@ function createMessageDetailDoc(data) {
   const footCell = new StubNode({ text: '返事を書く', attrs: { class: 'messageFoot' }, single: { 'a[href]': footerReply } });
   const table = new StubNode({
     single: {
+      'td.MessageBody, td.messageBody': bodyCell,
       'td.MessageBody': bodyCell,
       'td.messageBody': bodyCell,
       'td.messageFoot': footCell
@@ -274,6 +274,8 @@ const outboxList = inspectFixture('artifacts/fixtures/messages-outbox.json', 'me
 const recycleboxList = inspectFixture('artifacts/fixtures/messages-recyclebox.json', 'messages');
 const inboxDetail = inspectFixture('artifacts/fixtures/messages-detail-inbox.json', 'message-detail');
 const outboxDetail = inspectFixture('artifacts/fixtures/messages-detail-outbox.json', 'message-detail');
+const subjectFirstInboxDetail = inspectFixture('artifacts/fixtures/messages-detail-subject-first-inbox.html', 'message-detail');
+const subjectFirstOutboxDetail = inspectFixture('artifacts/fixtures/messages-detail-subject-first-outbox.html', 'message-detail');
 
 record('route support includes message detail', () => {
   const runtime = createRuntime();
@@ -295,7 +297,9 @@ record('message detail parser detects inbox mode and actions', () => {
   assert(view.folder === 'inbox', 'Inbox detail folder detection failed.');
   assert(view.modeLabel.includes('受信メッセージ'), 'Inbox detail mode label missing.');
   assert(view.metadata.some((item) => item.key === 'subject'), 'Inbox detail subject missing.');
-  assert(view.headline.includes('レポートを受け取りました'), 'Inbox detail headline missing.');
+  assert(view.headline === view.title, 'Inbox detail headline should match the native subject.');
+  assert(view.headline.includes('レポートを受け取りました'), 'Inbox detail subject headline missing.');
+  assert(view.excerpt.includes('レポートを受け取りました'), 'Inbox detail excerpt should preserve useful body-derived context only as secondary copy.');
   assert(view.metadata.some((item) => item.key === 'sender'), 'Inbox detail sender missing.');
   assert(view.downloadHref.includes('msg_down.php'), 'Inbox detail download action missing.');
   assert(view.replyHref.includes('returnmsgid='), 'Inbox detail reply action missing.');
@@ -320,9 +324,27 @@ record('message detail renderer preserves metadata and native actions', () => {
   const html = runtime.renderMessages(view);
   assert(html.includes('メッセージ詳細'), 'Message detail render missing page title.');
   assert(html.includes('受信メッセージ'), 'Message detail render missing mode cue.');
-  assert(html.includes('レポートを受け取りました'), 'Message detail render missing corrected headline.');
+  assert(html.includes('レポートを受け取りました'), 'Message detail render missing subject headline.');
+  assert(!html.includes('<span>件名</span>'), 'Message detail render should not duplicate the subject inside metadata tiles.');
   assert(html.includes('ダウンロード') && html.includes('返事を書く'), 'Message detail render missing native action links.');
   assert(html.includes('メッセージ本文と関連メタデータを確認できます。') || html.includes('言語学'), 'Message detail render missing supporting structure.');
+});
+
+record('subject-first regression fixtures prefer native subject over body-first copy', () => {
+  const runtime = createRuntime();
+  const inboxView = runtime.parseMessageDetail(createMessageDetailDoc(subjectFirstInboxDetail));
+  const outboxView = runtime.parseMessageDetail(createMessageDetailDoc(subjectFirstOutboxDetail));
+  assert(inboxView.headline === '本日の休講の確認', 'Inbox regression headline should use the native subject.');
+  assert(inboxView.excerpt === '皆様', 'Inbox regression excerpt should demote body-derived copy instead of leading with it.');
+  assert(outboxView.headline === '授業資料の更新について', 'Outbox regression headline should use the native subject.');
+  assert(outboxView.excerpt === '言語学の補足資料を共有します。', 'Outbox regression excerpt should keep body copy secondary.');
+  runtime.state.currentView = inboxView;
+  runtime.state.currentRoute = { name: 'messages-detail' };
+  runtime.state.currentContext = { links: { messages: '/webclass/msg_editor.php?msgappmode=inbox', notifications: '/webclass/information.php/', manual: '/webclass/user.php/manual', home: '/webclass/', courses: '/webclass/', logout: '/webclass/logout.php' }, language: '日本語', userName: 'レビュー' };
+  const inboxHtml = runtime.renderMessages(inboxView);
+  assert(inboxHtml.includes('本日の休講の確認'), 'Rendered inbox regression fixture should show the subject-first hero title.');
+  assert(inboxHtml.includes('皆様'), 'Rendered inbox regression fixture should still allow secondary body-derived copy.');
+  assert(!inboxHtml.includes('<span>件名</span>'), 'Rendered inbox regression fixture should remove duplicate subject metadata.');
 });
 
 record('outbox renderer uses ledger layout markers and preserves scan fields', () => {
@@ -339,6 +361,31 @@ record('outbox renderer uses ledger layout markers and preserves scan fields', (
   assert(html.includes('宛先') && html.includes('件名') && html.includes('添付ファイル') && html.includes('日付'), 'Outbox render lost truthful headers.');
 });
 
+record('inbox renderer improves scanability without changing native columns', () => {
+  const runtime = createRuntime();
+  const view = runtime.parseMessagesTable(createMessagesDoc(inboxList), 'messages-inbox');
+  runtime.state.currentView = view;
+  runtime.state.currentRoute = { name: 'messages-inbox' };
+  runtime.state.currentContext = { links: { messages: '/webclass/msg_editor.php?msgappmode=inbox', notifications: '/webclass/information.php/', manual: '/webclass/user.php/manual', home: '/webclass/', courses: '/webclass/', logout: '/webclass/logout.php' }, language: '日本語', userName: 'レビュー' };
+  const html = runtime.renderMessages(view);
+  assert(html.includes('data-message-layout="inbox-grid"'), 'Inbox layout marker missing.');
+  assert(html.includes('ku-message-subject-link'), 'Inbox subject emphasis marker missing.');
+  assert(html.includes('ku-message-date-stack'), 'Inbox date stack marker missing.');
+  assert(html.includes('ku-mini-meta'), 'Inbox scanability metadata marker missing.');
+});
+
+record('recyclebox renderer keeps native warning/actions with clearer layout marker', () => {
+  const runtime = createRuntime();
+  const view = runtime.parseMessagesTable(createMessagesDoc(recycleboxList), 'messages-recyclebox');
+  runtime.state.currentView = view;
+  runtime.state.currentRoute = { name: 'messages-recyclebox' };
+  runtime.state.currentContext = { links: { messages: '/webclass/msg_editor.php?msgappmode=inbox', notifications: '/webclass/information.php/', manual: '/webclass/user.php/manual', home: '/webclass/', courses: '/webclass/', logout: '/webclass/logout.php' }, language: '日本語', userName: 'レビュー' };
+  const html = runtime.renderMessages(view);
+  assert(html.includes('data-message-layout="recyclebox-grid"'), 'Recyclebox layout marker missing.');
+  assert(html.includes('ここでさらに削除したメッセージは、復元できなくなります。'), 'Recyclebox warning should be preserved.');
+  assert(view.actions.map((item) => item.name).join(',') === 'RETURN_SELECTED,COMFIRM_SELECTED,UNSET_UNREADFLAG,downloadmsg', 'Recyclebox actions regressed.');
+});
+
 record('existing inbox and recyclebox contracts still parse', () => {
   const runtime = createRuntime();
   const inboxView = runtime.parseMessagesTable(createMessagesDoc(inboxList), 'messages-inbox');
@@ -350,6 +397,8 @@ record('existing inbox and recyclebox contracts still parse', () => {
 
 record('durable docs and fixtures cover message detail phase', () => {
   const routes = new Set(fixtureManifest.routes.map((item) => item.route));
+  const prdLower = prd.toLowerCase();
+  const testSpecLower = testSpec.toLowerCase();
   for (const route of ['messages-detail-inbox', 'messages-detail-outbox', 'messages-outbox']) {
     assert(routes.has(route), `Fixture manifest missing route: ${route}`);
   }
@@ -357,14 +406,10 @@ record('durable docs and fixtures cover message detail phase', () => {
   assert(architecture.includes('infer folder context from the page content rather than the URL alone'), 'Architecture doc missing folder-authority contract.');
   assert(architecture.includes('Bare relative KU-LMS PHP links'), 'Architecture doc missing relative-PHP normalization note.');
   assert(designCode.includes('Messages detail page'), 'Design code missing message detail surface.');
-  assert(entrypoint.includes('.omx/plans/prd-ku-lms-message-detail-outbox-layout.md'), 'AI docs entrypoint missing message-detail PRD.');
-  assert(entrypoint.includes('.omx/plans/test-spec-ku-lms-message-detail-outbox-layout.md'), 'AI docs entrypoint missing message-detail test spec.');
-  assert(prd.includes('Message Detail + Sent Box Layout Refresh'), 'New PRD title/content missing.');
-  assert(prd.includes('authoritative subtype'), 'PRD missing detail subtype authority contract.');
-  assert(prd.includes('first meaningful body line'), 'PRD missing headline heuristic contract.');
-  assert(testSpec.includes('Message Detail + Sent Box Layout Refresh'), 'New test spec title/content missing.');
-  assert(testSpec.includes('authoritative subtype'), 'Test spec missing subtype authority coverage.');
-  assert(testSpec.includes('first meaningful body line'), 'Test spec missing headline heuristic coverage.');
+  assert(prdLower.includes('subject-first message hierarchy'), 'Follow-up PRD missing subject-first hierarchy contract.');
+  assert(prdLower.includes('remove the redundant subject metadata'), 'Follow-up PRD missing duplicate-subject removal contract.');
+  assert(testSpecLower.includes('subject is primary title/headline'), 'Follow-up test spec missing subject-first headline assertions.');
+  assert(testSpecLower.includes('duplicate subject metadata render is absent'), 'Follow-up test spec missing duplicate-subject render coverage.');
 });
 
 const report = { ok: true, checks };

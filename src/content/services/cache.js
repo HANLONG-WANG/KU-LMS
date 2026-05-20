@@ -4,6 +4,28 @@ async function loadUpcomingFromDueCourses(scheduleEntries, year = '') {
     return loadUpcomingFromCourseCache((scheduleEntries || []).filter((entry) => isDueFlagNote(entry.note) && entry.href));
   }
 
+function loadDisplayUpcomingFromCourses(courseEntries = []) {
+    return loadUpcomingFromCourseCache(courseEntries);
+  }
+
+function loadDisplayUpcomingFromOtherCourses(otherCourseGroups = [], scheduleEntries = []) {
+    const scheduledKeys = new Set((scheduleEntries || []).map((entry) => buildCourseCacheKey(entry?.href || '')).filter(Boolean));
+    const displayEntries = [];
+    (otherCourseGroups || []).forEach((group, groupIndex) => {
+      (group?.items || []).forEach((item, itemIndex) => {
+        const cacheKey = buildCourseCacheKey(item?.href || '');
+        if (!cacheKey || scheduledKeys.has(cacheKey)) return;
+        displayEntries.push({
+          href: item.href,
+          title: item.title || '',
+          note: '',
+          sortIndex: Number.MAX_SAFE_INTEGER - ((groupIndex * 1000) + itemIndex)
+        });
+      });
+    });
+    return loadDisplayUpcomingFromCourses(displayEntries);
+  }
+
 function loadUpcomingFromCourseCache(scheduleEntries) {
     const cache = readCourseUpcomingCache();
     let dirty = false;
@@ -98,7 +120,12 @@ function serializeCourseUpcomingItem(item) {
       usageText: item.usageText,
       usageCount: item.usageCount,
       hasUsage: item.hasUsage,
-      usageKnown: item.usageKnown
+      usageKnown: item.usageKnown,
+      courseHref: item.courseHref,
+      courseTitle: item.courseTitle,
+      courseNote: item.courseNote,
+      hasCourseDueFlag: item.hasCourseDueFlag,
+      scheduleIndex: item.scheduleIndex
     };
   }
 

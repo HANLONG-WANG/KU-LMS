@@ -97,7 +97,7 @@
   - My-reports = submission status surface
   - Notifications = system/course notice browsing surface
   - Notice detail = notice reading/detail surface
-  - Messages = inbox/work queue + sent/trash management surface
+- Messages = inbox/work queue + sent/trash management surface
 - Content hierarchy:
   - Level 1: page title / route identity
   - Level 2: route-specific navigation or filters
@@ -208,6 +208,7 @@
 ### Existing components to reuse
 - Top navigation shell
 - White rounded card container pattern
+- Message detail subject-first hero
 - Status chip pattern
 - Table/list row pattern
 - Course tab bar pattern
@@ -251,6 +252,14 @@
   - empty
   - disabled
   - error-safe fallback
+
+### Messages-specific hierarchy rules
+- Message detail pages are **subject-first**:
+  - the primary hero/title is the native `件名`
+  - body-derived copy may appear only as secondary excerpt/supporting copy
+  - the metadata grid must not repeat the subject as a separate tile/card once the hero already expresses it
+- Message folder lists must keep native column truth while making `件名` the strongest scan anchor and demoting low-value whitespace.
+- `その他のコース` may show compact deadline hints beneath the course title only when same-tab cached evidence exists; no hint must not visually imply that no deadline exists.
 
 ### Login-route guidance
 - The login route is intentionally lighter than authenticated routes.

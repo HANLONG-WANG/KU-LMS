@@ -60,12 +60,14 @@ src/content/
 
 ## Ownership rules
 - `runtime/state.js` owns shared mutable in-memory state (`state`, page lifecycle guards, cached DOM/form references).
+- `runtime/state.js` also owns the same-tab persisted message-context slot that separates global inbox routing from course-context inbox routing.
 - `runtime/boot-kulms.js` owns KU-LMS boot sequencing and the single rerender loop.
 - `runtime/boot-syllabus.js` owns syllabus-domain assist boot only.
 - `parsers/*` stay DOM-in / normalized-data-out and must remain side-effect free.
 - `render/*` stay string-generation only and must not perform I/O or storage writes.
 - `hydrate/*` may bind events and request rerenders, but should not own fetch/session-storage policy.
 - `services/refresh.js` is the only content-side owner of refresh sessionStorage state and refresh overlay synchronization.
+- `services/cache.js` may expose display-only cache helpers for homepage deadline hinting, but it must not absorb refresh-state ownership or widen refresh eligibility.
 - `services/syllabus.js` owns syllabus chip navigation, pending marker state, and assist-page auto-resolution.
 - `services/documents.js` and `services/timeline.js` own same-tab fetches and must preserve abortable request behavior.
 - `utils/core.js` owns pure cross-cutting helpers.

@@ -131,8 +131,11 @@ function renderUnsupported() {
 
 function resolveMessageFolderLinks() {
     const folderMap = Object.fromEntries((state.currentView?.folders || []).map((item) => [item.title, item.href]));
+    const messageContext = getActiveMessageContext();
+    const canonicalInboxHref = messageContext?.canonicalMessageHref || state.currentContext?.links?.canonicalMessageHref || state.currentContext?.links?.messages;
+    const globalInboxHref = messageContext?.globalInboxHref || state.currentContext?.links?.globalInboxHref || state.currentContext?.links?.messages;
     return {
-      inbox: folderMap['受信箱'] || state.currentContext.links.messages,
+      inbox: canonicalInboxHref || folderMap['受信箱'] || globalInboxHref,
       outbox: folderMap['送信済箱'] || absoluteUrl('/webclass/msg_editor.php?msgappmode=outbox'),
       recyclebox: folderMap['ゴミ箱'] || absoluteUrl('/webclass/msg_editor.php?msgappmode=recyclebox')
     };
