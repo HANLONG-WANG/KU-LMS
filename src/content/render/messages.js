@@ -60,14 +60,8 @@ function renderMessageBodyCell(cell, row, selection, view) {
 
 function renderStandardMessageBodyCell(cell, row, view) {
     const text = cell.text || '';
-    const rowMeta = getMessageRowMeta(row);
     if (cell.key === 'subject') {
-      const subject = normalizeMessageSubject(text || row.subject || '') || '—';
-      const subjectHtml = cell.href
-        ? `<a class="ku-table-link ku-message-subject-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(subject, 120))}</a>`
-        : escapeHtml(truncate(subject, 120));
-      const secondary = rowMeta.length ? `<div class="ku-mini-meta">${rowMeta.map((item) => escapeHtml(item)).join(' · ')}</div>` : '';
-      return `<div class="ku-message-cell ku-message-cell-subject ku-message-cell-subject-primary">${subjectHtml}${secondary}</div>`;
+      return `<div class="ku-message-cell ku-message-cell-subject ku-message-cell-subject-primary">${renderMessageSubjectDisplay(text || row.subject || '', cell.href, 120)}</div>`;
     }
     if (cell.key === 'attachments') {
       return `<div class="ku-message-cell ku-message-cell-attachments">${text ? `<span class="ku-chip neutral ku-message-attachment-chip">${escapeHtml(truncate(text, 28))}</span>` : `<span class="ku-mini-meta">なし</span>`}</div>`;
@@ -92,15 +86,15 @@ function renderStandardMessageBodyCell(cell, row, view) {
 function renderOutboxMessageBodyCell(cell) {
     const text = cell.text || '';
     if (cell.key === 'subject') {
-      const subject = normalizeMessageSubject(text);
-      return `<div class="ku-message-cell ku-message-cell-subject ku-message-cell-subject-primary">${cell.href ? `<a class="ku-table-link ku-message-subject-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(subject, 160))}</a>` : escapeHtml(truncate(subject, 160))}</div>`;
+      return `<div class="ku-message-cell ku-message-cell-subject ku-message-cell-subject-primary">${renderMessageSubjectDisplay(text, cell.href, 160)}</div>`;
     }
     if (cell.key === 'attachments') {
       return `<div class="ku-message-cell ku-message-cell-attachments">${text ? `<span class="ku-chip neutral ku-message-attachment-chip">${escapeHtml(truncate(text, 28))}</span>` : `<span class="ku-mini-meta">なし</span>`}</div>`;
     }
     if (cell.key === 'date') {
-      const parts = splitMessageDateTime(text);
-      return `<div class="ku-message-cell ku-message-cell-date ku-message-date-stack"><strong>${escapeHtml(parts.date)}</strong>${parts.time ? `<span class="ku-mini-meta">${escapeHtml(parts.time)}</span>` : ''}</div>`;
+      const normalized = cleanText(text) || '—';
+      const parts = splitMessageDateTime(normalized);
+      return `<div class="ku-message-cell ku-message-cell-date ku-message-cell-date-inline"><strong class="ku-message-date-inline-text">${escapeHtml(parts.date)}</strong>${parts.time ? `<span class="ku-message-date-inline-separator" aria-hidden="true">&#8203;</span><span class="ku-mini-meta ku-message-date-inline-time">${escapeHtml(parts.time)}</span>` : ''}</div>`;
     }
     if (cell.key === 'recipient') {
       return `<div class="ku-message-cell ku-message-cell-recipient"><strong>${escapeHtml(text || '—')}</strong></div>`;
@@ -158,6 +152,37 @@ function findMessageRowCellText(row, key) {
     return cleanText(row?.cells?.find((cell) => cell.key === key)?.text || '');
   }
 
+function splitMessageSubjectDisplay(subjectText = '') {
+    const normalized = cleanText(subjectText);
+    const receiptMatch = normalized.match(/^(レポートを受け取りました)\s*(\[[\s\S]*\])$/);
+    if (receiptMatch) {
+      return {
+        primary: receiptMatch[1],
+        inlineMeta: receiptMatch[2]
+      };
+    }
+    return {
+      primary: normalized,
+      inlineMeta: ''
+    };
+  }
+
+function renderMessageSubjectDisplay(subjectText = '', href = '', length = 120) {
+    const display = splitMessageSubjectDisplay(subjectText);
+    const primary = truncate(display.primary || '—', length);
+    const inlineMeta = display.inlineMeta ? truncate(display.inlineMeta, Math.max(length + 48, 160)) : '';
+    const content = inlineMeta
+      ? `<span class="ku-message-subject-main">${escapeHtml(primary)}</span><span class="ku-message-subject-inline-meta">${escapeHtml(inlineMeta)}</span>`
+      : escapeHtml(primary);
+    if (href) {
+      const receiptClass = inlineMeta ? ' ku-message-subject-link-receipt' : '';
+      return `<a class="ku-table-link ku-message-subject-link${receiptClass}" href="${escapeAttr(href)}">${content}</a>`;
+    }
+    return inlineMeta
+      ? `<span class="ku-message-subject-link ku-message-subject-link-receipt">${content}</span>`
+      : `<span class="ku-message-subject-link">${content}</span>`;
+  }
+
 function renderMessageDetail(view) {
     const tone = view.folder === 'outbox' ? 'blue' : view.folder === 'recyclebox' ? 'orange' : 'green';
     const metadata = (view.metadata || []).filter((item) => item.key !== 'subject');
@@ -174,17 +199,21 @@ function renderMessageDetail(view) {
           </div>
           <div class="ku-message-detail-shell">
             <section class="ku-message-detail-hero">
-              <div class="ku-inline">
-                <span class="ku-chip ${tone}">${escapeHtml(view.modeLabel || 'メッセージ')}</span>
-                ${view.folderHref ? `<a class="ku-button" href="${escapeAttr(view.folderHref)}">${escapeHtml(view.folder === 'outbox' ? '送信済箱へ戻る' : view.folder === 'recyclebox' ? 'ゴミ箱へ戻る' : '受信箱へ戻る')}</a>` : ''}
+              <div class="ku-message-detail-topline">
+                <div class="ku-inline">
+                  <span class="ku-chip ${tone}">${escapeHtml(view.modeLabel || 'メッセージ')}</span>
+                  ${view.folderHref ? `<a class="ku-button" href="${escapeAttr(view.folderHref)}">${escapeHtml(view.folder === 'outbox' ? '送信済箱へ戻る' : view.folder === 'recyclebox' ? 'ゴミ箱へ戻る' : '受信箱へ戻る')}</a>` : ''}
+                </div>
+                <div class="ku-message-detail-toolbar">
+                  ${view.downloadHref ? `<a class="ku-button" href="${escapeAttr(view.downloadHref)}">ダウンロード</a>` : ''}
+                  ${view.replyHref ? `<a class="ku-button" href="${escapeAttr(view.replyHref)}">返事を書く</a>` : ''}
+                  ${view.closeHref ? `<a class="ku-button" href="${escapeAttr(view.closeHref)}">このウィンドウを閉じる</a>` : ''}
+                </div>
               </div>
-              <h2 class="ku-notice-article-title">${escapeHtml(view.headline || view.title || 'メッセージ')}</h2>
-              ${view.excerpt ? `<p class="ku-page-subtitle">${escapeHtml(view.excerpt)}</p>` : ''}
-              <div class="ku-message-detail-toolbar">
-                ${view.downloadHref ? `<a class="ku-button" href="${escapeAttr(view.downloadHref)}">ダウンロード</a>` : ''}
-                ${view.replyHref ? `<a class="ku-button" href="${escapeAttr(view.replyHref)}">返事を書く</a>` : ''}
-                ${view.closeHref ? `<a class="ku-button" href="${escapeAttr(view.closeHref)}">このウィンドウを閉じる</a>` : ''}
-              </div>
+              ${(() => {
+                const subjectDisplay = splitMessageSubjectDisplay(view.headline || view.title || 'メッセージ');
+                return `<h2 class="ku-message-article-title"><span class="ku-message-headline-main">${escapeHtml(subjectDisplay.primary || 'メッセージ')}</span></h2>${subjectDisplay.inlineMeta ? `<div class="ku-message-headline-meta-block">${escapeHtml(subjectDisplay.inlineMeta)}</div>` : ''}${!subjectDisplay.inlineMeta && view.excerpt ? `<p class="ku-page-subtitle">${escapeHtml(view.excerpt)}</p>` : ''}`;
+              })()}
               ${view.forward ? `<div class="ku-message-forward">
                 <input class="ku-search ku-message-forward-input" data-action="message-detail-forward-input" type="email" value="" placeholder="${escapeAttr(view.forward.placeholder || 'メールアドレス')}">
                 <button class="ku-button" data-action="message-detail-forward">${escapeHtml(view.forward.buttonLabel || 'メールへ転送')}</button>

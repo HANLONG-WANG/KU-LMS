@@ -1254,7 +1254,8 @@ html[data-ku-redesign-state="ready"] body {
   gap: 14px;
 }
 
-.ku-notice-article-title {
+.ku-notice-article-title,
+.ku-message-article-title {
   margin: 0;
   font-size: 28px;
   line-height: 1.35;
@@ -1440,15 +1441,6 @@ html[data-ku-redesign-state="ready"] body {
   background: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
 }
 
-.ku-message-head-outbox .ku-message-header-label {
-  font-size: 13px;
-}
-
-.ku-message-table-outbox .ku-message-head > div,
-.ku-message-table-outbox .ku-message-row > div {
-  padding: 12px 14px;
-}
-
 .ku-message-table-outbox {
   overflow-x: auto;
   overflow-y: hidden;
@@ -1459,17 +1451,12 @@ html[data-ku-redesign-state="ready"] body {
   min-width: 780px;
 }
 
-.ku-message-row-outbox {
-  min-height: 84px;
-}
-
 .ku-message-row-outbox:hover {
   background: #fbfdff;
 }
 
 .ku-message-row-outbox .ku-message-cell-recipient strong {
   display: block;
-  font-size: 14px;
   line-height: 1.45;
   color: var(--ku-text);
 }
@@ -1477,8 +1464,6 @@ html[data-ku-redesign-state="ready"] body {
 .ku-message-cell-subject-primary {
   display: flex;
   align-items: flex-start;
-  flex-direction: column;
-  gap: 6px;
   min-width: 0;
 }
 
@@ -1492,10 +1477,73 @@ html[data-ku-redesign-state="ready"] body {
   line-height: 1.5;
 }
 
+.ku-message-subject-link-receipt {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ku-message-subject-main {
+  flex: 0 0 auto;
+}
+
+.ku-message-subject-inline-meta,
+.ku-message-headline-meta {
+  color: var(--ku-text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ku-message-subject-inline-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ku-message-headline-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ku-message-headline-meta-block {
+  color: var(--ku-text-soft);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .ku-message-row-outbox .ku-message-cell-attachments,
 .ku-message-row-outbox .ku-message-cell-date {
   display: flex;
   align-items: center;
+}
+
+.ku-message-cell-date-inline {
+  justify-content: flex-end;
+  align-items: baseline !important;
+  gap: 0;
+  text-align: right;
+}
+
+.ku-message-date-inline-text {
+  white-space: nowrap;
+}
+
+.ku-message-date-inline-separator {
+  width: 0;
+  overflow: hidden;
+}
+
+.ku-message-date-inline-time {
+  white-space: nowrap;
 }
 
 .ku-message-date-stack {
@@ -1530,6 +1578,14 @@ html[data-ku-redesign-state="ready"] body {
   gap: 16px;
 }
 
+.ku-message-detail-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .ku-message-detail-toolbar,
 .ku-message-forward,
 .ku-message-detail-footer {
@@ -1537,6 +1593,17 @@ html[data-ku-redesign-state="ready"] body {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.ku-message-article-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ku-message-headline-main {
+  flex: 0 0 auto;
 }
 
 .ku-message-forward-input {

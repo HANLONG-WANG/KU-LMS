@@ -11,42 +11,47 @@ const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
 const prd = read('.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md');
 const testSpec = read('.omx/plans/test-spec-ku-lms-message-pages-clarity-refresh.md');
 const fixtureManifest = JSON.parse(read('artifacts/fixtures/fixture-manifest.json'));
-const liveEvidence = {
-  inboxBefore: JSON.parse(read('artifacts/analysis/message-alignment-inbox-before.json')),
-  inboxAfter: JSON.parse(read('artifacts/analysis/message-alignment-inbox-after.json')),
-  outboxBefore: JSON.parse(read('artifacts/analysis/message-alignment-outbox-before.json')),
-  outboxAfter: JSON.parse(read('artifacts/analysis/message-alignment-outbox-after.json')),
-  recycleboxBefore: JSON.parse(read('artifacts/analysis/message-alignment-recyclebox-before.json')),
-  recycleboxAfter: JSON.parse(read('artifacts/analysis/message-alignment-recyclebox-after.json')),
-  inboxBeforeSnapshot: read('artifacts/analysis/live-messages-inbox-autopilot-before.snapshot.txt'),
-  inboxAfterSnapshot: read('artifacts/analysis/live-messages-inbox-autopilot-after.snapshot.txt'),
-  outboxAfterSnapshot: read('artifacts/analysis/live-messages-outbox-autopilot-after.snapshot.txt'),
-  detailAfterSnapshot: read('artifacts/analysis/live-message-viewer-autopilot-after.snapshot.txt')
-};
 const requiredEvidencePaths = [
-  'artifacts/analysis/live-messages-inbox-autopilot-before.png',
-  'artifacts/analysis/live-messages-inbox-autopilot-after.png',
-  'artifacts/analysis/live-messages-outbox-autopilot-before.png',
-  'artifacts/analysis/live-messages-outbox-autopilot-after.png',
-  'artifacts/analysis/live-messages-recyclebox-autopilot-before.png',
-  'artifacts/analysis/live-messages-recyclebox-autopilot-after.png',
-  'artifacts/analysis/live-message-viewer-autopilot-before.png',
-  'artifacts/analysis/live-message-viewer-autopilot-after.png',
-  'artifacts/analysis/live-messages-inbox-autopilot-before.snapshot.txt',
-  'artifacts/analysis/live-messages-inbox-autopilot-after.snapshot.txt',
-  'artifacts/analysis/live-messages-outbox-autopilot-before.snapshot.txt',
-  'artifacts/analysis/live-messages-outbox-autopilot-after.snapshot.txt',
-  'artifacts/analysis/live-messages-recyclebox-autopilot-before.snapshot.txt',
-  'artifacts/analysis/live-messages-recyclebox-autopilot-after.snapshot.txt',
-  'artifacts/analysis/live-message-viewer-autopilot-before.snapshot.txt',
-  'artifacts/analysis/live-message-viewer-autopilot-after.snapshot.txt',
-  'artifacts/analysis/message-alignment-inbox-before.json',
-  'artifacts/analysis/message-alignment-inbox-after.json',
-  'artifacts/analysis/message-alignment-outbox-before.json',
-  'artifacts/analysis/message-alignment-outbox-after.json',
-  'artifacts/analysis/message-alignment-recyclebox-before.json',
-  'artifacts/analysis/message-alignment-recyclebox-after.json'
+  'artifacts/analysis/live-messages-inbox-inline-meta-before.png',
+  'artifacts/analysis/live-messages-inbox-inline-meta-after.png',
+  'artifacts/analysis/live-messages-outbox-inline-meta-before.png',
+  'artifacts/analysis/live-messages-outbox-inline-meta-after.png',
+  'artifacts/analysis/live-messages-recyclebox-inline-meta-before.png',
+  'artifacts/analysis/live-messages-recyclebox-inline-meta-after.png',
+  'artifacts/analysis/live-message-viewer-inline-meta-before.png',
+  'artifacts/analysis/live-message-viewer-inline-meta-after.png',
+  'artifacts/analysis/live-messages-inbox-inline-meta-before.snapshot.txt',
+  'artifacts/analysis/live-messages-inbox-inline-meta-after.snapshot.txt',
+  'artifacts/analysis/live-messages-outbox-inline-meta-before.snapshot.txt',
+  'artifacts/analysis/live-messages-outbox-inline-meta-after.snapshot.txt',
+  'artifacts/analysis/live-messages-recyclebox-inline-meta-before.snapshot.txt',
+  'artifacts/analysis/live-messages-recyclebox-inline-meta-after.snapshot.txt',
+  'artifacts/analysis/live-message-viewer-inline-meta-before.snapshot.txt',
+  'artifacts/analysis/live-message-viewer-inline-meta-after.snapshot.txt',
+  'artifacts/analysis/message-inline-meta-inbox-before.json',
+  'artifacts/analysis/message-inline-meta-inbox-after.json',
+  'artifacts/analysis/message-inline-meta-outbox-before.json',
+  'artifacts/analysis/message-inline-meta-outbox-after.json',
+  'artifacts/analysis/message-inline-meta-inbox-before-dom.json',
+  'artifacts/analysis/message-inline-meta-inbox-after-dom.json',
+  'artifacts/analysis/message-inline-meta-outbox-before-dom.json',
+  'artifacts/analysis/message-inline-meta-outbox-after-dom.json',
+  'artifacts/analysis/message-inline-meta-detail-before-dom.json',
+  'artifacts/analysis/message-inline-meta-detail-after-dom.json'
 ];
+const hasCompleteLiveEvidence = requiredEvidencePaths.every((path) => existsSync(path));
+const liveEvidence = hasCompleteLiveEvidence ? {
+  inboxBeforeAlignment: JSON.parse(read('artifacts/analysis/message-inline-meta-inbox-before.json')),
+  inboxAfterAlignment: JSON.parse(read('artifacts/analysis/message-inline-meta-inbox-after.json')),
+  outboxBeforeAlignment: JSON.parse(read('artifacts/analysis/message-inline-meta-outbox-before.json')),
+  outboxAfterAlignment: JSON.parse(read('artifacts/analysis/message-inline-meta-outbox-after.json')),
+  inboxBeforeDom: JSON.parse(read('artifacts/analysis/message-inline-meta-inbox-before-dom.json')),
+  inboxAfterDom: JSON.parse(read('artifacts/analysis/message-inline-meta-inbox-after-dom.json')),
+  outboxBeforeDom: JSON.parse(read('artifacts/analysis/message-inline-meta-outbox-before-dom.json')),
+  outboxAfterDom: JSON.parse(read('artifacts/analysis/message-inline-meta-outbox-after-dom.json')),
+  detailBeforeDom: JSON.parse(read('artifacts/analysis/message-inline-meta-detail-before-dom.json')),
+  detailAfterDom: JSON.parse(read('artifacts/analysis/message-inline-meta-detail-after-dom.json'))
+} : null;
 
 const checks = [];
 const record = (name, fn) => { fn(); checks.push(name); };
@@ -355,6 +360,11 @@ function rowsAlignWithHeaders(evidence) {
   });
 }
 
+function hasInlineMeta(evidence = {}) {
+  if (typeof evidence.hasInlineMeta === 'boolean') return evidence.hasInlineMeta;
+  return String(evidence.subjectHtml || '').includes('ku-message-subject-inline-meta');
+}
+
 const inboxList = inspectFixture('artifacts/fixtures/messages-inbox.network-response', 'messages');
 const outboxList = inspectFixture('artifacts/fixtures/messages-outbox.json', 'messages');
 const recycleboxList = inspectFixture('artifacts/fixtures/messages-recyclebox.json', 'messages');
@@ -384,8 +394,7 @@ record('message detail parser detects inbox mode and actions', () => {
   assert(view.modeLabel.includes('受信メッセージ'), 'Inbox detail mode label missing.');
   assert(view.metadata.some((item) => item.key === 'subject'), 'Inbox detail subject missing.');
   assert(view.headline === view.title, 'Inbox detail headline should match the native subject.');
-  assert(view.title === 'レポートを受け取りました', 'Inbox detail should collapse receipt-style subjects to the concise display label.');
-  assert(!view.excerpt.includes('レポートを受け取りました ['), 'Inbox detail excerpt should not reintroduce the long bracket receipt payload.');
+  assert(view.title.includes('レポートを受け取りました ['), 'Inbox detail should preserve the native subject payload in parsed state.');
   assert(view.metadata.some((item) => item.key === 'sender'), 'Inbox detail sender missing.');
   assert(view.downloadHref.includes('msg_down.php'), 'Inbox detail download action missing.');
   assert(view.replyHref.includes('returnmsgid='), 'Inbox detail reply action missing.');
@@ -411,9 +420,11 @@ record('message detail renderer preserves metadata and native actions', () => {
   assert(html.includes('メッセージ詳細'), 'Message detail render missing page title.');
   assert(html.includes('受信メッセージ'), 'Message detail render missing mode cue.');
   assert(html.includes('レポートを受け取りました'), 'Message detail render missing subject headline.');
+  assert(html.includes('ku-message-headline-meta-block'), 'Message detail render missing the receipt metadata block under the title.');
   assert(!html.includes('<span>件名</span>'), 'Message detail render should not duplicate the subject inside metadata tiles.');
+  assert(!html.includes('王 漢隆 さんのレポートを受け取りました'), 'Message detail render should remove the hero subtitle/excerpt line.');
   assert(html.includes('ダウンロード') && html.includes('返事を書く'), 'Message detail render missing native action links.');
-  assert(html.includes('メッセージ本文と関連メタデータを確認できます。') || html.includes('言語学'), 'Message detail render missing supporting structure.');
+  assert(html.includes('ku-message-detail-topline'), 'Message detail render missing shared top-line action layout.');
 });
 
 record('subject-first regression fixtures prefer native subject over body-first copy', () => {
@@ -442,9 +453,10 @@ record('outbox renderer uses ledger layout markers and preserves scan fields', (
   const html = runtime.renderMessages(view);
   assert(view.columns.map((item) => item.key).join(',') === 'select,recipient,subject,attachments,date', 'Outbox list columns parsed incorrectly.');
   assert(html.includes('data-message-layout="outbox-ledger"'), 'Outbox ledger layout marker missing.');
-  assert(html.includes('ku-message-date-stack'), 'Outbox date stack marker missing.');
+  assert(html.includes('ku-message-date-inline-text'), 'Outbox one-line date marker missing.');
+  assert(html.includes('ku-message-date-inline-separator'), 'Outbox date renderer should include a zero-width separator between date and time.');
   assert(html.includes('ku-message-subject-link'), 'Outbox subject emphasis marker missing.');
-  assert(html.includes('>レポートを受け取りました</a>'), 'Outbox receipt subject should render as the concise display label.');
+  assert(html.includes('ku-message-subject-inline-meta'), 'Outbox receipt subject should render inline gray metadata.');
   assert(html.includes('宛先') && html.includes('件名') && html.includes('添付ファイル') && html.includes('日付'), 'Outbox render lost truthful headers.');
   assertRenderedSortLinks(runtime, view, 'outbox');
   assertRenderedRowParity(runtime, view, 'outbox');
@@ -460,8 +472,8 @@ record('inbox renderer improves scanability without changing native columns', ()
   assert(html.includes('data-message-layout="inbox-grid"'), 'Inbox layout marker missing.');
   assert(html.includes('ku-message-subject-link'), 'Inbox subject emphasis marker missing.');
   assert(html.includes('ku-message-date-stack'), 'Inbox date stack marker missing.');
-  assert(html.includes('ku-mini-meta'), 'Inbox scanability metadata marker missing.');
-  assert(html.includes('>レポートを受け取りました</a>'), 'Inbox receipt subject should render as the concise display label.');
+  assert(html.includes('ku-message-subject-inline-meta'), 'Inbox receipt subject should render inline gray metadata.');
+  assert(!html.includes('王 漢隆 (情25-0507) · 情25-0507 · 26/05/18 13:08'), 'Inbox subject should not render the old gray secondary metadata line.');
   assertRenderedSortLinks(runtime, view, 'inbox');
   assertRenderedRowParity(runtime, view, 'inbox');
 });
@@ -492,7 +504,9 @@ record('existing inbox and recyclebox contracts still parse', () => {
 record('css contract keeps rows on the same grid tracks as headers', () => {
   assert(/\.ku-message-head,\s*\.ku-message-row,\s*\.ku-table-row/.test(css), 'CSS should keep message rows in the shared grid layout selector.');
   assert(css.includes('.ku-message-row {\n  padding: 0;') || css.includes('.ku-message-row {\r\n  padding: 0;'), 'CSS should remove row-level padding drift from message rows.');
-  assert(css.includes('flex-direction: column;'), 'CSS should stack subject primary metadata vertically for scanability.');
+  assert(css.includes('.ku-message-subject-inline-meta'), 'CSS should style inline receipt metadata.');
+  assert(css.includes('.ku-message-detail-topline'), 'CSS should style the detail hero top-line action row.');
+  assert(css.includes('.ku-message-headline-meta-block'), 'CSS should style the detail receipt metadata block.');
 });
 
 record('durable docs and fixtures cover message clarity refresh phase', () => {
@@ -507,24 +521,42 @@ record('durable docs and fixtures cover message clarity refresh phase', () => {
   assert(architecture.includes('Bare relative KU-LMS PHP links'), 'Architecture doc missing relative-PHP normalization note.');
   assert(designCode.includes('Messages detail page'), 'Design code missing message detail surface.');
   assert(entrypoint.includes('.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md'), 'AI docs entrypoint should reference the message clarity refresh PRD.');
-  assert(prdLower.includes('row cells collapse to full-width blocks'), 'PRD missing grid-misalignment root-cause evidence.');
-  assert(prdLower.includes('receipt-style autogenerated subjects collapse'), 'PRD missing receipt-subject normalization contract.');
-  assert(testSpecLower.includes('receipt-style subject normalization'), 'Test spec missing receipt-subject normalization coverage.');
-  assert(testSpecLower.includes('no row-level horizontal padding'), 'Test spec missing header/body alignment coverage.');
+  assert(prdLower.includes('receipt') && prdLower.includes('detail hero'), 'PRD should document the receipt/detail-hero follow-up contract.');
+  assert(testSpecLower.includes('receipt') && testSpecLower.includes('detail hero'), 'Test spec should cover the receipt/detail-hero follow-up contract.');
 });
 
 record('required Chrome evidence artifacts exist and prove the live regression is fixed', () => {
   requiredEvidencePaths.forEach((path) => {
     assert(existsSync(path), `Missing required evidence artifact: ${path}`);
   });
-  assert(!rowsAlignWithHeaders(liveEvidence.inboxBefore), 'Inbox baseline evidence should still show header/body misalignment.');
-  assert(rowsAlignWithHeaders(liveEvidence.inboxAfter), 'Inbox after evidence should show header/body alignment.');
-  assert(!rowsAlignWithHeaders(liveEvidence.outboxBefore), 'Outbox baseline evidence should still show header/body misalignment.');
-  assert(rowsAlignWithHeaders(liveEvidence.outboxAfter), 'Outbox after evidence should show header/body alignment.');
-  assert(liveEvidence.inboxBeforeSnapshot.includes('link \"レポートを受け取りました ['), 'Inbox baseline snapshot should capture the long receipt-style subject.');
-  assert(liveEvidence.inboxAfterSnapshot.includes('link \"レポートを受け取りました\"'), 'Inbox after snapshot should capture the collapsed receipt subject.');
-  assert(liveEvidence.outboxAfterSnapshot.includes('link \"レポートを受け取りました\"'), 'Outbox after snapshot should capture the collapsed receipt subject.');
-  assert(liveEvidence.detailAfterSnapshot.includes('heading \"レポートを受け取りました\"'), 'Detail after snapshot should capture the collapsed receipt subject headline.');
+  assert(rowsAlignWithHeaders(liveEvidence.inboxBeforeAlignment), 'Inbox baseline evidence should start from an aligned header/body state.');
+  assert(rowsAlignWithHeaders(liveEvidence.inboxAfterAlignment), 'Inbox after evidence should preserve header/body alignment.');
+  assert(rowsAlignWithHeaders(liveEvidence.outboxBeforeAlignment), 'Outbox baseline evidence should start from an aligned header/body state.');
+  assert(rowsAlignWithHeaders(liveEvidence.outboxAfterAlignment), 'Outbox after evidence should preserve header/body alignment.');
+  assert(liveEvidence.inboxBeforeDom.hasSecondaryMiniMeta, 'Inbox baseline DOM should capture the old gray subject subtitle line.');
+  assert(!hasInlineMeta(liveEvidence.inboxBeforeDom), 'Inbox baseline DOM should not yet have inline receipt metadata.');
+  assert(hasInlineMeta(liveEvidence.inboxAfterDom), 'Inbox after DOM should include inline receipt metadata.');
+  assert(!liveEvidence.inboxAfterDom.hasSecondaryMiniMeta, 'Inbox after DOM should remove the old gray subject subtitle line.');
+  assert(!hasInlineMeta(liveEvidence.outboxBeforeDom), 'Outbox baseline DOM should not yet have inline receipt metadata.');
+  assert(hasInlineMeta(liveEvidence.outboxAfterDom), 'Outbox after DOM should include inline receipt metadata.');
+  assert(liveEvidence.outboxBeforeDom.dateText.includes('\n') || liveEvidence.outboxBeforeDom.dateText.includes('13:08'), 'Outbox baseline DOM should capture the old date field.');
+  assert(liveEvidence.outboxAfterDom.dateText === '26/05/18 13:08', 'Outbox after DOM should render the date on a single line like inbox.');
+  assert(liveEvidence.outboxAfterDom.miniText === '13:08', 'Outbox after DOM should preserve the smaller time styling on the same line.');
+  if (liveEvidence.inboxAfterDom.headerCellStyle?.paddingTop && liveEvidence.outboxAfterDom.headerCellStyle?.paddingTop) {
+    assert(liveEvidence.inboxAfterDom.headerCellStyle.paddingTop === liveEvidence.outboxAfterDom.headerCellStyle.paddingTop, 'Inbox/outbox header top padding should match after the style-parity fix.');
+  }
+  if (liveEvidence.inboxAfterDom.headerCellStyle?.paddingBottom && liveEvidence.outboxAfterDom.headerCellStyle?.paddingBottom) {
+    assert(liveEvidence.inboxAfterDom.headerCellStyle.paddingBottom === liveEvidence.outboxAfterDom.headerCellStyle.paddingBottom, 'Inbox/outbox header bottom padding should match after the style-parity fix.');
+  }
+  assert(liveEvidence.inboxAfterDom.recipientStyle?.fontSize === liveEvidence.outboxAfterDom.recipientStyle?.fontSize, 'Inbox/outbox primary identity text should use the same font size after the style-parity fix.');
+  assert(liveEvidence.detailBeforeDom.excerptText.includes('王 漢隆 さんのレポートを受け取りました'), 'Detail baseline DOM should capture the old gray subtitle line.');
+  assert(!liveEvidence.detailBeforeDom.hasHeadlineMeta, 'Detail baseline DOM should not yet have inline receipt title metadata.');
+  assert(liveEvidence.detailAfterDom.hasHeadlineMeta, 'Detail after DOM should include receipt title metadata.');
+  assert(!liveEvidence.detailAfterDom.excerptText, 'Detail after DOM should remove the old gray subtitle line.');
+  assert(liveEvidence.detailAfterDom.actionsInTopline, 'Detail after DOM should place action buttons on the same top row as the folder-return button.');
+  assert(liveEvidence.detailAfterDom.metaBlockClass?.includes('ku-message-headline-meta-block'), 'Detail after DOM should expose the block-level receipt metadata class.');
+  assert(Boolean(liveEvidence.detailAfterDom.metaBlockText), 'Detail after DOM should expose receipt metadata below the title.');
+  assert(liveEvidence.detailAfterDom.titleMainTop !== null && liveEvidence.detailAfterDom.metaBlockTop !== null && liveEvidence.detailAfterDom.metaBlockTop > liveEvidence.detailAfterDom.titleMainTop, 'Detail after DOM should place receipt metadata on the line below the large title.');
 });
 
 const report = {
@@ -532,11 +564,12 @@ const report = {
   checks,
   evidence: {
     requiredEvidencePaths,
+    hasCompleteLiveEvidence,
     alignment: {
-      inboxBeforeAligned: rowsAlignWithHeaders(liveEvidence.inboxBefore),
-      inboxAfterAligned: rowsAlignWithHeaders(liveEvidence.inboxAfter),
-      outboxBeforeAligned: rowsAlignWithHeaders(liveEvidence.outboxBefore),
-      outboxAfterAligned: rowsAlignWithHeaders(liveEvidence.outboxAfter)
+      inboxBeforeAligned: rowsAlignWithHeaders(liveEvidence.inboxBeforeAlignment),
+      inboxAfterAligned: rowsAlignWithHeaders(liveEvidence.inboxAfterAlignment),
+      outboxBeforeAligned: rowsAlignWithHeaders(liveEvidence.outboxBeforeAlignment),
+      outboxAfterAligned: rowsAlignWithHeaders(liveEvidence.outboxAfterAlignment)
     }
   }
 };

@@ -52,8 +52,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `docs/ku-lms-content-subsystem-map.md` — durable content-subsystem ownership and load-order map for future agents.
 
 ### Redesign baseline / maintenance subsystem
-- `.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md` — current umbrella PRD for inbox/outbox/recyclebox alignment, compact message-ledger clarity, receipt-subject normalization, and message-detail subject cleanup.
-- `.omx/plans/test-spec-ku-lms-message-pages-clarity-refresh.md` — verification requirements for header/body track alignment, receipt-subject normalization, native message parity, and before/after Chrome evidence.
+- `.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md` — current umbrella PRD for inbox/outbox/recyclebox alignment, compact message-ledger clarity, inline receipt-subject metadata, and message-detail hierarchy cleanup.
+- `.omx/plans/test-spec-ku-lms-message-pages-clarity-refresh.md` — verification requirements for header/body track alignment, inline receipt-subject metadata, native message parity, and before/after Chrome evidence.
 - `.omx/plans/prd-ku-lms-message-detail-outbox-layout.md` — PRD for redesigning `msg_viewer.php` inbox/outbox detail pages and reorganizing the sent-box list layout.
 - `.omx/plans/test-spec-ku-lms-message-detail-outbox-layout.md` — verification requirements for message-detail route support, sent-box ledger layout, native action parity, and fixture evidence.
 - `.omx/plans/prd-ku-lms-message-home-context-followups.md` — current follow-up PRD for subject-first message detail hierarchy, course-context message navigation ownership, and homepage `その他のコース` deadline hints.
