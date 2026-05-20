@@ -8,8 +8,8 @@ const css = read('src/content/critical.css');
 const architecture = read('docs/ku-lms-extension-architecture.md');
 const designCode = read('docs/ku-lms-design-code.md');
 const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
-const prd = read('.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md');
-const testSpec = read('.omx/plans/test-spec-ku-lms-message-pages-clarity-refresh.md');
+const prd = read('.omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md');
+const testSpec = read('.omx/plans/test-spec-ku-lms-message-detail-subtitle-guardrail.md');
 const fixtureManifest = JSON.parse(read('artifacts/fixtures/fixture-manifest.json'));
 const requiredEvidencePaths = [
   'artifacts/analysis/live-messages-inbox-inline-meta-before.png',
@@ -365,6 +365,11 @@ function hasInlineMeta(evidence = {}) {
   return String(evidence.subjectHtml || '').includes('ku-message-subject-inline-meta');
 }
 
+function extractHeroSection(html = '') {
+  const match = String(html).match(/<section class="ku-message-detail-hero">([\s\S]*?)<\/section>/);
+  return match ? match[1] : '';
+}
+
 const inboxList = inspectFixture('artifacts/fixtures/messages-inbox.network-response', 'messages');
 const outboxList = inspectFixture('artifacts/fixtures/messages-outbox.json', 'messages');
 const recycleboxList = inspectFixture('artifacts/fixtures/messages-recyclebox.json', 'messages');
@@ -417,12 +422,13 @@ record('message detail renderer preserves metadata and native actions', () => {
   runtime.state.currentRoute = { name: 'messages-detail' };
   runtime.state.currentContext = { links: { messages: '/webclass/msg_editor.php?msgappmode=inbox', notifications: '/webclass/information.php/', manual: '/webclass/user.php/manual', home: '/webclass/', courses: '/webclass/', logout: '/webclass/logout.php' }, language: '日本語', userName: 'レビュー' };
   const html = runtime.renderMessages(view);
+  const heroHtml = extractHeroSection(html);
   assert(html.includes('メッセージ詳細'), 'Message detail render missing page title.');
   assert(html.includes('受信メッセージ'), 'Message detail render missing mode cue.');
   assert(html.includes('レポートを受け取りました'), 'Message detail render missing subject headline.');
-  assert(html.includes('ku-message-headline-meta-block'), 'Message detail render missing the receipt metadata block under the title.');
+  assert(heroHtml.includes('ku-message-headline-meta-block'), 'Message detail render missing the receipt metadata block under the title.');
   assert(!html.includes('<span>件名</span>'), 'Message detail render should not duplicate the subject inside metadata tiles.');
-  assert(!html.includes('王 漢隆 さんのレポートを受け取りました'), 'Message detail render should remove the hero subtitle/excerpt line.');
+  assert(!heroHtml.includes('ku-page-subtitle'), 'Receipt detail hero should not render a generic subtitle node.');
   assert(html.includes('ダウンロード') && html.includes('返事を書く'), 'Message detail render missing native action links.');
   assert(html.includes('ku-message-detail-topline'), 'Message detail render missing shared top-line action layout.');
 });
@@ -439,8 +445,16 @@ record('subject-first regression fixtures prefer native subject over body-first 
   runtime.state.currentRoute = { name: 'messages-detail' };
   runtime.state.currentContext = { links: { messages: '/webclass/msg_editor.php?msgappmode=inbox', notifications: '/webclass/information.php/', manual: '/webclass/user.php/manual', home: '/webclass/', courses: '/webclass/', logout: '/webclass/logout.php' }, language: '日本語', userName: 'レビュー' };
   const inboxHtml = runtime.renderMessages(inboxView);
+  const inboxHeroHtml = extractHeroSection(inboxHtml);
+  runtime.state.currentView = outboxView;
+  const outboxHtml = runtime.renderMessages(outboxView);
+  const outboxHeroHtml = extractHeroSection(outboxHtml);
   assert(inboxHtml.includes('本日の休講の確認'), 'Rendered inbox regression fixture should show the subject-first hero title.');
-  assert(inboxHtml.includes('皆様'), 'Rendered inbox regression fixture should still allow secondary body-derived copy.');
+  assert(!inboxHeroHtml.includes('ku-page-subtitle'), 'Rendered inbox regression fixture should not render a hero subtitle node for non-receipt detail.');
+  assert(!inboxHeroHtml.includes('ku-message-headline-meta-block'), 'Rendered inbox regression fixture should not render receipt meta for non-receipt detail.');
+  assert(outboxHtml.includes('授業資料の更新について'), 'Rendered outbox regression fixture should show the subject-first hero title.');
+  assert(!outboxHeroHtml.includes('ku-page-subtitle'), 'Rendered outbox regression fixture should not render a hero subtitle node for non-receipt detail.');
+  assert(!outboxHeroHtml.includes('ku-message-headline-meta-block'), 'Rendered outbox regression fixture should not render receipt meta for non-receipt detail.');
   assert(!inboxHtml.includes('<span>件名</span>'), 'Rendered inbox regression fixture should remove duplicate subject metadata.');
 });
 
@@ -509,7 +523,7 @@ record('css contract keeps rows on the same grid tracks as headers', () => {
   assert(css.includes('.ku-message-headline-meta-block'), 'CSS should style the detail receipt metadata block.');
 });
 
-record('durable docs and fixtures cover message clarity refresh phase', () => {
+record('durable docs and fixtures cover message detail subtitle guardrail phase', () => {
   const routes = new Set(fixtureManifest.routes.map((item) => item.route));
   const prdLower = prd.toLowerCase();
   const testSpecLower = testSpec.toLowerCase();
@@ -520,9 +534,9 @@ record('durable docs and fixtures cover message clarity refresh phase', () => {
   assert(architecture.includes('infer folder context from the page content rather than the URL alone'), 'Architecture doc missing folder-authority contract.');
   assert(architecture.includes('Bare relative KU-LMS PHP links'), 'Architecture doc missing relative-PHP normalization note.');
   assert(designCode.includes('Messages detail page'), 'Design code missing message detail surface.');
-  assert(entrypoint.includes('.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md'), 'AI docs entrypoint should reference the message clarity refresh PRD.');
-  assert(prdLower.includes('receipt') && prdLower.includes('detail hero'), 'PRD should document the receipt/detail-hero follow-up contract.');
-  assert(testSpecLower.includes('receipt') && testSpecLower.includes('detail hero'), 'Test spec should cover the receipt/detail-hero follow-up contract.');
+  assert(entrypoint.includes('.omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md'), 'AI docs entrypoint should reference the message-detail subtitle guardrail PRD.');
+  assert(prdLower.includes('receipt') && prdLower.includes('no subtitle node inside `.ku-message-detail-hero`'.toLowerCase()), 'PRD should document the receipt-only hero subtitle contract.');
+  assert(testSpecLower.includes('receipt') && testSpecLower.includes('no hero subtitle node is rendered beneath the title inside `.ku-message-detail-hero`'.toLowerCase()), 'Test spec should cover the hero-scoped subtitle suppression contract.');
 });
 
 record('required Chrome evidence artifacts exist and prove the live regression is fixed', () => {
@@ -573,5 +587,5 @@ const report = {
     }
   }
 };
-writeArtifact('.omx/artifacts/message-pages-clarity-refresh', 'verification-report.json', report);
+writeArtifact('.omx/artifacts/message-detail-subtitle-guardrail', 'verification-report.json', report);
 console.log(JSON.stringify(report, null, 2));

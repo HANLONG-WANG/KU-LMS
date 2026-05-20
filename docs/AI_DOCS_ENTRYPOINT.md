@@ -58,6 +58,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `.omx/plans/test-spec-ku-lms-message-detail-outbox-layout.md` — verification requirements for message-detail route support, sent-box ledger layout, native action parity, and fixture evidence.
 - `.omx/plans/prd-ku-lms-message-home-context-followups.md` — current follow-up PRD for subject-first message detail hierarchy, course-context message navigation ownership, and homepage `その他のコース` deadline hints.
 - `.omx/plans/test-spec-ku-lms-message-home-context-followups.md` — verification requirements for those message/home follow-ups, including context precedence, bleed prevention, and display-only cache hinting.
+- `.omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md` — narrow authoritative PRD for receipt-only hero subtitle rendering on redesigned `msg_viewer.php`; this supersedes broader non-receipt subtitle allowances for message detail.
+- `.omx/plans/test-spec-ku-lms-message-detail-subtitle-guardrail.md` — verification requirements for that receipt-only hero subtitle contract.
 - `.omx/plans/prd-ku-lms-notice-detail-outbox-recyclebox-redesign.md` — PRD for redesigning notice detail, sent box, and recycle box as first-class supported communication routes.
 - `.omx/plans/test-spec-ku-lms-notice-detail-outbox-recyclebox-redesign.md` — verification requirements for those three communication surfaces, including route coverage, native action parity, and fixture evidence.
 - `.omx/plans/prd-ku-lms-refactor-fixes.md` — previous bug-fix / route-completion PRD.

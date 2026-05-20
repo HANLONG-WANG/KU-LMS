@@ -256,7 +256,8 @@
 ### Messages-specific hierarchy rules
 - Message detail pages are **subject-first**:
   - the primary hero/title is the native `件名`
-  - body-derived copy may appear only as secondary excerpt/supporting copy
+  - ordinary message-detail heroes must not render a second subtitle line beneath the title
+  - the only supported second line on the message-detail hero is the receipt-style bracket metadata for `レポートを受け取りました [...]`
   - the metadata grid must not repeat the subject as a separate tile/card once the hero already expresses it
 - Message folder lists must keep native column truth while making `件名` the strongest scan anchor and demoting low-value whitespace.
 - Message folder headers and body rows must share the same effective grid tracks; row-level horizontal padding may not shift body cells away from their matching headers.

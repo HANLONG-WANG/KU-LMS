@@ -212,7 +212,7 @@ function renderMessageDetail(view) {
               </div>
               ${(() => {
                 const subjectDisplay = splitMessageSubjectDisplay(view.headline || view.title || 'メッセージ');
-                return `<h2 class="ku-message-article-title"><span class="ku-message-headline-main">${escapeHtml(subjectDisplay.primary || 'メッセージ')}</span></h2>${subjectDisplay.inlineMeta ? `<div class="ku-message-headline-meta-block">${escapeHtml(subjectDisplay.inlineMeta)}</div>` : ''}${!subjectDisplay.inlineMeta && view.excerpt ? `<p class="ku-page-subtitle">${escapeHtml(view.excerpt)}</p>` : ''}`;
+                return `<h2 class="ku-message-article-title"><span class="ku-message-headline-main">${escapeHtml(subjectDisplay.primary || 'メッセージ')}</span></h2>${subjectDisplay.inlineMeta ? `<div class="ku-message-headline-meta-block">${escapeHtml(subjectDisplay.inlineMeta)}</div>` : ''}`;
               })()}
               ${view.forward ? `<div class="ku-message-forward">
                 <input class="ku-search ku-message-forward-input" data-action="message-detail-forward-input" type="email" value="" placeholder="${escapeAttr(view.forward.placeholder || 'メールアドレス')}">
