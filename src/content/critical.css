@@ -827,6 +827,10 @@ html[data-ku-redesign-state="ready"] body {
   min-width: 0;
 }
 
+.ku-other-course-title-row {
+  align-items: center;
+}
+
 .ku-route-header {
   display: flex;
   flex-direction: column;

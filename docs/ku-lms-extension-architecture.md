@@ -48,7 +48,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Homepage announcements enrichment fetches `/webclass/information.php/`, parses notification rows across pagination, and uses that full feed for the visible `最新のお知らせ` panel.
 - The concrete `期限が近い課題` card now focuses on timetable courses already marked with `締切が近い課題があります`.
 - Homepage automatic near-deadline rendering is now cache-first: it reads same-tab course cache only and does not fetch course login/material pages during automatic homepage enrichment.
-- Homepage `その他のコース` deadline hints and card inclusion are display-only same-tab-cache-backed extensions on top of that cache-first model.
+- Homepage `その他のコース` reminder chips and card inclusion are display-only same-tab-cache-backed extensions on top of that cache-first model; the visible chip copy may match timetable wording, but supporting copy/tooltip must keep the cache-backed origin explicit.
 - Those display-only hints must stay separate from refresh targeting; refresh targeting remains red-flag-only even when display coverage grows.
 - Same-tab session cache is the authoritative homepage source for course-specific near-deadline details; explicit course visits update that cache automatically.
 - Homepage cached course items are shown only when they are still inside their `利用可能期間`, have no `利用回数`, and their due date is within 7 days.

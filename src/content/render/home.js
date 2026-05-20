@@ -13,13 +13,11 @@ function renderHome(view) {
         daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate.getTime() - now) / 86400000)) : null
       }))
     ).sort(compareUpcomingItems).slice(0, 5);
-    const otherCourseHints = new Map();
-    [...displayOtherCourseUpcoming].sort(compareUpcomingItems)
-      .forEach((item) => {
-        const cacheKey = buildCourseCacheKey(item.courseHref || item.href || '');
-        if (!cacheKey || otherCourseHints.has(cacheKey)) return;
-        otherCourseHints.set(cacheKey, item);
-      });
+    const otherCourseReminderKeys = new Set(
+      [...displayOtherCourseUpcoming].sort(compareUpcomingItems)
+        .map((item) => buildCourseCacheKey(item.courseHref || item.href || ''))
+        .filter(Boolean)
+    );
     const deadlineTarget = displayUpcoming[0]?.courseHref || state.currentContext.links.courses;
     const refreshState = readHomeRefreshState();
     const refreshActive = isHomeRefreshActive(refreshState);
@@ -30,7 +28,7 @@ function renderHome(view) {
           title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
           subtitle: escapeHtml(buildUpcomingSubtitle(item)),
           trailing: `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>`
-        }))) : `<div class="ku-empty">表示できる近い締切はありません。その他のコースのヒントは、このタブで最近開いたコースのキャッシュがある場合のみ表示されます。</div>`);
+        }))) : `<div class="ku-empty">表示できる近い締切はありません。その他のコースのリマインダーは、このタブで最近開いたコースのキャッシュがある場合のみ表示されます。</div>`);
     const announcementSource = view.announcements.items.length ? view.announcements.items : normalizeHomeAnnouncementItems(view.homeNotices);
     const announcementsHtml = view.announcements.loading
       ? `<div class="ku-loading"><div class="ku-spinner"></div><div>お知らせを読み込み中…</div></div>`
@@ -74,14 +72,13 @@ function renderHome(view) {
               <h2 class="ku-card-title">その他のコース</h2>
               <input class="ku-search" type="search" placeholder="コース名・教員名で検索" value="${escapeAttr(state.homeSearch)}" data-action="home-search" />
             </div>
-            <div class="ku-mini-meta">期限ヒントは、このタブで最近開いたコースの同一タブキャッシュがある場合のみ表示されます。</div>
+            <div class="ku-mini-meta">締切リマインダーは、このタブで最近開いたコースの同一タブキャッシュがある場合のみ表示されます。</div>
             ${filteredGroups.map((group) => `
               <section class="ku-other-group">
                 <div class="ku-other-group-title">${escapeHtml(group.title)}</div>
                 ${group.items.map((item) => {
-                  const hint = otherCourseHints.get(buildCourseCacheKey(item.href));
-                  const hintMeta = hint ? `期限ヒント · ${formatDate(hint.dueDate)}（あと${Math.max(0, Math.ceil((hint.dueDate.getTime() - now) / 86400000))}日） · ${hint.title}` : '';
-                  return `<div class="ku-other-row"><div class="ku-course-link-stack"><div class="ku-title-inline"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>${renderSyllabusChip({ title: item.title, href: item.href, year: view.filters.year })}</div><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div>${hintMeta ? `<div class="ku-mini-meta">${escapeHtml(hintMeta)}</div>` : ''}</div></div>`;
+                  const hasReminder = otherCourseReminderKeys.has(buildCourseCacheKey(item.href));
+                  return `<div class="ku-other-row"><div class="ku-course-link-stack"><div class="ku-title-inline ku-other-course-title-row"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>${hasReminder ? `<div class="ku-chip red" title="このリマインダーは同一タブキャッシュ由来です">${escapeHtml(dueSoonReminderText())}</div>` : ''}${renderSyllabusChip({ title: item.title, href: item.href, year: view.filters.year })}</div><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div></div></div>`;
                 }).join('')}
               </section>`).join('') || `<div class="ku-empty">一致するコースがありません。</div>`}
           </section>

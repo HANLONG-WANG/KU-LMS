@@ -1,5 +1,9 @@
 /* src/content/utils/core.js */
 
+function dueSoonReminderText() {
+  return '締切が近い課題があります。';
+}
+
 function getAvatarInitial(name) {
     const source = (name || '').trim();
     if (!source) return 'U';
@@ -8,7 +12,8 @@ function getAvatarInitial(name) {
 
 function isDueFlagNote(note = '') {
   const normalized = String(note || '').replace(/\s+/g, ' ').trim();
-  return normalized === '締切が近い課題があります。' || normalized === '締切が近い課題があります';
+  const canonical = dueSoonReminderText();
+  return normalized === canonical || normalized === canonical.replace(/。$/, '');
 }
 
 function parseAvailabilityEnd(text) {

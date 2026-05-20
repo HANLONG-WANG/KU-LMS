@@ -20,7 +20,7 @@ assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Home due ca
 assert(renderHomeSource.includes('loadDisplayUpcomingFromOtherCourses('), 'Home render should use a display-only other-course cache path.');
 assert(renderHomeSource.includes('同一タブキャッシュ'), 'Home render should explain that other-course hints depend on same-tab cache availability.');
 assert(extractFunction(source, 'parseSchedule').includes('const period = `${rowIndex + 1}限`;'), 'Schedule parsing should derive canonical period keys from row order.');
-assert(extractFunction(source, 'isDueFlagNote').includes("normalized === '締切が近い課題があります。'"), 'Due-flag detection should only key off the explicit native red-flag note.');
+assert(extractFunction(source, 'isDueFlagNote').includes('const canonical = dueSoonReminderText();'), 'Due-flag detection should key off the shared native red-flag reminder copy.');
 
 const loadUpcomingSource = extractFunction(source, 'loadUpcomingFromDueCourses');
 assert(loadUpcomingSource.includes('loadUpcomingFromCourseCache('), 'Home upcoming should be sourced from the same-tab course cache.');
@@ -79,7 +79,7 @@ const sandbox = {
 };
 vm.createContext(sandbox);
 for (const name of [
-  'extractCourseId', 'buildCourseCacheKey', 'isDueFlagNote', 'parseAvailabilityRange', 'isUpcomingDueSoonUnused',
+  'extractCourseId', 'buildCourseCacheKey', 'dueSoonReminderText', 'isDueFlagNote', 'parseAvailabilityRange', 'isUpcomingDueSoonUnused',
   'readCourseUpcomingCache', 'writeCourseUpcomingCache', 'serializeCourseUpcomingItem', 'pruneUpcomingItems',
   'hydrateCourseUpcomingItem', 'areUpcomingCacheEntriesEqual', 'shortenCourseTitle', 'rememberCourseUpcoming',
   'loadUpcomingFromCourseCache', 'loadDisplayUpcomingFromCourses', 'loadDisplayUpcomingFromOtherCourses',
@@ -144,9 +144,11 @@ const renderedHome = sandbox.renderHome({
   schedule: { entries: [scheduleEntry] },
   otherCourses: [{ title: 'その他', items: [otherCourseEntry] }]
 });
-assert(renderedHome.includes('他コース課題'), 'Rendered home should include cache-backed other-course items in the upcoming card and/or hint rows.');
+assert(renderedHome.includes('他コース課題'), 'Rendered home should include cache-backed other-course items in the upcoming card and/or reminder rows.');
+assert(renderedHome.includes('<div class="ku-chip red" title="このリマインダーは同一タブキャッシュ由来です">締切が近い課題があります。</div>'), 'Rendered home should show the exact schedule-style red reminder chip plus cache-origin clarification for cache-backed other-course reminders.');
+assert(!renderedHome.includes('期限ヒント ·'), 'Rendered home should no longer expose verbose other-course deadline hint metadata.');
 assert(renderedHome.includes('同一タブキャッシュ'), 'Rendered home should document that missing other-course hints reflect cache availability, not guaranteed deadline absence.');
 
-const report = { ok: true, checks: ['home-enrich-retired-worker-fetch-path', 'home-upcoming-cache-first', 'home-display-only-other-course-hints-separated-from-refresh-targeting', 'refresh-button-exposed-on-home-card', 'due-flag-contract-explicit-redflag-only', 'cache-pruning-persists-valid-items-only', 'refresh-targets-all-redflag-courses-for-live-latest-data', 'other-course-cache-hints-render-with-cache-availability-copy', 'docs-point-to-safe-refresh-phase'] };
+const report = { ok: true, checks: ['home-enrich-retired-worker-fetch-path', 'home-upcoming-cache-first', 'home-display-only-other-course-reminders-separated-from-refresh-targeting', 'refresh-button-exposed-on-home-card', 'due-flag-contract-explicit-redflag-only', 'cache-pruning-persists-valid-items-only', 'refresh-targets-all-redflag-courses-for-live-latest-data', 'other-course-cache-reminders-render-with-schedule-style-chip-copy', 'docs-point-to-safe-refresh-phase'] };
 writeArtifact('.omx/artifacts/home-upcoming-session-safety', 'verification-report.json', report);
 console.log(JSON.stringify(report));
