@@ -62,7 +62,7 @@ function renderStandardMessageBodyCell(cell, row, view) {
     const text = cell.text || '';
     const rowMeta = getMessageRowMeta(row);
     if (cell.key === 'subject') {
-      const subject = text || row.subject || '—';
+      const subject = normalizeMessageSubject(text || row.subject || '') || '—';
       const subjectHtml = cell.href
         ? `<a class="ku-table-link ku-message-subject-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(subject, 120))}</a>`
         : escapeHtml(truncate(subject, 120));
@@ -92,7 +92,8 @@ function renderStandardMessageBodyCell(cell, row, view) {
 function renderOutboxMessageBodyCell(cell) {
     const text = cell.text || '';
     if (cell.key === 'subject') {
-      return `<div class="ku-message-cell ku-message-cell-subject ku-message-cell-subject-primary">${cell.href ? `<a class="ku-table-link ku-message-subject-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(text, 160))}</a>` : escapeHtml(truncate(text, 160))}</div>`;
+      const subject = normalizeMessageSubject(text);
+      return `<div class="ku-message-cell ku-message-cell-subject ku-message-cell-subject-primary">${cell.href ? `<a class="ku-table-link ku-message-subject-link" href="${escapeAttr(cell.href)}">${escapeHtml(truncate(subject, 160))}</a>` : escapeHtml(truncate(subject, 160))}</div>`;
     }
     if (cell.key === 'attachments') {
       return `<div class="ku-message-cell ku-message-cell-attachments">${text ? `<span class="ku-chip neutral ku-message-attachment-chip">${escapeHtml(truncate(text, 28))}</span>` : `<span class="ku-mini-meta">なし</span>`}</div>`;

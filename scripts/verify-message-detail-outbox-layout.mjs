@@ -1,13 +1,52 @@
+import { existsSync } from 'node:fs';
 import vm from 'node:vm';
 import { execFileSync } from 'node:child_process';
 import { read, readKulmsSource, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
+const css = read('src/content/critical.css');
 const architecture = read('docs/ku-lms-extension-architecture.md');
 const designCode = read('docs/ku-lms-design-code.md');
-const prd = read('.omx/plans/prd-ku-lms-message-home-context-followups.md');
-const testSpec = read('.omx/plans/test-spec-ku-lms-message-home-context-followups.md');
+const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
+const prd = read('.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md');
+const testSpec = read('.omx/plans/test-spec-ku-lms-message-pages-clarity-refresh.md');
 const fixtureManifest = JSON.parse(read('artifacts/fixtures/fixture-manifest.json'));
+const liveEvidence = {
+  inboxBefore: JSON.parse(read('artifacts/analysis/message-alignment-inbox-before.json')),
+  inboxAfter: JSON.parse(read('artifacts/analysis/message-alignment-inbox-after.json')),
+  outboxBefore: JSON.parse(read('artifacts/analysis/message-alignment-outbox-before.json')),
+  outboxAfter: JSON.parse(read('artifacts/analysis/message-alignment-outbox-after.json')),
+  recycleboxBefore: JSON.parse(read('artifacts/analysis/message-alignment-recyclebox-before.json')),
+  recycleboxAfter: JSON.parse(read('artifacts/analysis/message-alignment-recyclebox-after.json')),
+  inboxBeforeSnapshot: read('artifacts/analysis/live-messages-inbox-autopilot-before.snapshot.txt'),
+  inboxAfterSnapshot: read('artifacts/analysis/live-messages-inbox-autopilot-after.snapshot.txt'),
+  outboxAfterSnapshot: read('artifacts/analysis/live-messages-outbox-autopilot-after.snapshot.txt'),
+  detailAfterSnapshot: read('artifacts/analysis/live-message-viewer-autopilot-after.snapshot.txt')
+};
+const requiredEvidencePaths = [
+  'artifacts/analysis/live-messages-inbox-autopilot-before.png',
+  'artifacts/analysis/live-messages-inbox-autopilot-after.png',
+  'artifacts/analysis/live-messages-outbox-autopilot-before.png',
+  'artifacts/analysis/live-messages-outbox-autopilot-after.png',
+  'artifacts/analysis/live-messages-recyclebox-autopilot-before.png',
+  'artifacts/analysis/live-messages-recyclebox-autopilot-after.png',
+  'artifacts/analysis/live-message-viewer-autopilot-before.png',
+  'artifacts/analysis/live-message-viewer-autopilot-after.png',
+  'artifacts/analysis/live-messages-inbox-autopilot-before.snapshot.txt',
+  'artifacts/analysis/live-messages-inbox-autopilot-after.snapshot.txt',
+  'artifacts/analysis/live-messages-outbox-autopilot-before.snapshot.txt',
+  'artifacts/analysis/live-messages-outbox-autopilot-after.snapshot.txt',
+  'artifacts/analysis/live-messages-recyclebox-autopilot-before.snapshot.txt',
+  'artifacts/analysis/live-messages-recyclebox-autopilot-after.snapshot.txt',
+  'artifacts/analysis/live-message-viewer-autopilot-before.snapshot.txt',
+  'artifacts/analysis/live-message-viewer-autopilot-after.snapshot.txt',
+  'artifacts/analysis/message-alignment-inbox-before.json',
+  'artifacts/analysis/message-alignment-inbox-after.json',
+  'artifacts/analysis/message-alignment-outbox-before.json',
+  'artifacts/analysis/message-alignment-outbox-after.json',
+  'artifacts/analysis/message-alignment-recyclebox-before.json',
+  'artifacts/analysis/message-alignment-recyclebox-after.json'
+];
 
 const checks = [];
 const record = (name, fn) => { fn(); checks.push(name); };
@@ -269,6 +308,53 @@ function createRuntime() {
   return context;
 }
 
+function escapeAttrForAssertion(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function assertRenderedSortLinks(runtime, view, label) {
+  view.columns
+    .filter((column) => column.key !== 'select')
+    .forEach((column) => {
+      const headerHtml = runtime.renderMessageHeaderCell(column, view.rows, view);
+      assert(headerHtml.includes(`ku-message-cell-${column.key}`), `${label} header cell missing class for ${column.key}.`);
+      (column.sortLinks || []).forEach((link) => {
+        assert(headerHtml.includes(`data-message-js="${escapeAttrForAssertion(link.href)}"`), `${label} header lost sort link ${link.href}.`);
+        assert(headerHtml.includes(`>${link.text}<`), `${label} header lost sort text ${link.text}.`);
+      });
+    });
+}
+
+function assertRenderedRowParity(runtime, view, label) {
+  if (!view.rows.length) return;
+  const firstRow = view.rows[0];
+  const selectCell = firstRow.cells.find((cell) => cell.key === 'select');
+  const selectHtml = runtime.renderMessageBodyCell(selectCell, firstRow, new Set(), view);
+  assert(selectHtml.includes(`data-id="${escapeAttrForAssertion(firstRow.id)}"`), `${label} row checkbox identity missing from rendered output.`);
+  if (firstRow.href) {
+    const subjectCell = firstRow.cells.find((cell) => cell.key === 'subject') || firstRow.cells.find((cell) => cell.href);
+    const subjectHtml = runtime.renderMessageBodyCell(subjectCell, firstRow, new Set(), view);
+    assert(subjectHtml.includes(`href="${escapeAttrForAssertion(firstRow.href)}"`), `${label} subject href missing from rendered output.`);
+  }
+  const html = runtime.renderMessages(view);
+  assert(html.includes(view.pagination.pageText), `${label} pagination page text missing from rendered output.`);
+  for (const href of [view.pagination.prev, view.pagination.next, view.pagination.last].filter(Boolean)) {
+    assert(html.includes(`data-message-js="${escapeAttrForAssertion(href)}"`), `${label} pagination link ${href} missing from rendered output.`);
+  }
+}
+
+function rowsAlignWithHeaders(evidence) {
+  return evidence.row.every((cell, index) => {
+    const head = evidence.head[index];
+    return head && cell.left === head.left && cell.right === head.right;
+  });
+}
+
 const inboxList = inspectFixture('artifacts/fixtures/messages-inbox.network-response', 'messages');
 const outboxList = inspectFixture('artifacts/fixtures/messages-outbox.json', 'messages');
 const recycleboxList = inspectFixture('artifacts/fixtures/messages-recyclebox.json', 'messages');
@@ -298,8 +384,8 @@ record('message detail parser detects inbox mode and actions', () => {
   assert(view.modeLabel.includes('受信メッセージ'), 'Inbox detail mode label missing.');
   assert(view.metadata.some((item) => item.key === 'subject'), 'Inbox detail subject missing.');
   assert(view.headline === view.title, 'Inbox detail headline should match the native subject.');
-  assert(view.headline.includes('レポートを受け取りました'), 'Inbox detail subject headline missing.');
-  assert(view.excerpt.includes('レポートを受け取りました'), 'Inbox detail excerpt should preserve useful body-derived context only as secondary copy.');
+  assert(view.title === 'レポートを受け取りました', 'Inbox detail should collapse receipt-style subjects to the concise display label.');
+  assert(!view.excerpt.includes('レポートを受け取りました ['), 'Inbox detail excerpt should not reintroduce the long bracket receipt payload.');
   assert(view.metadata.some((item) => item.key === 'sender'), 'Inbox detail sender missing.');
   assert(view.downloadHref.includes('msg_down.php'), 'Inbox detail download action missing.');
   assert(view.replyHref.includes('returnmsgid='), 'Inbox detail reply action missing.');
@@ -358,7 +444,10 @@ record('outbox renderer uses ledger layout markers and preserves scan fields', (
   assert(html.includes('data-message-layout="outbox-ledger"'), 'Outbox ledger layout marker missing.');
   assert(html.includes('ku-message-date-stack'), 'Outbox date stack marker missing.');
   assert(html.includes('ku-message-subject-link'), 'Outbox subject emphasis marker missing.');
+  assert(html.includes('>レポートを受け取りました</a>'), 'Outbox receipt subject should render as the concise display label.');
   assert(html.includes('宛先') && html.includes('件名') && html.includes('添付ファイル') && html.includes('日付'), 'Outbox render lost truthful headers.');
+  assertRenderedSortLinks(runtime, view, 'outbox');
+  assertRenderedRowParity(runtime, view, 'outbox');
 });
 
 record('inbox renderer improves scanability without changing native columns', () => {
@@ -372,6 +461,9 @@ record('inbox renderer improves scanability without changing native columns', ()
   assert(html.includes('ku-message-subject-link'), 'Inbox subject emphasis marker missing.');
   assert(html.includes('ku-message-date-stack'), 'Inbox date stack marker missing.');
   assert(html.includes('ku-mini-meta'), 'Inbox scanability metadata marker missing.');
+  assert(html.includes('>レポートを受け取りました</a>'), 'Inbox receipt subject should render as the concise display label.');
+  assertRenderedSortLinks(runtime, view, 'inbox');
+  assertRenderedRowParity(runtime, view, 'inbox');
 });
 
 record('recyclebox renderer keeps native warning/actions with clearer layout marker', () => {
@@ -384,6 +476,8 @@ record('recyclebox renderer keeps native warning/actions with clearer layout mar
   assert(html.includes('data-message-layout="recyclebox-grid"'), 'Recyclebox layout marker missing.');
   assert(html.includes('ここでさらに削除したメッセージは、復元できなくなります。'), 'Recyclebox warning should be preserved.');
   assert(view.actions.map((item) => item.name).join(',') === 'RETURN_SELECTED,COMFIRM_SELECTED,UNSET_UNREADFLAG,downloadmsg', 'Recyclebox actions regressed.');
+  assertRenderedSortLinks(runtime, view, 'recyclebox');
+  assertRenderedRowParity(runtime, view, 'recyclebox');
 });
 
 record('existing inbox and recyclebox contracts still parse', () => {
@@ -395,7 +489,13 @@ record('existing inbox and recyclebox contracts still parse', () => {
   assert(recycleView.actions.map((item) => item.name).join(',') === 'RETURN_SELECTED,COMFIRM_SELECTED,UNSET_UNREADFLAG,downloadmsg', 'Recyclebox actions regressed.');
 });
 
-record('durable docs and fixtures cover message detail phase', () => {
+record('css contract keeps rows on the same grid tracks as headers', () => {
+  assert(/\.ku-message-head,\s*\.ku-message-row,\s*\.ku-table-row/.test(css), 'CSS should keep message rows in the shared grid layout selector.');
+  assert(css.includes('.ku-message-row {\n  padding: 0;') || css.includes('.ku-message-row {\r\n  padding: 0;'), 'CSS should remove row-level padding drift from message rows.');
+  assert(css.includes('flex-direction: column;'), 'CSS should stack subject primary metadata vertically for scanability.');
+});
+
+record('durable docs and fixtures cover message clarity refresh phase', () => {
   const routes = new Set(fixtureManifest.routes.map((item) => item.route));
   const prdLower = prd.toLowerCase();
   const testSpecLower = testSpec.toLowerCase();
@@ -406,12 +506,39 @@ record('durable docs and fixtures cover message detail phase', () => {
   assert(architecture.includes('infer folder context from the page content rather than the URL alone'), 'Architecture doc missing folder-authority contract.');
   assert(architecture.includes('Bare relative KU-LMS PHP links'), 'Architecture doc missing relative-PHP normalization note.');
   assert(designCode.includes('Messages detail page'), 'Design code missing message detail surface.');
-  assert(prdLower.includes('subject-first message hierarchy'), 'Follow-up PRD missing subject-first hierarchy contract.');
-  assert(prdLower.includes('remove the redundant subject metadata'), 'Follow-up PRD missing duplicate-subject removal contract.');
-  assert(testSpecLower.includes('subject is primary title/headline'), 'Follow-up test spec missing subject-first headline assertions.');
-  assert(testSpecLower.includes('duplicate subject metadata render is absent'), 'Follow-up test spec missing duplicate-subject render coverage.');
+  assert(entrypoint.includes('.omx/plans/prd-ku-lms-message-pages-clarity-refresh.md'), 'AI docs entrypoint should reference the message clarity refresh PRD.');
+  assert(prdLower.includes('row cells collapse to full-width blocks'), 'PRD missing grid-misalignment root-cause evidence.');
+  assert(prdLower.includes('receipt-style autogenerated subjects collapse'), 'PRD missing receipt-subject normalization contract.');
+  assert(testSpecLower.includes('receipt-style subject normalization'), 'Test spec missing receipt-subject normalization coverage.');
+  assert(testSpecLower.includes('no row-level horizontal padding'), 'Test spec missing header/body alignment coverage.');
 });
 
-const report = { ok: true, checks };
-writeArtifact('.omx/artifacts/message-detail-outbox-layout-refresh', 'verification-report.json', report);
+record('required Chrome evidence artifacts exist and prove the live regression is fixed', () => {
+  requiredEvidencePaths.forEach((path) => {
+    assert(existsSync(path), `Missing required evidence artifact: ${path}`);
+  });
+  assert(!rowsAlignWithHeaders(liveEvidence.inboxBefore), 'Inbox baseline evidence should still show header/body misalignment.');
+  assert(rowsAlignWithHeaders(liveEvidence.inboxAfter), 'Inbox after evidence should show header/body alignment.');
+  assert(!rowsAlignWithHeaders(liveEvidence.outboxBefore), 'Outbox baseline evidence should still show header/body misalignment.');
+  assert(rowsAlignWithHeaders(liveEvidence.outboxAfter), 'Outbox after evidence should show header/body alignment.');
+  assert(liveEvidence.inboxBeforeSnapshot.includes('link \"レポートを受け取りました ['), 'Inbox baseline snapshot should capture the long receipt-style subject.');
+  assert(liveEvidence.inboxAfterSnapshot.includes('link \"レポートを受け取りました\"'), 'Inbox after snapshot should capture the collapsed receipt subject.');
+  assert(liveEvidence.outboxAfterSnapshot.includes('link \"レポートを受け取りました\"'), 'Outbox after snapshot should capture the collapsed receipt subject.');
+  assert(liveEvidence.detailAfterSnapshot.includes('heading \"レポートを受け取りました\"'), 'Detail after snapshot should capture the collapsed receipt subject headline.');
+});
+
+const report = {
+  ok: true,
+  checks,
+  evidence: {
+    requiredEvidencePaths,
+    alignment: {
+      inboxBeforeAligned: rowsAlignWithHeaders(liveEvidence.inboxBefore),
+      inboxAfterAligned: rowsAlignWithHeaders(liveEvidence.inboxAfter),
+      outboxBeforeAligned: rowsAlignWithHeaders(liveEvidence.outboxBefore),
+      outboxAfterAligned: rowsAlignWithHeaders(liveEvidence.outboxAfter)
+    }
+  }
+};
+writeArtifact('.omx/artifacts/message-pages-clarity-refresh', 'verification-report.json', report);
 console.log(JSON.stringify(report, null, 2));

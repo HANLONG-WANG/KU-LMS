@@ -1144,6 +1144,7 @@ html[data-ku-redesign-state="ready"] body {
 
 .ku-report-head,
 .ku-message-head,
+.ku-message-row,
 .ku-table-row {
   display: grid;
   gap: 0;
@@ -1173,6 +1174,7 @@ html[data-ku-redesign-state="ready"] body {
 .ku-message-row > div {
   padding: 14px 14px;
   border-right: 1px solid #edf2fb;
+  min-width: 0;
 }
 
 .ku-report-head > div:last-child,
@@ -1418,6 +1420,10 @@ html[data-ku-redesign-state="ready"] body {
   line-height: 1.6;
 }
 
+.ku-message-row {
+  padding: 0;
+}
+
 .ku-sort-link {
   margin-left: 6px;
   color: var(--ku-blue-strong);
@@ -1471,6 +1477,9 @@ html[data-ku-redesign-state="ready"] body {
 .ku-message-cell-subject-primary {
   display: flex;
   align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
 .ku-message-subject-link {

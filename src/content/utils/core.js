@@ -286,6 +286,13 @@ function truncate(text, length) {
     return text.length > length ? `${text.slice(0, length)}…` : text;
   }
 
+function normalizeMessageSubject(text = '') {
+    const normalized = cleanText(text);
+    const receiptMatch = normalized.match(/^(レポートを受け取りました)\s*\[.*\]$/);
+    if (receiptMatch) return receiptMatch[1];
+    return normalized;
+  }
+
 function absoluteUrl(path) {
     if (!path) return '';
     if (/^https?:/i.test(path)) return path;

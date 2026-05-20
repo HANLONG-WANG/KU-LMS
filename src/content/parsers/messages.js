@@ -83,9 +83,10 @@ function parseMessageDetail(doc) {
     const dateMeta = metadata.find((item) => item.key === 'date');
     const folderTitle = folder === 'outbox' ? '送信済箱' : folder === 'recyclebox' ? 'ゴミ箱' : '受信箱';
     const folderHref = folders.find((item) => item.title.includes(folderTitle))?.href || '';
-    const title = subjectMeta?.text || cleanText((doc.title || '').replace(/\s*-\s*メッセージ\s*$/, ''));
+    const rawTitle = subjectMeta?.text || cleanText((doc.title || '').replace(/\s*-\s*メッセージ\s*$/, ''));
+    const title = normalizeMessageSubject(rawTitle);
     const headline = deriveMessageDetailHeadline(title);
-    const excerpt = deriveMessageDetailExcerpt(bodyCell, title);
+    const excerpt = deriveMessageDetailExcerpt(bodyCell, rawTitle, title);
     return {
       kind: 'detail',
       folder,
@@ -176,18 +177,19 @@ function getMessageDetailMetaKey(label = '') {
   }
 
 function deriveMessageDetailHeadline(subject = '') {
-    return cleanText(subject);
+    return normalizeMessageSubject(subject);
   }
 
-function deriveMessageDetailExcerpt(bodyCell, subject = '') {
-    const title = cleanText(subject);
-    const subjectLead = cleanText(title.split('[')[0]);
+function deriveMessageDetailExcerpt(bodyCell, rawSubject = '', normalizedSubject = '') {
+    const title = cleanText(rawSubject);
+    const normalized = normalizeMessageSubject(normalizedSubject || rawSubject);
+    const subjectLead = normalizeMessageSubject(title.split('[')[0]);
     const lines = String(bodyCell?.textContent || '')
       .split(/\n+/)
       .map((line) => cleanText(line))
       .filter(Boolean)
       .filter((line) => !/^(提出日|提出者|コース\s*名|課題名|設問番号|提出ファイル名)\s*:/.test(line));
-    const preferred = lines.find((line) => line !== title && line !== subjectLead);
+    const preferred = lines.find((line) => line !== title && line !== normalized && line !== subjectLead);
     return preferred || '';
   }
 
