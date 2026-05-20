@@ -49,7 +49,7 @@ const contentSandbox = {
 vm.createContext(contentSandbox);
 for (const name of [
   'normalizeSyllabusCourseQuery', 'extractNotificationPageCount', 'buildNotificationPageUrl', 'extractCourseId', 'deriveSyllabusCourseCode',
-  'buildCourseCacheKey', 'isDueFlagNote', 'parseAvailabilityRange', 'parseAvailabilityEnd', 'isUpcomingDueSoonUnused',
+  'buildCourseCacheKey', 'dueSoonReminderText', 'isDueFlagNote', 'parseAvailabilityRange', 'parseAvailabilityEnd', 'isUpcomingDueSoonUnused',
   'shortenCourseTitle', 'sanitizeCourseItemTitle', 'extractPrimaryTitleText', 'inferMaterialType', 'extractCourseItem',
   'parseUpcomingFromCourse', 'readHomeRefreshState', 'writeHomeRefreshState', 'clearHomeRefreshState', 'getCurrentHomeRefreshTarget',
   'isHomeRefreshActive', 'shouldSuppressRefreshSideEffects', 'doesHomeRefreshMatchCurrentView'

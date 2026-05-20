@@ -186,6 +186,8 @@ function renderMessageSubjectDisplay(subjectText = '', href = '', length = 120) 
 function renderMessageDetail(view) {
     const tone = view.folder === 'outbox' ? 'blue' : view.folder === 'recyclebox' ? 'orange' : 'green';
     const metadata = (view.metadata || []).filter((item) => item.key !== 'subject');
+    const subjectDisplay = splitMessageSubjectDisplay(view.headline || view.title || 'メッセージ');
+    const subjectHeadingHtml = `<h2 class="ku-message-article-title"><span class="ku-message-headline-main">${escapeHtml(subjectDisplay.primary || 'メッセージ')}</span></h2>${subjectDisplay.inlineMeta ? `<div class="ku-message-headline-meta-block">${escapeHtml(subjectDisplay.inlineMeta)}</div>` : ''}`;
     return `
       <div class="ku-sidebar-shell">
         ${renderSidebar(`messages-${view.folder}`)}
@@ -210,10 +212,7 @@ function renderMessageDetail(view) {
                   ${view.closeHref ? `<a class="ku-button" href="${escapeAttr(view.closeHref)}">このウィンドウを閉じる</a>` : ''}
                 </div>
               </div>
-              ${(() => {
-                const subjectDisplay = splitMessageSubjectDisplay(view.headline || view.title || 'メッセージ');
-                return `<h2 class="ku-message-article-title"><span class="ku-message-headline-main">${escapeHtml(subjectDisplay.primary || 'メッセージ')}</span></h2>${subjectDisplay.inlineMeta ? `<div class="ku-message-headline-meta-block">${escapeHtml(subjectDisplay.inlineMeta)}</div>` : ''}`;
-              })()}
+              ${subjectHeadingHtml}
               ${view.forward ? `<div class="ku-message-forward">
                 <input class="ku-search ku-message-forward-input" data-action="message-detail-forward-input" type="email" value="" placeholder="${escapeAttr(view.forward.placeholder || 'メールアドレス')}">
                 <button class="ku-button" data-action="message-detail-forward">${escapeHtml(view.forward.buttonLabel || 'メールへ転送')}</button>

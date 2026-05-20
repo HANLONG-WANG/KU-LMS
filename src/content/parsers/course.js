@@ -7,12 +7,17 @@ function parseOtherCourses(doc) {
       const group = { title: titleEl.textContent.trim(), items: [] };
       const list = titleEl.nextElementSibling?.querySelector('.courseList') || titleEl.parentElement?.querySelector('.courseList');
       if (list) {
-        Array.from(list.querySelectorAll('.course-title')).forEach((box) => {
-          const anchor = box.querySelector('a[href]');
+        const courseBoxes = Array.from(list.querySelectorAll('.course-data-box-normal'));
+        const parseTargets = courseBoxes.length ? courseBoxes : Array.from(list.querySelectorAll('.course-title'));
+        parseTargets.forEach((courseBox) => {
+          const titleBox = courseBox.querySelector('.course-title') || courseBox;
+          const anchor = titleBox.querySelector('a[href]');
           if (!anchor) return;
-          const meta = box.querySelector('.course-info')?.textContent.replace(/\s+/g, ' ').trim() || '';
+          const meta = titleBox.querySelector('.course-info')?.textContent.replace(/\s+/g, ' ').trim() || '';
+          const hasNativeDueReminder = !!courseBox.querySelector('.course-contents-info');
+          const note = courseBox.querySelector('.course-contents-info')?.textContent.replace(/\s+/g, ' ').trim() || '';
           const rawHref = absoluteUrl(anchor.getAttribute('href'));
-          group.items.push({ title: anchor.textContent.replace(/^»\s*/, '').trim(), href: rawHref, supplementalHref: rawHref, meta });
+          group.items.push({ title: anchor.textContent.replace(/^»\s*/, '').trim(), href: rawHref, supplementalHref: rawHref, meta, note, hasNativeDueReminder });
         });
       }
       if (group.items.length) groups.push(group);

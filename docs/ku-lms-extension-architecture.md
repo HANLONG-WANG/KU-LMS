@@ -48,11 +48,13 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Homepage announcements enrichment fetches `/webclass/information.php/`, parses notification rows across pagination, and uses that full feed for the visible `最新のお知らせ` panel.
 - The concrete `期限が近い課題` card now focuses on timetable courses already marked with `締切が近い課題があります`.
 - Homepage automatic near-deadline rendering is now cache-first: it reads same-tab course cache only and does not fetch course login/material pages during automatic homepage enrichment.
-- Homepage `その他のコース` reminder chips and card inclusion are display-only same-tab-cache-backed extensions on top of that cache-first model; the visible chip copy may match timetable wording, but supporting copy/tooltip must keep the cache-backed origin explicit.
-- Those display-only hints must stay separate from refresh targeting; refresh targeting remains red-flag-only even when display coverage grows.
+- Homepage `その他のコース` row-level reminder chips should mirror the native homepage `.course-contents-info` field when it exists, so those chips appear on first render without requiring a prior course visit.
+- Same-tab cache may still supplement the right-column `期限が近い課題` card with detailed other-course items, but row-level `その他のコース` reminder chips must not depend on cache hydration.
+- Homepage refresh targeting now includes timetable red-flag rows plus `その他のコース` rows whose native homepage `.course-contents-info` reminder is present.
+- Cache-only other-course detailed items remain supplemental and must not create refresh targets by themselves.
 - Same-tab session cache is the authoritative homepage source for course-specific near-deadline details; explicit course visits update that cache automatically.
 - Homepage cached course items are shown only when they are still inside their `利用可能期間`, have no `利用回数`, and their due date is within 7 days.
-- Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh must actually re-fetch the latest data for currently red-flagged timetable courses through top-level same-tab navigation, using the native course-entry URLs rather than hidden content-script or service-worker fetches.
+- Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh must actually re-fetch the latest data for timetable red-flag rows plus `その他のコース` rows whose native homepage reminder is already present, through top-level same-tab navigation using the native course-entry URLs rather than hidden content-script or service-worker fetches.
 - While that manual refresh is active, the UI must show a full-screen blocking mask with a clear wait message and visible progress so users do not interact with the shell mid-refresh.
 - That refresh overlay must explicitly remain visible through the takeover hide rules; it is not allowed to be hidden as an ordinary `body` sibling during `booting`/`ready` redesign state.
 - To reduce cross-page flicker during that manual refresh, the overlay should be rehydrated during `document_start` boot immediately after `dataset='booting'` and before the generic boot shell mounts; this early sync is visual-only, while route/auth decisions still belong to the later `init()` path after the existing `DOMContentLoaded` gate.

@@ -7,7 +7,7 @@ async function startHomeRefresh(view) {
       syncHomeRefreshOverlay(existing);
       return;
     }
-    const targets = getRefreshEntries(view.schedule.entries).map((entry) => ({
+    const targets = getRefreshEntries(view.schedule.entries, view.otherCourses).map((entry) => ({
       href: entry.href,
       courseHref: buildCourseCacheKey(entry.href),
       title: entry.title,

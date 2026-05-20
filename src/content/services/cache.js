@@ -137,8 +137,9 @@ function pruneUpcomingItems(items = []) {
     return (items || []).filter((item) => isUpcomingDueSoonUnused(item));
   }
 
-function getRefreshEntries(scheduleEntries = []) {
+function getRefreshEntries(scheduleEntries = [], otherCourseGroups = []) {
     const dueEntries = (scheduleEntries || []).filter((entry) => isDueFlagNote(entry.note) && entry.href);
+    const scheduledKeys = new Set(dueEntries.map((entry) => buildCourseCacheKey(entry.href)).filter(Boolean));
     const cache = readCourseUpcomingCache();
     let dirty = false;
     dueEntries.forEach((entry) => {
@@ -154,5 +155,20 @@ function getRefreshEntries(scheduleEntries = []) {
       if (!areUpcomingCacheEntriesEqual(cachedItems, serializedItems)) dirty = true;
     });
     if (dirty) writeCourseUpcomingCache(cache);
-    return dueEntries;
+    const otherDueEntries = [];
+    (otherCourseGroups || []).forEach((group, groupIndex) => {
+      (group?.items || []).forEach((item, itemIndex) => {
+        const cacheKey = buildCourseCacheKey(item?.href || '');
+        if (!cacheKey || scheduledKeys.has(cacheKey)) return;
+        if (!item?.href || !(item?.hasNativeDueReminder || isDueFlagNote(item?.note || ''))) return;
+        otherDueEntries.push({
+          href: item.href,
+          title: item.title || '',
+          note: item.note || dueSoonReminderText(),
+          hasNativeDueReminder: true,
+          sortIndex: (scheduleEntries?.length || 0) + (groupIndex * 1000) + itemIndex
+        });
+      });
+    });
+    return [...dueEntries, ...otherDueEntries];
   }

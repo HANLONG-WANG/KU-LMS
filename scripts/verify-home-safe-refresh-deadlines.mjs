@@ -39,7 +39,7 @@ assert(syncOverlayFn.includes("let overlay = document.getElementById('ku-home-re
 assert(syncOverlayFn.includes("overlay.id = 'ku-home-refresh-overlay';"), 'Overlay sync should canonicalize the overlay id.');
 assert(syncOverlayFn.includes('(document.body || document.documentElement).appendChild(overlay);'), 'Overlay sync should stay safe before body exists.');
 assert(syncOverlayFn.includes("document.getElementById('ku-home-refresh-overlay')?.remove();"), 'Overlay sync should clear the overlay when refresh becomes inactive.');
-assert(extractFunction(source, 'startHomeRefresh').includes('getRefreshEntries(view.schedule.entries)'), 'Refresh should explicitly target current due-flag courses when the user asks for latest data.');
+assert(extractFunction(source, 'startHomeRefresh').includes('getRefreshEntries(view.schedule.entries, view.otherCourses)'), 'Refresh should explicitly target timetable red flags plus native-reminder other-course rows when the user asks for latest data.');
 assert(extractFunction(source, 'startHomeRefresh').includes('homeUrl: window.location.href'), 'Refresh should snapshot the exact home URL before navigation.');
 assert(extractFunction(source, 'continueHomeRefreshIfNeeded').includes("route.name === 'home'"), 'Refresh state machine should resume on the home route.');
 assert(extractFunction(source, 'continueHomeRefreshIfNeeded').includes("route.name === 'course-materials'"), 'Refresh state machine should resume on course pages.');
@@ -67,6 +67,8 @@ assert(source.includes('ku-home-refresh-progress-value'), 'Refresh overlay shoul
 assert(architectureDoc.includes('validation-gated refresh control'), 'Architecture doc should describe the validation-gated refresh control.');
 assert(architectureDoc.includes('top-level same-tab navigation only'), 'Architecture doc should describe the same-tab navigation transport rule.');
 assert(architectureDoc.includes('must explicitly remain visible through the takeover hide rules'), 'Architecture doc should describe the overlay visibility contract against takeover hide rules.');
+assert(architectureDoc.includes('Homepage refresh targeting now includes timetable red-flag rows plus `その他のコース` rows whose native homepage `.course-contents-info` reminder is present.'), 'Architecture doc should describe the expanded refresh target contract for native-reminder other-course rows.');
+assert(!architectureDoc.includes('currently red-flagged timetable courses through top-level same-tab navigation'), 'Architecture doc should no longer describe refresh as timetable-only.');
 assert(sessionSafetyDoc.includes('session-safer / validation-gated'), 'Session-safety doc should describe the refresh path as validation-gated.');
 
 const storage = new Map();
