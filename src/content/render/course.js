@@ -9,8 +9,8 @@ function renderCourseMaterials(view) {
           <div class="ku-card-title">タイムライン</div>
           ${view.course.timeline.items.length ? view.course.timeline.items.map((item) => {
             const token = materialTypeToken(item.subtitle, item.title);
-            const body = item.href ? `<a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>` : `<div>${escapeHtml(item.title)}</div>`;
-            return `<div class="ku-timeline-item"><div class="ku-timeline-icon ku-token-${token.key}">${icon(token.icon)}</div><div class="ku-panel-body">${body}<span class="ku-mini-meta">${escapeHtml(item.subtitle)}</span><span class="ku-chip ${item.label === 'New' ? 'red' : token.tone}">${escapeHtml(item.label || '更新')}</span></div><div class="ku-mini-meta">${escapeHtml(item.recency)}</div></div>`;
+            const body = renderTimelineBody(item);
+            return `<div class="ku-timeline-item"><div class="ku-timeline-icon ku-token-${token.key}">${icon(token.icon)}</div><div class="ku-timeline-content"><div class="ku-timeline-head"><div class="ku-timeline-head-main"><span class="ku-mini-meta ku-timeline-kicker">${escapeHtml(item.subtitle)}</span><span class="ku-chip ${item.label === 'New' ? 'red' : token.tone}">${escapeHtml(item.label || '更新')}</span></div><span class="ku-mini-meta ku-timeline-recency">${escapeHtml(item.recency)}</span></div><div class="ku-timeline-body">${body}</div></div></div>`;
           }).join('') : `<div class="ku-empty">${view.course.timeline.error ? 'タイムラインを取得できませんでした。' : '表示できる活動はありません。'}</div>`}
         </aside>
         <section class="ku-sidebar-layout">
@@ -19,7 +19,11 @@ function renderCourseMaterials(view) {
               <div class="ku-collapse-head"><span>${escapeHtml(section.title || 'General')}</span><span>${icon('chevron-up')}</span></div>
               <div class="ku-section-items">${section.items.map((item) => {
                 const token = materialTypeToken(item.type, item.title);
-                return `<div class="ku-section-item"><div class="ku-item-icon ku-token-${token.key}">${icon(token.icon)}</div><div class="ku-section-item-meta"><a class="ku-title-link" href="${escapeAttr(item.href || item.detailHref)}">${item.isNew ? '<span class="ku-chip red">New</span> ' : ''}${escapeHtml(item.title)}</a><div class="ku-inline"><span class="ku-chip ${token.tone}">${escapeHtml(item.type || token.label)}</span></div>${item.availability ? `<div class="ku-mini-meta">利用可能期間 ${escapeHtml(item.availability)}</div>` : ''}</div><div class="ku-inline">${item.detailHref ? `<a class="ku-chip blue ku-chip-link" href="${escapeAttr(item.detailHref)}">詳細</a>` : ''}${item.historyHref ? `<a class="ku-chip neutral ku-chip-link" href="${escapeAttr(item.historyHref)}">${escapeHtml(item.historyLabel || '履歴')}</a>` : ''}</div></div>`;
+                const titleInner = `${item.isNew ? '<span class="ku-chip red">New</span> ' : ''}${escapeHtml(item.title)}`;
+                const titleNode = item.isTitleClickable && item.titleLaunchHref
+                  ? `<a class="ku-title-link" href="${escapeAttr(item.titleLaunchHref)}">${titleInner}</a>`
+                  : `<div class="ku-section-title ku-section-item-title">${titleInner}</div>`;
+                return `<div class="ku-section-item"><div class="ku-item-icon ku-token-${token.key}">${icon(token.icon)}</div><div class="ku-section-item-meta">${titleNode}<div class="ku-inline"><span class="ku-chip ${token.tone}">${escapeHtml(item.type || token.label)}</span></div>${item.availability ? `<div class="ku-mini-meta">利用可能期間 ${escapeHtml(item.availability)}</div>` : ''}</div><div class="ku-inline">${item.detailHref ? `<a class="ku-chip blue ku-chip-link" href="${escapeAttr(item.detailHref)}">詳細</a>` : ''}${item.historyHref ? `<a class="ku-chip neutral ku-chip-link" href="${escapeAttr(item.historyHref)}">${escapeHtml(item.historyLabel || '履歴')}</a>` : ''}</div></div>`;
               }).join('')}</div>
             </section>`).join('')}
         </section>
@@ -28,6 +32,17 @@ function renderCourseMaterials(view) {
           <ul class="ku-rightnav-list">${view.course.anchors.map((anchor, index) => `<li><a class="ku-rightnav-link ${index === 0 ? 'active' : ''}" href="#${escapeAttr(anchor.target)}">${escapeHtml(anchor.title)}</a></li>`).join('')}</ul>
         </aside>
       </div>`;
+  }
+
+function renderTimelineBody(item) {
+    const bodyText = String(item?.bodyText || '').replace(/\r\n/g, '\n').trim();
+    if (bodyText) {
+      return `<div>${escapeHtml(bodyText).replace(/\n/g, '<br>')}</div>`;
+    }
+    if (item?.href) {
+      return `<a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`;
+    }
+    return `<div>${escapeHtml(item?.title || '')}</div>`;
   }
 
 function renderMyReports(view) {

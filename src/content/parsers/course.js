@@ -138,7 +138,8 @@ function extractCourseItem(item) {
     const availabilityData = availabilityLabel?.nextElementSibling?.textContent.replace(/\s+/g, ' ').trim() || '';
     const detailLinks = Array.from(item.querySelectorAll('.cl-contentsList_contentDetail a, .cl-contentsList_contentDetailListItem a, .cm-contentsList_contentDetailListItem a'));
     const primaryTitleLink = allLinks.find((link) => sanitizeCourseItemTitle(link.textContent || ''));
-    const detailHref = absoluteUrl(detailLinks.find((link) => /\/contents\//.test(link.getAttribute('href') || '') || /詳細/.test(link.textContent || ''))?.getAttribute('href') || primaryTitleLink?.getAttribute('href') || '');
+    const titleLaunchHref = absoluteUrl(primaryTitleLink?.getAttribute('href') || '');
+    const detailHref = absoluteUrl(detailLinks.find((link) => /\/contents\//.test(link.getAttribute('href') || '') || /詳細/.test(link.textContent || ''))?.getAttribute('href') || '');
     const historyHref = absoluteUrl(allLinks.find((link) => /\/history(?:[/?]|$)/.test(link.getAttribute('href') || ''))?.getAttribute('href') || '');
     const historyLabel = allLinks.find((link) => /利用回数|履歴/.test(link.textContent || ''))?.textContent.replace(/\s+/g, ' ').trim() || '';
     const usage = /利用回数/.test(historyLabel) ? historyLabel : '';
@@ -146,13 +147,15 @@ function extractCourseItem(item) {
     const categoryType = item.querySelector('.cl-contentsList_categoryLabel')?.textContent.replace(/\s+/g, ' ').trim() || '';
     const inferredType = inferMaterialType(rawTitle);
     const type = /試験/.test(inferredType) ? inferredType : (categoryType || inferredType);
-    const href = absoluteUrl(detailHref || primaryTitleLink?.getAttribute('href') || '');
+    const href = absoluteUrl(detailHref || titleLaunchHref || '');
     return {
       title: rawTitle || '項目',
       isNew: !!item.querySelector('.cl-contentsList_new') || /(^|\s)New(\s|$)/.test(titleSource?.textContent || ''),
       type,
       availability: availabilityData,
       href,
+      titleLaunchHref,
+      isTitleClickable: !!titleLaunchHref,
       detailHref,
       historyHref,
       historyLabel,

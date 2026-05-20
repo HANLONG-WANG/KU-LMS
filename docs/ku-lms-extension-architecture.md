@@ -65,6 +65,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - For the homepage deadline CTA, target the first aggregated upcoming item's `courseHref`, and fall back to the native course list when no upcoming item resolves.
 - Refresh-mode course visits must suppress nonessential side effects such as timeline/API enrichment so the traversal stays focused on cache refresh and restoration.
 - Preserve original href targets for detail pages and downloads.
+- On the course materials route, native title-anchor presence is authoritative for primary material clickability: if the native title is plain text, the redesign must keep it non-clickable.
+- Primary material title launches are distinct from secondary detail/history actions. Preserve a separate native title-launch target (for example `do_contents.php?...`) rather than collapsing it into `detailHref`, and do not widen that contract into shared consumers without explicit audit.
 - For syllabus jumping, do not fetch KU-LMS `/course.php/:courseId/info` during chip-click handling.
 - Instead, send the current course title / year / courseCode to the extension service worker and resolve the public syllabus detail URL in the background first by fetching the public search/detail pages there; when that succeeds, navigate the current tab directly to the detail page so the user never sees the intermediate search page.
 - Syllabus query normalization must strip timetable suffixes such as `(2026-春学期-...-70399)`, trailing section tags like `[A 1]`, and trailing marker tags such as `＜M＞＜S＞＜C＞`, while preserving meaningful subject text like `（著作権）`.

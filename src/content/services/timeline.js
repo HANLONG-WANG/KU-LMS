@@ -31,15 +31,28 @@ function mapTimelineRecord(record, courseId) {
       ? record.message_info.contents.filter((content) => content && content.type && content.type !== 'string' && content.type !== 'deleted')
       : [];
     const primaryContent = linkedContents[0] || null;
-    const contentTitle = primaryContent?.text || sanitizeCourseItemTitle(record?.message_info?.text || record?.message || '');
+    const plainMessage = String(record?.message || '').replace(/\r\n/g, '\n').trim();
+    const fallbackBodyText = plainMessage || normalizeTimelineBodyText(record?.message_info?.text || '');
+    const contentTitle = primaryContent?.text || sanitizeCourseItemTitle(fallbackBodyText || '');
     const contentType = mapTimelineContentType(primaryContent?.type || '');
     return {
       title: contentTitle || record?.realname || 'タイムライン',
+      bodyText: primaryContent ? '' : fallbackBodyText,
       subtitle: primaryContent ? (contentType || '教材更新') : (record?.realname || '投稿'),
       label: primaryContent ? (contentType || '更新') : '投稿',
       recency: formatTimelineTimestamp(record?.datetime),
       href: primaryContent ? buildTimelineContentHref(primaryContent, courseId) : ''
     };
+  }
+
+function normalizeTimelineBodyText(text = '') {
+    return String(text || '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?(?:p|div|li|ul|ol)[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
 function mapTimelineContentType(type = '') {
