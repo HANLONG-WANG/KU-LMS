@@ -1,8 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "KU-LMS Visual Redesign Takeover",
-  "description": "Pre-paint KU-LMS redesign overlay for login, logout, home, course, notices, messages, and manual routes.",
+  "name": "KU-LMS",
+  "description": "为关西大学 KU-LMS 提供更现代的界面，优化仪表盘、消息与通知阅读体验，并支持快速访问课程大纲。",
   "version": "0.1.0",
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
   "host_permissions": [
     "https://kulms.tl.kansai-u.ac.jp/webclass/*",
     "https://syllabus3.jm.kansai-u.ac.jp/*"
