@@ -97,6 +97,9 @@ const record = (name, fn) => { fn(); checks.push(name); };
 record('bootstrap files are final in manifest order', () => {
   assert(kulms.js.at(-1) === 'src/content/main.js', 'KU-LMS bootstrap must be last in manifest order.');
   assert(syllabus.js.at(-1) === 'src/content/syllabus-main.js', 'Syllabus bootstrap must be last in manifest order.');
+  assert(!syllabus.js.includes('src/content/runtime/boot-kulms.js'), 'Syllabus manifest chain must not include the KU-LMS boot runtime.');
+  assert(!syllabus.js.includes('src/content/main.js'), 'Syllabus manifest chain must not include the KU-LMS app entrypoint.');
+  assert(syllabus.js.includes('src/content/runtime/boot-syllabus.js'), 'Syllabus manifest chain must include its standalone boot runtime.');
 });
 record('pre-bootstrap files stay definition-only', () => {
   for (const file of new Set([...kulmsPre, ...syllabusPre])) {

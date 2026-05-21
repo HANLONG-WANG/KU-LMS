@@ -144,6 +144,47 @@ function clearSyllabusAssistOverlay() {
     document.getElementById('ku-syllabus-assist-overlay')?.remove();
   }
 
+function ensureSyllabusRoot() {
+    let root = document.getElementById(SYLLABUS_ROOT_ID);
+    if (!root) {
+      root = document.createElement('div');
+      root.id = SYLLABUS_ROOT_ID;
+      (document.body || document.documentElement).appendChild(root);
+    }
+    return root;
+  }
+
+function mountSyllabusDetailBootShell() {
+    const root = ensureSyllabusRoot();
+    root.innerHTML = '<div class="ku-app ku-syllabus-app"><main class="ku-page ku-syllabus-page"><div class="ku-card ku-loading"><div class="ku-spinner"></div><div>シラバス詳細を読み込み中…</div></div></main></div>';
+  }
+
+function releaseSyllabusDetailRedesign() {
+    delete document.documentElement.dataset.kuSyllabusRedesignState;
+    const root = document.getElementById(SYLLABUS_ROOT_ID);
+    if (root) root.remove();
+  }
+
+function initSyllabusDetailRedesign() {
+    try {
+      const view = parseSyllabusDetailDocument(document);
+      if (!view) {
+        releaseSyllabusDetailRedesign();
+        return;
+      }
+      clearPendingSyllabusNavigation();
+      clearSyllabusAssistOverlay();
+      document.documentElement.dataset.kuSyllabusAssist = 'detail';
+      const root = ensureSyllabusRoot();
+      root.innerHTML = renderSyllabusDetailPage(view);
+      hydrateSyllabusDetail(root);
+      document.documentElement.dataset.kuSyllabusRedesignState = 'ready';
+    } catch (error) {
+      console.warn('[KU Redesign] syllabus detail redesign failed', error);
+      releaseSyllabusDetailRedesign();
+    }
+  }
+
 function submitSyllabusSearchForm({ query = '', year = '' } = {}) {
     const form = document.createElement('form');
     form.method = 'POST';

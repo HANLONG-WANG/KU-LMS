@@ -20,6 +20,7 @@
   - Messages detail page
   - Messages sent box page
   - Messages recycle box page
+  - Public syllabus detail page
 - Evidence reviewed:
   - `UI-Image/*.png`
   - `docs/ku-lms-extension-architecture.md`
@@ -97,7 +98,8 @@
   - My-reports = submission status surface
   - Notifications = system/course notice browsing surface
   - Notice detail = notice reading/detail surface
-- Messages = inbox/work queue + sent/trash management surface
+  - Public syllabus detail = standalone read-only academic article surface
+  - Messages = inbox/work queue + sent/trash management surface
 - Content hierarchy:
   - Level 1: page title / route identity
   - Level 2: route-specific navigation or filters
@@ -226,6 +228,7 @@
 - Course section accordion/timeline hybrid
 - My-report display settings popover
 - Compact syllabus jump chip (`シ`) that sits immediately after course names and reuses the shared chip language
+- Public syllabus detail article shell
 
 ### Variants and states
 - Chips:
@@ -277,6 +280,18 @@
 - Brand treatment should stay calm and trustworthy; prioritize form clarity over hero imagery.
 - If the route introduces helper/error/auth-status copy, it should reuse the same neutral/danger token logic as the rest of the redesign.
 
+
+### Public syllabus detail guidance
+- Public syllabus detail pages are standalone read-only article surfaces, not authenticated KU-LMS workspace routes.
+- They may reuse shared visual tokens — white cards, blue accents, pale borders, readable typography, restrained shadows — but must not show the authenticated top navigation, user context, course shell, or dashboard-style widgets.
+- Preferred layout:
+  - hero card with course title, subtitle/tags when source-backed, course code, instructor, term, day/period, and faculty/school metadata
+  - compact metadata summary card or right rail for parseable source fields
+  - main article cards for overview/objectives, class plan, grading, materials, feedback/contact, and comments when present
+  - small source action labeled like `公開シラバス原本` that points only to the current public detail URL
+- Do not invent a keyword-search back action or reconstructed result-list destination; use native browser Back/history behavior for return navigation.
+- Preserve long Japanese text, line breaks, and native section ordering. Do not invent summaries, weekly breakdowns, grading stats, relationship chips, or course metadata that cannot be parsed from the public source page.
+- If the detail parser cannot recover the minimum valid article contract — non-empty course code, non-empty title, and at least one non-empty body section — the extension must show the native public syllabus page instead of a partial redesign.
 
 ### Communication-route guidance
 - Notice detail pages should feel editorial but still operational: metadata first, readable body second, return/navigation actions third.
@@ -427,6 +442,13 @@
 - Bulk actions sit above the table.
 - Search is right-aligned in the action bar region.
 - Folder navigation remains in the left sidebar.
+
+### Public syllabus detail
+- Must remain article-first and read-only.
+- Must not mount the authenticated KU-LMS top nav or global workspace shell.
+- Metadata should help scan the source-backed course identity before the body text.
+- Source-backed body sections should stay dense but readable, using the same card and type rhythm as notice/message detail surfaces.
+- The only explicit source action should point to the current public detail URL; return behavior should rely on native browser Back/history rather than a fabricated search-result link.
 
 ## Review checklist for future AI output
 - Does it still look like the same product family?

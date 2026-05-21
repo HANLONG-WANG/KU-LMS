@@ -9,6 +9,7 @@
 - **KU-LMS routes** boot through `src/content/main.js`.
 - **Syllabus routes** boot through `src/content/syllabus-main.js`.
 - Both entrypoints are loaded at `document_start` via `manifest.json` and are intentionally thin bootstrap shims.
+- Syllabus routes must never enter the KU-LMS `bootKulms()` path or mount authenticated KU-LMS shell semantics.
 
 ## Load-order contract
 1. Files listed before the final bootstrap file are **definition-only**.
@@ -62,22 +63,28 @@ src/content/
 - `runtime/state.js` owns shared mutable in-memory state (`state`, page lifecycle guards, cached DOM/form references).
 - `runtime/state.js` also owns the same-tab persisted message-context slot that separates global inbox routing from course-context inbox routing.
 - `runtime/boot-kulms.js` owns KU-LMS boot sequencing and the single rerender loop.
-- `runtime/boot-syllabus.js` owns syllabus-domain assist boot only.
+- `runtime/boot-syllabus.js` owns syllabus-domain boot. It keeps search/results pages assist-only and may gate eligible public detail pages into a standalone read-only article render path.
 - `parsers/*` stay DOM-in / normalized-data-out and must remain side-effect free.
 - `render/*` stay string-generation only and must not perform I/O or storage writes.
 - `hydrate/*` may bind events and request rerenders, but should not own fetch/session-storage policy.
 - `services/refresh.js` is the only content-side owner of refresh sessionStorage state and refresh overlay synchronization.
 - `services/cache.js` may expose display-only cache helpers for homepage deadline hinting, but it must not absorb refresh-state ownership or widen refresh eligibility.
 - `services/syllabus.js` owns syllabus chip navigation, pending marker state, and assist-page auto-resolution.
+- Public syllabus detail parsing/rendering, when present, must remain syllabus-domain-only and read-only: parse from the current public detail DOM, render only source-backed article data, and expose at most a source action to the current detail URL.
+- Public syllabus detail route gating requires `actionClass=syllabus.search.DetailKeySearchSt` plus non-empty `UJikanwari_cd`; malformed or insufficient parses must fall back to the native public page.
 - `services/documents.js` and `services/timeline.js` own same-tab fetches and must preserve abortable request behavior.
 - `utils/core.js` owns pure cross-cutting helpers.
 
 ## Safety-sensitive rules
 - The refresh FSM remains validation-gated, same-tab only, and fail-closed on `login.php`, `logout.php`, conflict pages, unexpected routes, manual interruption, and stale state.
 - The early boot refresh overlay sync remains **visual-only** and must not absorb route/auth branching.
-- Syllabus pages remain assist-only; they must not render the KU-LMS redesign shell.
+- Public syllabus search/results pages remain assist-only; they may use the pending overlay / auto-resolution path but must not be fully redesigned.
+- Public syllabus detail pages may render a standalone read-only article surface, but they must not render the authenticated KU-LMS redesign shell, top navigation, user context, or `bootKulms()` route semantics.
+- Public syllabus detail rendering must fail open to native on malformed parse, missing course code/title, or no non-empty body section.
+- Public syllabus detail may link only to the current public detail URL as its source action; it must not fabricate a keyword-search back/results action.
 - The retired background upcoming-course fan-out path must not be reintroduced.
 
 ## Verification surface
 - Existing route/safety verifiers now inspect the ordered KU-LMS content-script subsystem instead of assuming all logic lives in `src/content/main.js`.
-- Modularization-specific verifiers live under `scripts/verify-content-*.mjs`, including dedicated load-order and syllabus-contract checks for the assist-only domain.
+- Modularization-specific verifiers live under `scripts/verify-content-*.mjs`, including dedicated load-order and syllabus-contract checks for the syllabus domain.
+- Syllabus verifiers should protect the narrowed contract: search/results assist-only, eligible detail pages read-only, native fallback on malformed detail parse, and no `bootKulms()` on the public syllabus domain.

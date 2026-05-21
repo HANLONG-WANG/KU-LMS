@@ -1,0 +1,356 @@
+<!--content-->
+
+
+
+
+
+<html lang="ja">
+    <!--[if lt IE 8]><html class="ie8"><![endif]-->
+    <!--[if IE 8]><html class="ie8"><![endif]-->
+    <!--[if (gt IE 9)|!(IE)]> <html><![endif]-->
+    <head>
+        <meta charset="utf-8" />
+        <title>キーワード検索</title>
+        <meta http-equiv="Content-Style-Type" content="text/css; charset=UTF-8;">
+        <meta http-equiv="Content-Script-Type" content="text/javascript; charset=UTF-8;"> 
+        <meta http-equiv="imagetoolbar" content="no">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=9">
+        <link rel="stylesheet" type="text/css" href="/css/print.css" media="print">
+        <!--[if lt IE 9]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
+        <![endif]-->
+
+        <link type="text/css" rel="stylesheet" href="/css/lib/jquery.sidr.dark.css" >
+        <link type="text/css" rel="stylesheet" href="/css/base.css" >
+        <link type="text/css" rel="stylesheet" href="/css/lib/easy-responsive-tabs.css" >
+        <link type="text/css" rel="stylesheet" href="/css/lib/footable.core.css" >
+        <script type="text/javascript" src="/common/js/jquery.min.js"></script>
+        <script type="text/javascript" src="/common/js/heightLine.js"></script>
+        <script type="text/javascript" src="/common/js/lib/smoothscroll.js"></script>
+        <script type="text/javascript" src="/common/js/lib/jquery.sidr.min.js"></script>
+        <script type="text/javascript" src="/common/js/lib/footable.js"></script>
+        <script type="text/javascript" src="/common/js/lib/easyResponsiveTabs.js"></script>
+        <script type="text/javascript" src="/common/js/KandaiLogout.js"></script>
+
+        <script type="text/javascript">
+            $(function () {
+                $('.footable').footable();
+            });
+        </script>
+        <script type="text/javascript">
+        <!--
+            function linkSetSearchValue(query, maxresults, startat, daigaku_flg, gaiyo, tantousya, kamoku, biko, hideSelectJyugyohouhou) {
+                SetNendoSelect();
+                document.frmKeyResult.query.value = query;
+                document.frmKeyResult.maxresults.value = maxresults;
+                document.frmKeyResult.startat.value = startat;
+                document.frmKeyResult.daigaku_flg.value =daigaku_flg;
+                document.frmKeyResult.gaiyo.value =gaiyo;
+                document.frmKeyResult.tantousya.value =tantousya;
+                document.frmKeyResult.kamoku.value =kamoku;
+                document.frmKeyResult.biko.value =biko;
+                document.frmKeyResult.hideSelectJyugyohouhou.value =hideSelectJyugyohouhou;
+                document.frmKeyResult.submit();
+            }
+
+            function linkSetGo(jyu_knr_no, queryString) {
+                SetNendoSelect();
+                var varNendo = document.frmKeyResult.hideSelectNendo.value;
+                w = window.open("Controller?UJikanwari_cd=" + jyu_knr_no +
+                        "&actionClass=syllabus.search.DetailKeySearch&nendo=" + varNendo + "&queryString=" + queryString + "&st=key",
+                        "",
+                        "width=650,height=540,left=0,top=0,toolbar=no,resizable=yes,scrollbars=yes,location=no");
+
+                w.focus();
+            }
+
+        // 一般公開シラバスのシラバス詳細表示
+            function linkSetGoSt(nendo, jyu_knr_no, queryString) {
+                w = window.open("Controller?UJikanwari_cd=" + jyu_knr_no +
+                        "&actionClass=syllabus.search.DetailKeySearchSt&nendo=" + nendo + "&queryString=" + queryString + "&st=key",
+                        "",
+                        "width=1050,height=540,left=0,top=0,toolbar=no,resizable=yes,scrollbars=yes,location=no");
+                w.focus();
+            }
+
+            function MM_swapImgRestore() {
+                var i, x, a = document.MM_sr;
+                for (i = 0; a && i < a.length && (x = a[i]) && x.oSrc; i++)
+                    x.src = x.oSrc;
+            }
+
+            function MM_preloadImages() {
+                var d = document;
+                if (d.images) {
+                    if (!d.MM_p)
+                        d.MM_p = new Array();
+                    var i, j = d.MM_p.length, a = MM_preloadImages.arguments;
+                    for (i = 0; i < a.length; i++)
+                        if (a[i].indexOf("#") != 0) {
+                            d.MM_p[j] = new Image;
+                            d.MM_p[j++].src = a[i];
+                        }
+                }
+            }
+
+            function MM_findObj(n, d) {
+                var p, i, x;
+                if (!d)
+                    d = document;
+                if ((p = n.indexOf("?")) > 0 && parent.frames.length) {
+                    d = parent.frames[n.substring(p + 1)].document;
+                    n = n.substring(0, p);
+                }
+                if (!(x = d[n]) && d.all)
+                    x = d.all[n];
+                for (i = 0; !x && i < d.forms.length; i++)
+                    x = d.forms[i][n];
+                for (i = 0; !x && d.layers && i < d.layers.length; i++)
+                    x = MM_findObj(n, d.layers[i].document);
+                if (!x && document.getElementById)
+                    x = document.getElementById(n);
+                return x;
+            }
+
+            function MM_swapImage() {
+                var i, j = 0, x, a = MM_swapImage.arguments;
+                document.MM_sr = new Array;
+                for (i = 0; i < (a.length - 2); i += 3)
+                    if ((x = MM_findObj(a[i])) != null) {
+                        document.MM_sr[j++] = x;
+                        if (!x.oSrc)
+                            x.oSrc = x.src;
+                        x.src = a[i + 2];
+                    }
+            }
+
+            function MM_goToURL() {
+                var i, args = MM_goToURL.arguments;
+                document.MM_returnValue = false;
+                for (i = 0; i < (args.length - 1); i += 2)
+                    eval(args[i] + ".location='" + args[i + 1] + "'");
+            }
+
+            function backFirst(firstPath) {
+                document.frmKeyResult.hidSelIdx.value = '0';
+                SetNendoSelect();
+                document.frmKeyResult.action = firstPath;
+                document.frmKeyResult.submit();
+            }
+
+            function SetNendoSelect() {
+                document.frmKeyResult.hideSelectNendo.value =
+                        document.frmKeyResult.tileNendo.options[
+                                document.frmKeyResult.tileNendo.selectedIndex].value;
+            }
+
+            function setNendo() {
+                SetNendoSelect();
+                document.frmKeyResult.action = "syllabus.search.KeySearch";
+                document.frmKeyResult.submit();
+            }
+
+            function setNendoSt() {
+                SetNendoSelect();
+                document.frmKeyResult.action =
+                        "search/keyword/KeywordSearchTop.html?selectedNendo=" + document.frmKeyResult.hideSelectNendo.value;
+                document.frmKeyResult.submit();
+            }
+        //-->
+        </script>
+        <script type="text/javascript">
+            $(function () {
+                $('.footable').footable();
+            });
+        </script>
+        <style>
+            .footable-row-detail-name {
+                white-space: nowrap;
+            }
+        </style>
+    </head>
+    <body  class="syllabus"  >
+        <div id="wrapper">
+            <header id="header">
+                <div class="logo"><img width="244" height="45" alt="" src="/img/header/logo01.png"></div>
+            </header>
+            <section class="content">
+
+                <form action="Controller" name="frmKeyResult" method="POST">
+                    <div class="contettitle"><span class="title"></span></div>
+                    <div class="searchyear">
+                        
+                        <select name="tileNendo" class="year" onchange="setNendoSt()">
+                            
+                                
+                                <option value="2026" selected>2026</option>
+                                
+                                <option value="2025" >2025</option>
+                                
+                                <option value="2024" >2024</option>
+                                
+                                <option value="2023" >2023</option>
+                                
+                                <option value="2022" >2022</option>
+                                
+                            </select>
+                            年度の<span>講義要項のデータベースを検索します（科目検索、キーワード検索のみ過去5年検索可。その他の検索機能は当該年度のみ。）</span>
+                    </div>
+
+                    <div class="tab_ac">
+
+                        <!--Horizontal Tab-->
+                        <div id="horizontalTab">
+                            
+                            <ul class="resp-tabs-list">
+                                <li class="tab01"><span class="pctitle01"></span></li>
+                                <li class="tab02"><span class="pctitle02"></span></li>
+                                <li class="tab03"><span class="pctitle03"></span></li>
+                                <li class="tab04 resp-tab-active"><span class="pctitle04"></span></li>
+                            </ul>
+                            
+                            <div class="resp-tabs-container">
+
+                                <h2 class="resp-accordion resp-tab-active" ><div class="title"></div><span class="resp-arrow"></span><span class="pctitle04"></span></h2>
+                                <!--tab4start-->
+                                <div class="resp-tab-content resp-tab-content-active" style="display: block;">
+
+                                    
+                                    
+                                    
+                                    <table class="footable style02" cellspacing="0" cellpadding="8">
+                                        <thead>
+                                            <tr>
+                                                <th width="100" data-class="expand">学部・研究科</th>
+                                                <th width="150" data-hide="expand">科目名</th>
+                                                <th width="100" data-hide="phone">担当者名</th>
+                                                <th data-hide="phone">概要</th>
+                                                <th data-hide="phone">備考</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            
+
+                                            <tr>
+                                                <td>総情</td>
+                                                <td>
+                                                    
+                                                    <a href='javascript:void(0);' onkeydown="linkSetGoSt('2026', '171476', '知的財産法（著作権）');
+                return false;" onclick="linkSetGoSt('2026', '171476', '知的財産法（著作権）');
+                        return false;">
+                                                        
+                                                            <span style="background-color: #efc2c2">知的財産法（著作権）</span>
+                                                        </a>
+                                                </td>
+                                                <td>
+                                                    泉　克幸
+                                                </td>
+                                                <td width="250">　「知的財産」とは人間の知的・精神的活動によって生み出された成果および商品・営業の主体を示す標識（マーク）のことであり、「情報」としての一般的性格を有している・・・</td>
+                                                <td width="250">①著作権法が含まれている六法全書（ポケット六法で可）を毎回持 
+　参すること。 
+②知的財産法を総合的に理解するために、「知的財産法（産業財産 
+　権）」も併・・・</td>
+                                            </tr>
+                                            
+                                    </table>
+                                    <ul class="pager">
+                                        <li class="prev">
+                                            
+                                            &lt;&lt;前の検索結果へ
+                                            
+                                        </li>
+                                        <li>検索結果：1件</li>
+                                        <li class="next">
+                                            
+                                            次の検索結果へ&gt;&gt;
+                                            
+                                        </li>
+                                    </ul>
+                                    
+                                    <div class="backbtn">
+                                        
+                                        <input type="button" class="back" value="" onclick="tab04click();">
+                                        
+                                    </div>
+
+                                </div>
+                                <!--tab4start-->
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    <input type="hidden" name="pageId" value="syllabus_ref_kamoku_search">
+                    <input type="hidden" name="actionClass" value="syllabus.search.KeySearchUp">
+                    <input type="hidden" name="query">
+                    <input type="hidden" name="maxresults">
+                    <input type="hidden" name="startat">
+                    <input type="hidden" name="daigaku_flg">
+
+                    <input type="hidden" name="gaiyo">
+                    <input type="hidden" name="tantousya">
+                    <input type="hidden" name="kamoku">
+                    <input type="hidden" name="biko">
+
+                    <input type="hidden" name="hidParam" value="">
+                    <input type="hidden" name="hidSelIdx" value="">
+                    <input type="hidden" name="hideSelectNendo" value="">
+                    <input type="hidden" name="hideSelectJyugyohouhou" value="">
+
+                </form>
+            </section><!--content-->
+            <script type="text/javascript">
+                function tab01click()
+                {
+                
+                    backFirst('/syllabus/search/curri/CurriSearchTop.html');
+                
+                    return false;
+                }
+                function tab02click()
+                {
+                
+                    backFirst('/syllabus/search/kamoku/KamokuSearchTop.html');
+                
+                    return false;
+                }
+                function tab03click()
+                {
+                
+                    backFirst('/syllabus/search/kyoin/KyoinSearchTop.html');
+                
+                    return false;
+                }
+                function tab04click()
+                {
+                
+                    backFirst('/syllabus/search/keyword/KeywordSearchTop.html');
+                
+                    return false;
+                }
+                $('.tab01').on("click", tab01click);
+                $('.tab02').on("click", tab02click);
+                $('.tab03').on("click", tab03click);
+                $('.tab04').on("click", tab04click);
+            </script>
+
+            <!-- #end: part:551 (b491) -->
+            <!-- #end: block:491 -->        <!-- /#MAIN -->
+
+            <!-- #FOOTER -->
+
+            <!-- #start: block:472 -->
+            <!-- #start: part:532 (b472) --><footer id="footer">
+                <div class="pagetop"><span class="ico"></span><a href="#header">PAGETOP</a></div>
+<div class="copyright" style="text-align: center; margin-top: 10px; font-size: 12px;"><span>Copyright(C)</span> <span>関西大学および情報提供者　All rights reserved.</span>　無断転載を禁じます</div>
+<!--                <div class="copyright"><img src="images/copyrights.gif" alt="Copyright(C) 関西大学および情報提供者　All rights reserved.　無断転載を禁じます" width="519" height="15"></div>-->
+            </footer>
+
+            <!-- #end: part:532 (b472) -->
+            <!-- #end: block:472 -->        <!-- /#FOOTER -->
+        </div><!--wrapper-->
+    </body>
+</html>

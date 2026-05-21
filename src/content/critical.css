@@ -21,25 +21,32 @@
 }
 
 html[data-ku-redesign-state="booting"],
-html[data-ku-redesign-state="ready"] {
+html[data-ku-redesign-state="ready"],
+html[data-ku-syllabus-redesign-state="booting"],
+html[data-ku-syllabus-redesign-state="ready"] {
   background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%) !important;
   overflow: hidden !important;
 }
 
 html[data-ku-redesign-state="booting"] body > *:not(#ku-redesign-root):not(#ku-home-refresh-overlay):not(script):not(style):not(link),
-html[data-ku-redesign-state="ready"] body > *:not(#ku-redesign-root):not(#ku-home-refresh-overlay):not(script):not(style):not(link) {
+html[data-ku-redesign-state="ready"] body > *:not(#ku-redesign-root):not(#ku-home-refresh-overlay):not(script):not(style):not(link),
+html[data-ku-syllabus-redesign-state="booting"] body > *:not(#ku-syllabus-root):not(script):not(style):not(link),
+html[data-ku-syllabus-redesign-state="ready"] body > *:not(#ku-syllabus-root):not(script):not(style):not(link) {
   opacity: 0 !important;
   pointer-events: none !important;
 }
 
 html[data-ku-redesign-state="booting"] body,
-html[data-ku-redesign-state="ready"] body {
+html[data-ku-redesign-state="ready"] body,
+html[data-ku-syllabus-redesign-state="booting"] body,
+html[data-ku-syllabus-redesign-state="ready"] body {
   background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%) !important;
   overflow: hidden !important;
   height: 100vh !important;
 }
 
-#ku-redesign-root {
+#ku-redesign-root,
+#ku-syllabus-root {
   position: fixed;
   inset: 0;
   z-index: 2147483646;
@@ -51,7 +58,8 @@ html[data-ku-redesign-state="ready"] body {
   color: var(--ku-text);
 }
 
-#ku-redesign-root * {
+#ku-redesign-root *,
+#ku-syllabus-root * {
   box-sizing: border-box;
 }
 
@@ -1149,6 +1157,141 @@ html[data-ku-redesign-state="ready"] body {
   font-size: 12px;
   line-height: 1;
   flex-shrink: 0;
+}
+
+.ku-syllabus-page {
+  max-width: 1520px;
+}
+
+.ku-syllabus-hero-card {
+  padding: 22px 24px 24px;
+}
+
+.ku-syllabus-hero-topline {
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ku-syllabus-page-title {
+  margin-top: 16px;
+}
+
+.ku-syllabus-hero-subtitle {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.ku-syllabus-hero-meta {
+  margin-top: 16px;
+}
+
+.ku-syllabus-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.ku-syllabus-summary-item,
+.ku-syllabus-aside-item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid rgba(229, 235, 246, 0.94);
+  border-radius: var(--ku-radius-md);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.ku-syllabus-summary-item span,
+.ku-syllabus-aside-item span,
+.ku-syllabus-field-label {
+  color: var(--ku-text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ku-syllabus-summary-item strong,
+.ku-syllabus-aside-item strong {
+  color: var(--ku-text);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.ku-syllabus-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(260px, 360px);
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.ku-syllabus-main {
+  display: grid;
+  gap: 18px;
+}
+
+.ku-syllabus-section-card {
+  overflow: hidden;
+}
+
+.ku-syllabus-section-body {
+  padding: 0 20px 20px;
+}
+
+.ku-syllabus-field-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.ku-syllabus-field {
+  border: 1px solid rgba(229, 235, 246, 0.94);
+  border-radius: var(--ku-radius-md);
+  background: rgba(255, 255, 255, 0.76);
+  padding: 14px 16px;
+}
+
+.ku-syllabus-field-value,
+.ku-syllabus-prose {
+  color: var(--ku-text);
+  font-size: 15px;
+  line-height: 1.75;
+  margin-top: 8px;
+}
+
+.ku-syllabus-field-value p,
+.ku-syllabus-prose p {
+  margin: 0;
+}
+
+.ku-syllabus-field-value a,
+.ku-syllabus-prose a {
+  color: var(--ku-blue-strong);
+  text-decoration: underline;
+}
+
+.ku-syllabus-aside {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.ku-syllabus-aside-summary,
+.ku-syllabus-anchor-block {
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 1120px) {
+  .ku-syllabus-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .ku-syllabus-aside {
+    position: static;
+  }
 }
 
 .ku-sidebar-shell {

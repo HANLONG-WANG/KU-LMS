@@ -1,6 +1,7 @@
 /* src/content/runtime/constants.js */
 
 var ROOT_ID = 'ku-redesign-root';
+var SYLLABUS_ROOT_ID = 'ku-syllabus-root';
 var COURSE_UPCOMING_CACHE_KEY = 'ku-redesign-course-upcoming-v1';
 var HOME_REFRESH_STATE_KEY = 'ku-redesign-home-refresh-v1';
 var HOME_REFRESH_MAX_AGE_MS = 5 * 60 * 1000;

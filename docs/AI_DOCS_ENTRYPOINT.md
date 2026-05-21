@@ -39,6 +39,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `.omx/plans/test-spec-ku-lms-home-upcoming-session-safety.md` — corresponding verification requirements.
 
 ### Deadline / syllabus / course-materials subsystem
+- `.omx/plans/prd-ku-lms-syllabus-detail-redesign.md` — approved public syllabus detail redesign PRD: search/results stay assist-only, eligible detail pages may render standalone read-only article surfaces, and the syllabus domain never boots the authenticated KU-LMS shell.
+- `.omx/plans/test-spec-ku-lms-syllabus-detail-redesign.md` — verification requirements for resolver safety, detail route gating, malformed-parse native fallback, source-action limits, and no `bootKulms()` on the syllabus domain.
 - `.omx/plans/prd-ku-lms-deadlines-syllabus-session-safety.md` — deadline detail recovery / direct syllabus / session-safety PRD.
 - `.omx/plans/test-spec-ku-lms-deadlines-syllabus-session-safety.md` — corresponding verification requirements.
 - `.omx/plans/prd-ku-lms-review-followups.md` — post-review homepage/syllabus PRD.

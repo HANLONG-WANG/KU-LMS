@@ -59,6 +59,9 @@
       "matches": [
         "https://syllabus3.jm.kansai-u.ac.jp/syllabus/*"
       ],
+      "css": [
+        "src/content/critical.css"
+      ],
       "js": [
         "src/content/runtime/constants.js",
         "src/content/runtime/state.js",
@@ -71,6 +74,7 @@
         "src/content/parsers/notifications.js",
         "src/content/parsers/messages.js",
         "src/content/parsers/manual.js",
+        "src/content/parsers/syllabus.js",
         "src/content/render/shared.js",
         "src/content/render/auth.js",
         "src/content/render/home.js",
@@ -78,8 +82,10 @@
         "src/content/render/notifications.js",
         "src/content/render/messages.js",
         "src/content/render/manual.js",
+        "src/content/render/syllabus.js",
         "src/content/hydrate/auth.js",
         "src/content/hydrate/shared.js",
+        "src/content/hydrate/syllabus.js",
         "src/content/services/documents.js",
         "src/content/services/cache.js",
         "src/content/services/timeline.js",

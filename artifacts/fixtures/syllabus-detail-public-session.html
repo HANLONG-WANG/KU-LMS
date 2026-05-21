@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+
+<html lang="ja">
+	<!--[if lt IE 8]><html class="ie8"><![endif]-->
+	<!--[if IE 8]><html class="ie8"><![endif]-->
+	<!--[if (gt IE 9)|!(IE)]> <html><![endif]-->
+<head>
+	<meta charset="utf-8" />
+    <title>授業科目詳細</title>
+    <meta http-equiv="Content-Style-Type" content="text/css; charset=UTF-8;">
+	<meta http-equiv="Content-Script-Type" content="text/javascript; charset=UTF-8;"> 
+	<meta http-equiv="imagetoolbar" content="no">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="IE=9">
+	<link rel="stylesheet" type="text/css" href="/css/print.css" media="print">
+	<!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
+	<![endif]-->
+    
+                                            <link type="text/css" rel="stylesheet" href="/css/lib/jquery.sidr.dark.css" >
+                                                <link type="text/css" rel="stylesheet" href="/css/base.css" >
+                                                <link type="text/css" rel="stylesheet" href="/css/lib/easy-responsive-tabs.css" >
+                                                <link type="text/css" rel="stylesheet" href="/css/lib/footable.core.css" >
+                                                                    <script type="text/javascript" src="/common/js/jquery.min.js"></script>
+                                                <script type="text/javascript" src="/common/js/heightLine.js"></script>
+                                                <script type="text/javascript" src="/common/js/lib/smoothscroll.js"></script>
+                                                <script type="text/javascript" src="/common/js/lib/jquery.sidr.min.js"></script>
+                                                <script type="text/javascript" src="/common/js/lib/footable.js"></script>
+                                                <script type="text/javascript" src="/common/js/lib/easyResponsiveTabs.js"></script>
+                                                <script type="text/javascript" src="/common/js/KandaiLogout.js"></script>
+                        <!--
+	<script type="text/javascript">
+//		$(function () {
+//		$('.footable').footable();
+//		});
+	</script>
+	-->
+</head>
+
+        <body  class="popupwindow"  >
+	<div id="wrapper">
+        <!-- #HEADER -->
+        <!-- /#HEADER -->
+
+        <!-- #MAIN -->
+        
+<script type="text/javascript" src="/common/js/KSE.js"></script>
+<script type="text/javascript">
+    <!--
+    function openKoala(){
+        window.open("https://www.lib.kansai-u.ac.jp/webopac/" ,"","width=800,height=400,left=50,top=50,toolbar=no,resizable=yes,scrollbars=yes,location=no");
+    }
+
+    function MM_swapImgRestore() { //v3.0
+        var i,x,a=document.MM_sr; for(i=0;a&&i<a.length&&(x=a[i])&&x.oSrc;i++) x.src=x.oSrc;
+    }
+    function MM_preloadImages() { //v3.0
+        var d=document; if(d.images){ if(!d.MM_p) d.MM_p=new Array();
+            var i,j=d.MM_p.length,a=MM_preloadImages.arguments; for(i=0; i<a.length; i++)
+                if (a[i].indexOf("#")!=0){ d.MM_p[j]=new Image; d.MM_p[j++].src=a[i];}}
+        }
+        function MM_findObj(n, d) { //v4.0
+            var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+                d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+            if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+            for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+            if(!x && document.getElementById) x=document.getElementById(n); return x;
+        }
+        function MM_swapImage() { //v3.0
+            var i,j=0,x,a=MM_swapImage.arguments; document.MM_sr=new Array; for(i=0;i<(a.length-2);i+=3)
+                if ((x=MM_findObj(a[i]))!=null){document.MM_sr[j++]=x; if(!x.oSrc) x.oSrc=x.src; x.src=a[i+2];}
+        }
+        function MM_goToURL() { //v3.0
+            var i, args=MM_goToURL.arguments; document.MM_returnValue = false;
+            for (i=0; i<(args.length-1); i+=2) eval(args[i]+".location='"+args[i+1]+"'");
+        }
+        function tantoList(kyoinCd) {
+            document.forms[0].kyoinCd.value=kyoinCd;
+            windowAction( 0, '/syllabus/search/tantolist/', 'TantoKmkWin', 650, 540,'menubar=yes,resizable=yes,width=1050,scrollbars=yes', 'kyoinCd='+kyoinCd );
+            return false;
+        }
+        function enqCom(kyoinCd) {
+            document.forms[1].kyoinCode.value=kyoinCd;
+            windowAction( 1, '/syllabus/SyllbusOldEnqueteConnect', 'JyuHyokaCommentWin', 650, 540,'menubar=yes,resizable=yes,width=650,scrollbars=yes', 'REDIRECT_PATH_=/lss/do/JHC_D110_DISP' );
+            return false;
+        }
+        function enqRef(enqId,jyuKnrNo,kyoinCd) {
+            document.forms[2].enqId.value=enqId;
+            document.forms[2].jyuKnrNo.value=jyuKnrNo;
+            document.forms[2].kyoinCd.value=kyoinCd;
+            windowAction( 2, '/syllabus/SyllbusEnqueteConnect', 'JyuHyokaConnectWin', 800, 700,'menubar=yes,resizable=yes,width=800,height=700,scrollbars=yes' );
+            return false;
+        }
+        //-->
+</script>
+        
+        <section class="content">
+
+            <div class="contettitle"><span class="title"></span></div>
+            <div class="searchyear">2026 年度の<span>講義概要のデータベースを検索します。</span></div>
+
+				<div class="tableblock04">
+
+                    <dl class="first">
+                        <dt>学部・研究科<br />Faculty/Graduate School</dt>
+                        <dd>総情</dd>
+                        <dt>時間割コード<br />Course Code</dt>
+                        <dd>70427</dd>
+                    </dl>
+
+                    <dl>
+                        <dt>科目名<br />Course title<br>サブテーマ<br />Subtitle</dt>
+                        <dd><span style="background-color: #efc2c2">知的財産法（著作権）</span><br>＜M＞＜S＞＜C＞</dd>
+                        <dt>
+                            <dl>
+                                <dt>授業形態/単位<br />Term/Credits</dt>
+                                <dt>クラス<br />Class</dt>
+                            </dl>
+                        <dd>
+                            <dl>
+                                <dd>春/2</dd>
+                                <dd id="kamoku"></dd>
+                            </dl>
+                        </dd>
+                    </dl>
+
+                    <dl>
+                        <dt>担任者名<br />Instructor</dt>
+                        <dd id="tannin">
+                            
+                            泉　克幸
+                            
+                        </dd>
+                        <dt>曜限<br />Day/Period</dt>
+                        <dd>月3</dd>
+                    </dl>
+				</div><!--tableblock04-->
+            
+				<div class="tableblock05">
+			    <dl class="first">
+			        <dt>授業概要<br />Course Description<br />到達目標<br />Course Objective</dt>
+			        <dd>
+			        	<dl>
+                            
+                            <dt><p>授業種別&nbsp;/&nbsp;Teaching Types</p></dt>
+                            <dd>
+                                <p>
+                                    講義（対面型）
+                                </p>
+                            </dd>
+                            
+                            
+                            <dt><p>言語&nbsp;/&nbsp;Language</p></dt>
+                            <dd>
+                                <p>
+                                    日本語(Japanese)
+                                </p>
+                            </dd>
+                            
+                            <dt><p>授業概要&nbsp;/&nbsp;Course Description</p></dt>
+                            <dd>
+                                <p id="gaiyo">
+                                    
+                                    　「知的財産」とは人間の知的・精神的活動によって生み出された成果および商品・営業の主体を示す標識（マーク）のことであり、「情報」としての一般的性格を有している。知的財産の保護と利用に関する基本的なルールが「知的財産法」であるが、この知的財産法には様々な法律が含まれる。知的財産法のうち、文化の発展を究極の目的としているのが著作権法である。著作権法は音楽や小説、動画や、ゲームソフトといった著作物を対象としており、「デジタル社会」や「ネットワーク社会」「生成AI」といったこととも関連が深く、現在、最もダイナミックで重要な法領域の１つである。 <br>　本講義ではこのような著作権法を概説する。また、著作権法は現実の社会と密接に結び付いており、それゆえ、具体例やトピックスについてもできる限り紹介したいと考えている。 <br>
+                                    
+                                </p>
+                            </dd>
+
+                            
+
+                        <dt><p>到達目標&nbsp;/&nbsp;Course Objectives</p></dt>
+                        <dd>
+                            <p id="mokuhyo">
+                                
+                                　断片的な知識の単なる記憶ではなく、著作権法の基本的な原理や構造の把握に心掛けて欲しい。そのことを前提に、著作権法に関する重要なテーマについて基本的レベルで理解していることを到達目標とする。さらに、日々生じる様々な事象に対して、著作権法の問題として適切に対処できる能力の修得を最終的な目標とする。
+                            </p>
+                        </dd>
+                        
+                        <dt><p>授業手法&nbsp;/&nbsp;Teaching Methods</p></dt>
+                        <dd>
+                            <p>
+                                ・教員による資料等を用いた説明や課題等へのフィードバック<br>・学生による学習のふりかえり
+                            </p>
+                        </dd>
+                        
+                        </dl>
+			        </dd>
+			    </dl>
+
+			    <dl>
+		        <dt>授業計画<br />Course Content</dt>
+		        <dd>
+		        	<dl>
+		        		<dt class="table_child"><p>授業計画&nbsp;/&nbsp;Course Content</p></dt>
+		        		<dd>
+                            <p id="keikaku">
+                                
+                                　以下の計画に沿って授業を行う。ただし、学生の理解度等の関係で、内容や順序には変更があり得る。 <br>第１週：知的財産法概観…知的財産とは、知的財産法の種類と体系 <br>第２週：著作権法の目的…著作権法の基本原理 <br>第３・４週：著作物（権利の客体）…著作物とは、創作性、 <br>　　　　　　表現とアイデア、編集著作物、二次的著作物 <br>第５週：著作者（権利の主体）…創作者としての著作者、 <br>　　　　職務著作、映画著作物の著作者 <br>第６週：著作者人格権…公表権、氏名表示権、同一性保持権 <br>第７～９週：著作権…複製権、上演・演奏権、公衆送信権、 <br>　　　　　　頒布権・譲渡権・貸与権、翻案権、二次的著 <br>　　　　　　作物の利用に関する原著作者の権利 <br>第10・11週：著作権の制限…私的使用のための複製、付随 <br>　　　　　　    対象著作物の利用、引用、フェアユース <br>第12週：著作隣接権制度…実演家、レコード製作者、放送 <br>　　　　  事業者、有線放送事業者 <br>第13～14週：侵害とその救済…差止請求・損害賠償請求、 <br>　　　　　　    みなし侵害、間接侵害 <br> <br>【オンデマンド配信授業回について】 <br>対面授業の補足説明と復習（授業動画60分，学習課題30分） <br> <br>
+                                
+                            </p>
+                        </dd>
+
+		        		<dt class="table_child02"><p>授業時間外学習&nbsp;/&nbsp;Expected work outside of class</p></dt>
+		        		<dd>
+                            <p>
+                                
+                                　著作権を中心に、知的財産法に関する事件やニュース（侵害事例、新しいビジネスの誕生、企業同士の提携など）に対して敏感でいること。
+                            </p>
+                        </dd>
+					</dl>
+		        </dd>
+			    </dl>
+
+			    <dl>
+		        <dt>成績評価の方法・基準<br />Grading Policies&nbsp;/<br />Evaluation Criteria</dt>
+		        <dd>
+		        	<dl>
+		        		<dt class="table_child"><p>方法&nbsp;/&nbsp;Course Content</p></dt>
+		        		<dd>
+                            <p>
+                                                            定期試験（筆記試験）の成績で評価する。<br>定期試験100％
+                            </p>
+                        </dd>
+
+		        		<dt class="table_child02"><p>基準&nbsp;/&nbsp;Evaluation Criteria</p></dt>
+		        		<dd>
+                            <p>
+                            
+                            授業の内容の理解度を主たる評価基準とする。
+                            </p>
+                        </dd>
+                    </dl>
+		        </dd>
+			    </dl>
+
+			    <dl>
+		        <dt>教科書<br />Textbooks
+                    
+                </dt>
+		        <dd>
+                    <p>
+                        
+                        
+                        
+                        
+                        
+                        
+                        平嶋竜太、宮脇正晴、蘆立順美　　『入門　知的財産法〔第３版〕』　　（有斐閣）　　978-4-641-24360-6<br/>
+                        
+                        <br/>
+                        
+                        備 考 / Note===================================================================<br/>
+                        
+                        【オンデマンド配信授業回に関する情報】 <br>①配信元：関大LMSまたはDroboxを予定 <br>②配信時期／期限：具体的な配信時期および期限は、関大LMS「お知らせ」に掲示 <br>③質問対応：対面授業時または関大LMSメッセージ <br><br/>
+                        
+                        
+                    </p>
+                </dd>
+			    </dl>
+
+			    <dl>
+		        <dt>参考書<br />References
+                    
+                </dt>
+		        <dd>
+                    <p>
+                        
+                        
+                        
+                        
+
+                        
+                        
+                        池村　聡　　『はじめての著作権法』　　日経文庫　　  978-4532113827<br/>
+                        
+                        <br/>
+                        
+                        備 考 / Note===================================================================<br/>
+                        
+                        　その他適宜紹介する。なお、著作権法を所管する文化庁のウェブサイトには著作権制度に関する様々な情報が掲載されているので、授業の初回までに１度は訪れてみることを勧める。<br/>
+                        
+                        
+                    </p>
+                </dd>
+			    </dl>
+                
+			    <dl>
+                    <dt><p>フィードバックの方法&nbsp;/&nbsp;Feedback Method</p></dt>
+                    <dd>
+                        <p>
+                            主としてメールとＬＭＳ。
+                        </p>
+                    </dd>
+			    </dl>
+                
+                
+			    <dl>
+                    <dt><p>担任者への問合せ方法&nbsp;/&nbsp;Contacts</p></dt>
+                    <dd>
+                        <p>
+                            授業の前後に対応する。 <br> <br>
+                        </p>
+                    </dd>
+			    </dl>
+                
+			    <dl>
+		        <dt>備考<br />Other Comments</dt>
+		        <dd class="table_child02">
+                    <p>
+                    
+                    ①著作権法が含まれている六法全書（ポケット六法で可）を毎回持 <br>　参すること。 <br>②知的財産法を総合的に理解するために、「知的財産法（産業財産 <br>　権）」も併せて履修することを勧める。
+                    
+                    </p>
+                </dd>
+			    </dl>
+            </div><!--tableblock05-->
+
+<div class="copyright" style="text-align: right; margin-top: 10px; font-size: 12px;"><span>Copyright(C)</span> <span>関西大学および情報提供者　All rights reserved.</span>　無断転載を禁じます</div>
+
+            <form class="closebtn" action="javascript:void(0);">
+                <input type="button" name="submit23222222" value="" onclick="javascript:window.close()" class="close">
+            </form>
+    
+        </section><!--content-->
+        <!-- #FOOTER -->
+        <!-- /#FOOTER -->
+    </div><!--wrapper-->
+</body>
+</html>

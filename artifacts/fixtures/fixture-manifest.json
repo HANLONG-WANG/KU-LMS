@@ -44,6 +44,14 @@
     {
       "route": "notifications-detail-missing",
       "html": "artifacts/fixtures/notifications-detail-missing.json"
+    },
+    {
+      "route": "syllabus-search-public",
+      "html": "artifacts/fixtures/syllabus-search-public.html"
+    },
+    {
+      "route": "syllabus-detail-public-session",
+      "html": "artifacts/fixtures/syllabus-detail-public-session.html"
     }
   ]
 }

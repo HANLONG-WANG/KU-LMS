@@ -20,7 +20,9 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - `/webclass/msg_editor.php?msgappmode=recyclebox`
 - `/webclass/msg_viewer.php`
 - `/webclass/user.php/manual`
-- `https://syllabus3.jm.kansai-u.ac.jp/syllabus/*` is not visually redesigned, but the same content script is allowed to run there in assist-only mode for syllabus-result auto-resolution.
+- `https://syllabus3.jm.kansai-u.ac.jp/syllabus/*` uses the syllabus-domain bootstrap, not the authenticated KU-LMS shell:
+  - public search/results pages remain assist-only for pending overlay and safe auto-resolution
+  - public detail pages matching `actionClass=syllabus.search.DetailKeySearchSt` with non-empty `UJikanwari_cd` may render a standalone read-only article surface
 
 ## Takeover strategy
 - Inject static content scripts at `document_start`.
@@ -75,6 +77,9 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
   - a unique exact title match, or
   - an exact-title candidate set that can be disambiguated by comparing KU-LMS course code against the public syllabus detail page.
 - If the candidate set remains ambiguous, fall back to the public search/results page instead of guessing.
+- On public syllabus detail pages, render only source-backed read-only article fields from the current public detail DOM. Minimum valid parse requires a non-empty course code, non-empty title, and at least one non-empty body section.
+- If public detail parsing is malformed or below the minimum contract, release to the native public detail page instead of rendering partial or guessed content.
+- Public syllabus detail may expose a small source action to the current public detail URL only. Do not invent a keyword-search back action or reconstructed results URL; return behavior should rely on native browser Back/history.
 
 ## Safety / fallback
 - If route is unsupported or adapter parsing fails, release the suppression and show native KU-LMS.
@@ -92,6 +97,9 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Same-tab supplemental/timeline fetches that are no longer needed after navigation must be abortable so a just-left course page cannot keep competing with the next course navigation.
 - Until fresh live validation proves that same-tab refresh no longer falls into `login.php`/conflict, the refresh control may remain visible only as an explicit user-invoked, validation-gated path with fail-closed behavior and no “proven-safe” claim.
 - Preferred future direction: homepage automatic enrichment should stay on current-page DOM, `information.php`, `msg_editor.php?msgappmode=inbox`, and same-tab cache written after explicit user course visits. Any cross-course refresh remains subject to live go/no-go validation.
+- The syllabus domain must never boot `bootKulms()`, collect authenticated KU-LMS context, mount the authenticated top navigation, or treat public syllabus pages as authenticated KU-LMS routes.
+- Public syllabus search/results pages must remain native except for the existing assist overlay / auto-resolution behavior.
+- Public syllabus detail takeover must fail open to the native public page when the URL is not an eligible detail route or parsing cannot satisfy the minimum detail contract.
 
 ## Content subsystem map
 - KU-LMS routes now boot through `src/content/main.js`, which is a thin manifest-facing bootstrap shim.
@@ -105,7 +113,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
   - `services/*` — fetch/cache/refresh/syllabus flows
   - `utils/*` — pure shared helpers
 - The refresh FSM remains owned by `src/content/services/refresh.js`; it is still the only content-side owner of refresh sessionStorage state and overlay synchronization.
-- The syllabus assist flow remains owned by `src/content/services/syllabus.js`; syllabus pages must stay assist-only and must not render the KU-LMS redesign shell.
+- The syllabus flow remains owned by `src/content/services/syllabus.js` plus the syllabus-domain bootstrap. Search/results pages stay assist-only; eligible detail pages may render a standalone read-only article surface. No syllabus page may render the authenticated KU-LMS redesign shell.
 
 ## Design system direction
 - Desktop-first layout tuned to the approved references, with 1448x1086 as the baseline reference and wider desktop expansion allowed when it improves information density.
