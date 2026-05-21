@@ -1,7 +1,7 @@
 # oh-my-codex agent: dependency-expert
 name = "dependency-expert"
 description = "External SDK/API/package evaluation"
-model = "gpt-5.5"
+model = "gpt-5.4"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -154,5 +154,5 @@ This role is tuned for standard-capability models.
 - posture: frontier-orchestrator
 - model_class: standard
 - routing_role: specialist
-- resolved_model: gpt-5.5
+- resolved_model: gpt-5.4
 """

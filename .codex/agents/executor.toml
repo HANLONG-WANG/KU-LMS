@@ -1,7 +1,7 @@
 # oh-my-codex agent: executor
 name = "executor"
 description = "Code implementation, refactoring, feature work"
-model = "gpt-5.5"
+model = "gpt-5.4"
 model_reasoning_effort = "medium"
 developer_instructions = """
 <identity>
@@ -132,5 +132,5 @@ This role is tuned for standard-capability models.
 - posture: deep-worker
 - model_class: standard
 - routing_role: executor
-- resolved_model: gpt-5.5
+- resolved_model: gpt-5.4
 """
