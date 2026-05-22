@@ -63,6 +63,7 @@ src/content/
 - `runtime/state.js` owns shared mutable in-memory state (`state`, page lifecycle guards, cached DOM/form references).
 - `runtime/state.js` also owns the same-tab persisted message-context slot that separates global inbox routing from course-context inbox routing.
 - `runtime/boot-kulms.js` owns KU-LMS boot sequencing and the single rerender loop.
+- KU-LMS history restores on supported routes must leave JS-intercepted controls live again before users fall through to raw fallback anchors; runtime/boot plus hydrate remain responsible for that restore-time rebinding contract.
 - `runtime/boot-syllabus.js` owns syllabus-domain boot. It keeps search/results pages assist-only and may gate eligible public detail pages into a standalone read-only article render path.
 - `parsers/*` stay DOM-in / normalized-data-out and must remain side-effect free.
 - `render/*` stay string-generation only and must not perform I/O or storage writes.

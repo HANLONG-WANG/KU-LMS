@@ -4,6 +4,7 @@ function bootKulms() {
   window.addEventListener('pagehide', abortInFlightPageRequests);
   window.addEventListener('beforeunload', abortInFlightPageRequests);
   window.addEventListener('pageshow', resetPageLifecycleGuards);
+  window.addEventListener('pageshow', rebindHomeInterceptionOnHistoryRestore);
 
   document.documentElement.dataset.kuRedesignState = 'booting';
   syncBootRefreshOverlay();
@@ -118,6 +119,20 @@ function resetPageLifecycleGuards() {
     if (!pageRequestAbortController || pageRequestAbortController.signal?.aborted) {
       pageRequestAbortController = typeof AbortController === 'function' ? new AbortController() : null;
     }
+  }
+
+function rebindHomeInterceptionOnHistoryRestore(event) {
+    if (!event?.persisted && getHomeRefreshNavigationType() !== 'back_forward') return;
+    const route = detectRoute(window.location);
+    if (!route?.supported || route.name !== 'home') return;
+    if (document.documentElement.dataset.kuRedesignState !== 'ready') return;
+    if (!state.currentRoute || !state.currentContext || !state.currentView) {
+      init().catch((error) => {
+        console.warn('[KU Redesign] home history restore re-init failed', error);
+      });
+      return;
+    }
+    rerender();
   }
 
 function mountBootShell() {

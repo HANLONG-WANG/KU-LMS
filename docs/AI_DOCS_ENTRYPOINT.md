@@ -49,6 +49,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `.omx/plans/test-spec-ku-lms-course-materials-syllabus-fixes.md` — corresponding verification requirements.
 - `.omx/plans/prd-ku-lms-course-title-syllabus-normalization.md` — focused PRD for visible course-title cleanup, syllabus detail heading normalization, and resilient repeated syllabus-chip navigation after browser back/history.
 - `.omx/plans/test-spec-ku-lms-course-title-syllabus-normalization.md` — verification requirements for visible course-title normalization, top-level syllabus heading cleanup, and remembered safe detail fallback.
+- `.omx/plans/prd-ku-lms-home-syllabus-history-rebind.md` — focused PRD for preserving homepage syllabus-chip detail navigation after browser Back/history restore by restoring JS-intercepted chip behavior before raw search fallback leaks.
+- `.omx/plans/test-spec-ku-lms-home-syllabus-history-rebind.md` — verification requirements for homepage syllabus-chip history-restore rebinding, repeated-click detail safety, and search-fallback containment.
 - `.omx/plans/prd-ku-lms-course-timeline-materials-parity.md` — focused PRD for timeline layout/html parity plus native materials clickability/link-target parity on the course materials page.
 - `.omx/plans/test-spec-ku-lms-course-timeline-materials-parity.md` — verification requirements for timeline formatting/layout parity, native title launch parity, and inactive-material non-clickable state.
 - `.omx/plans/prd-ku-lms-width-deadlines-materials.md` — prior width/deadline/materials PRD.

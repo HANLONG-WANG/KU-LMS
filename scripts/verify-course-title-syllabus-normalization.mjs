@@ -13,20 +13,26 @@ assert(testSpec.includes('Acceptance checks'), 'Missing course-title normalizati
 assert(entrypointDoc.includes('prd-ku-lms-course-title-syllabus-normalization.md'), 'AI docs entrypoint should list the course-title normalization PRD.');
 assert(entrypointDoc.includes('test-spec-ku-lms-course-title-syllabus-normalization.md'), 'AI docs entrypoint should list the course-title normalization test spec.');
 assert(architectureDoc.includes('remember the safe detail URL'), 'Architecture doc should describe remembered syllabus detail fallback.');
+assert(architectureDoc.includes('raw public-search fallback anchors'), 'Architecture doc should document the history-restore syllabus-chip rebind contract.');
 assert(extractFunction(kulmsSource, 'collectContext').includes('shortenCourseTitle(rawUserName)'), 'Course-route topbar identity should use the normalized course title.');
 assert(extractFunction(kulmsSource, 'renderCourseHeader').includes('escapeHtml(displayTitle)'), 'Course header should render the normalized display title.');
 assert(extractFunction(kulmsSource, 'renderHome').includes('escapeHtml(shortenCourseTitle(item.title))'), 'Home other-course rows should render normalized display titles.');
 assert(extractFunction(kulmsSource, 'renderCourseMaterials').includes('escapeHtml(shortenCourseTitle(course.title))'), 'Course sidebar title should render the normalized display title.');
+assert(kulmsSource.includes("window.addEventListener('pageshow', rebindHomeInterceptionOnHistoryRestore);"), 'Home history restores should install a dedicated pageshow rebind handler.');
 
 const sandbox = {
   console,
   URL,
   SYLLABUS_DETAIL_CACHE_KEY: 'ku-redesign-syllabus-detail-v1',
+  SYLLABUS_WINDOW_STATE_PREFIX: '__KU_SYLLABUS_STATE__',
+  SYLLABUS_PENDING_PREFIX: '__KU_SYLLABUS_AUTO__',
   cleanText: (value = '') => String(value || '').replace(/\s+/g, ' ').trim(),
   MAX_REMEMBERED_SYLLABUS_DETAILS: 32,
   normalizeSyllabusCourseQuery: undefined,
   deriveSyllabusCourseCode: undefined,
   fallbackCount: 0,
+  readRememberedSyllabusDetailFromBackground: async () => '',
+  rememberSyllabusDetailInBackground: async () => {},
   window: {
     location: { href: 'https://kulms.tl.kansai-u.ac.jp/webclass/' },
     sessionStorage: {
@@ -43,6 +49,8 @@ for (const name of [
   'shortenCourseTitle',
   'extractCourseId',
   'deriveSyllabusCourseCode',
+  'readSyllabusWindowState',
+  'writeSyllabusWindowState',
   'buildSyllabusResolvedDetailKey',
   'readSyllabusResolvedDetails',
   'writeSyllabusResolvedDetails',
@@ -88,11 +96,11 @@ const anchor = {
 };
 await sandbox.handleSyllabusNavigation(anchor);
 assert(sandbox.window.location.href.includes('UJikanwari_cd=70340'), 'Successful direct syllabus resolution should navigate to the direct detail page.');
-assert(sandbox.readRememberedSyllabusDetail({
+assert((await sandbox.readRememberedSyllabusDetail({
   title: anchor.dataset.syllabusTitle,
   courseHref: anchor.dataset.syllabusHref,
   year: anchor.dataset.syllabusYear
-}).includes('UJikanwari_cd=70340'), 'Successful direct syllabus resolution should be remembered for the same tab.');
+})).includes('UJikanwari_cd=70340'), 'Successful direct syllabus resolution should be remembered for the same tab.');
 assert(sandbox.buildSyllabusResolvedDetailKey({
   title: '同名授業',
   courseHref: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/custom-course-1/',
@@ -129,6 +137,49 @@ for (let index = 0; index < 40; index += 1) {
   }, `https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=${index}&actionClass=syllabus.search.DetailKeySearchSt&nendo=2026&queryString=${index}&st=key`);
 }
 assert(Object.keys(sandbox.readSyllabusResolvedDetails()).length <= sandbox.MAX_REMEMBERED_SYLLABUS_DETAILS, 'Remembered syllabus detail cache should stay bounded.');
+sandbox.window.sessionStorage.store.clear();
+const rememberedKey = sandbox.buildSyllabusResolvedDetailKey({
+  title: anchor.dataset.syllabusTitle,
+  courseHref: anchor.dataset.syllabusHref,
+  year: anchor.dataset.syllabusYear
+});
+sandbox.writeSyllabusWindowState({
+  pending: null,
+  remembered: {
+    [rememberedKey]: {
+      url: 'https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=70340&actionClass=syllabus.search.DetailKeySearchSt&nendo=2026&queryString=%E8%A8%80%E8%AA%9E%E5%AD%A6&st=key',
+      storedAt: new Date().toISOString()
+    }
+  }
+});
+assert((await sandbox.readRememberedSyllabusDetail({
+  title: anchor.dataset.syllabusTitle,
+  courseHref: anchor.dataset.syllabusHref,
+  year: anchor.dataset.syllabusYear
+})).includes('UJikanwari_cd=70340'), 'Remembered syllabus detail should survive via the same-tab window state when sessionStorage is stale.');
+
+const restoreSandbox = {
+  console,
+  state: { currentRoute: { name: 'home' }, currentContext: { links: {} }, currentView: { filters: { year: '2026' } } },
+  document: { documentElement: { dataset: { kuRedesignState: 'ready' } } },
+  window: { location: { href: 'https://kulms.tl.kansai-u.ac.jp/webclass/', pathname: '/webclass/', origin: 'https://kulms.tl.kansai-u.ac.jp' } },
+  rerenderCalls: 0,
+  initCalls: 0,
+  detectRoute() { return { supported: true, name: 'home' }; },
+  getHomeRefreshNavigationType() { return 'back_forward'; },
+  rerender() { restoreSandbox.rerenderCalls += 1; },
+  init() { restoreSandbox.initCalls += 1; return Promise.resolve(); }
+};
+vm.createContext(restoreSandbox);
+vm.runInContext(extractFunction(kulmsSource, 'rebindHomeInterceptionOnHistoryRestore'), restoreSandbox, { filename: 'kulms-source.js' });
+restoreSandbox.rebindHomeInterceptionOnHistoryRestore({ persisted: false });
+assert(restoreSandbox.rerenderCalls === 1, 'Home history-restore handler should rerender when Back/Forward returns to a ready home view.');
+
+restoreSandbox.rerenderCalls = 0;
+restoreSandbox.initCalls = 0;
+restoreSandbox.state.currentView = null;
+restoreSandbox.rebindHomeInterceptionOnHistoryRestore({ persisted: true });
+assert(restoreSandbox.initCalls === 1, 'Home history-restore handler should re-init if view state is missing on a persisted restore.');
 
 const report = {
   ok: true,
@@ -136,7 +187,8 @@ const report = {
     'visible-course-title-normalization',
     'syllabus-top-level-heading-normalization',
     'nested-syllabus-labels-preserved',
-    'remembered-direct-detail-fallback'
+    'remembered-direct-detail-fallback',
+    'home-history-restore-rebind'
   ]
 };
 writeArtifact('.omx/artifacts/course-title-syllabus-normalization', 'verification-report.json', report);

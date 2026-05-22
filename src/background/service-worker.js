@@ -2,6 +2,8 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('[KU-LMS Redesign] service worker installed');
 });
 
+var rememberedSyllabusDetailsByTab = new Map();
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === 'ku:lms:lookup-syllabus') {
     lookupSyllabusDetailUrl(message.payload || {})
@@ -12,8 +14,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true;
   }
+  if (message?.type === 'ku:lms:remember-syllabus-detail') {
+    rememberSyllabusDetailForTab(sender?.tab?.id, message.payload || {});
+    sendResponse({ ok: true });
+    return false;
+  }
+  if (message?.type === 'ku:lms:read-remembered-syllabus-detail') {
+    sendResponse({ url: readRememberedSyllabusDetailForTab(sender?.tab?.id, message.payload?.key || '') });
+    return false;
+  }
   return undefined;
 });
+
+function rememberSyllabusDetailForTab(tabId, { key = '', url = '' } = {}) {
+  if (!tabId || !key || !url) return;
+  const cache = rememberedSyllabusDetailsByTab.get(tabId) || {};
+  cache[key] = {
+    url,
+    storedAt: new Date().toISOString()
+  };
+  const entries = Object.entries(cache);
+  if (entries.length > 32) {
+    entries
+      .sort(([, a], [, b]) => String(a?.storedAt || '').localeCompare(String(b?.storedAt || '')))
+      .slice(0, entries.length - 32)
+      .forEach(([staleKey]) => delete cache[staleKey]);
+  }
+  rememberedSyllabusDetailsByTab.set(tabId, cache);
+}
+
+function readRememberedSyllabusDetailForTab(tabId, key = '') {
+  if (!tabId || !key) return '';
+  return rememberedSyllabusDetailsByTab.get(tabId)?.[key]?.url || '';
+}
 
 async function lookupSyllabusDetailUrl({ title = '', year = '', courseCode = '' } = {}) {
   const nendo = String(year || new Date().getFullYear());

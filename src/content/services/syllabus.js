@@ -2,6 +2,8 @@
 
 var SYLLABUS_DETAIL_CACHE_KEY = 'ku-redesign-syllabus-detail-v1';
 var MAX_REMEMBERED_SYLLABUS_DETAILS = 32;
+var SYLLABUS_WINDOW_STATE_PREFIX = '__KU_SYLLABUS_STATE__';
+var SYLLABUS_PENDING_PREFIX = '__KU_SYLLABUS_AUTO__';
 
 async function handleSyllabusNavigation(anchor) {
     if (anchor.dataset.loading === 'true') return;
@@ -14,10 +16,10 @@ async function handleSyllabusNavigation(anchor) {
         courseHref: anchor.dataset.syllabusHref || '',
         year: anchor.dataset.syllabusYear || ''
       };
-      const remembered = readRememberedSyllabusDetail(payload);
+      const remembered = await readRememberedSyllabusDetail(payload);
       const resolved = await resolveSyllabusUrl(payload);
       if (resolved) {
-        rememberSyllabusDetail(payload, resolved);
+        await rememberSyllabusDetail(payload, resolved);
         window.location.href = resolved;
       } else if (remembered) {
         window.location.href = remembered;
@@ -43,20 +45,22 @@ async function resolveSyllabusUrl({ title = '', courseHref = '', year = '' } = {
     return '';
   }
 
-function buildSyllabusResolvedDetailKey({ title = '', courseHref = '', year = '' } = {}) {
+function buildSyllabusResolvedDetailKey({ title = '', courseHref = '', year = '', courseCode = '' } = {}) {
     const query = normalizeSyllabusCourseQuery(title);
     const courseId = extractCourseId(courseHref);
-    const courseCode = deriveSyllabusCourseCode(courseHref);
+    const normalizedCourseCode = cleanText(courseCode) || deriveSyllabusCourseCode(courseHref);
     const normalizedYear = String(year || '').trim();
-    const identity = courseCode || courseId;
+    const identity = normalizedCourseCode || courseId;
     return query && identity ? `${normalizedYear}::${identity}::${query}` : '';
   }
 
 function readSyllabusResolvedDetails() {
     try {
-      return JSON.parse(window.sessionStorage?.getItem(SYLLABUS_DETAIL_CACHE_KEY) || '{}');
+      const stored = JSON.parse(window.sessionStorage?.getItem(SYLLABUS_DETAIL_CACHE_KEY) || '{}');
+      const remembered = readSyllabusWindowState().remembered;
+      return Object.keys(stored || {}).length ? stored : (remembered || {});
     } catch (error) {
-      return {};
+      return readSyllabusWindowState().remembered || {};
     }
   }
 
@@ -66,17 +70,22 @@ function writeSyllabusResolvedDetails(cache) {
     } catch (error) {
       console.warn('[KU Redesign] failed to persist remembered syllabus detail', error);
     }
+    const statePayload = readSyllabusWindowState();
+    writeSyllabusWindowState({
+      pending: statePayload.pending,
+      remembered: cache || {}
+    });
   }
 
-function readRememberedSyllabusDetail(payload = {}) {
+async function readRememberedSyllabusDetail(payload = {}) {
     const key = buildSyllabusResolvedDetailKey(payload);
     if (!key) return '';
     const entry = readSyllabusResolvedDetails()[key];
-    if (!entry || !isRememberedSyllabusDetailUrl(entry.url)) return '';
-    return entry.url;
+    if (entry && isRememberedSyllabusDetailUrl(entry.url)) return entry.url;
+    return await readRememberedSyllabusDetailFromBackground(key);
   }
 
-function rememberSyllabusDetail(payload = {}, detailUrl = '') {
+async function rememberSyllabusDetail(payload = {}, detailUrl = '') {
     if (!isRememberedSyllabusDetailUrl(detailUrl)) return;
     const key = buildSyllabusResolvedDetailKey(payload);
     if (!key) return;
@@ -93,6 +102,7 @@ function rememberSyllabusDetail(payload = {}, detailUrl = '') {
         .forEach(([staleKey]) => delete cache[staleKey]);
     }
     writeSyllabusResolvedDetails(cache);
+    await rememberSyllabusDetailInBackground(key, detailUrl);
   }
 
 function isRememberedSyllabusDetailUrl(url = '') {
@@ -125,6 +135,36 @@ async function lookupSyllabusDirectUrl(payload) {
     });
   }
 
+async function readRememberedSyllabusDetailFromBackground(key = '') {
+    if (!key || !chrome?.runtime?.sendMessage) return '';
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage({ type: 'ku:lms:read-remembered-syllabus-detail', payload: { key } }, (response) => {
+          if (chrome.runtime.lastError) {
+            resolve('');
+            return;
+          }
+          resolve(isRememberedSyllabusDetailUrl(response?.url || '') ? response.url : '');
+        });
+      } catch (error) {
+        resolve('');
+      }
+    });
+  }
+
+async function rememberSyllabusDetailInBackground(key = '', detailUrl = '') {
+    if (!key || !isRememberedSyllabusDetailUrl(detailUrl) || !chrome?.runtime?.sendMessage) return;
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage({ type: 'ku:lms:remember-syllabus-detail', payload: { key, url: detailUrl } }, () => {
+          resolve();
+        });
+      } catch (error) {
+        resolve();
+      }
+    });
+  }
+
 async function submitSyllabusSearchNavigation({ title = '', courseHref = '', year = '' } = {}) {
     const query = normalizeSyllabusCourseQuery(title);
     if (!query) {
@@ -142,26 +182,65 @@ async function submitSyllabusSearchNavigation({ title = '', courseHref = '', yea
   }
 
 function rememberPendingSyllabusNavigation(payload) {
-    try {
-      window.name = `__KU_SYLLABUS_AUTO__${JSON.stringify(payload)}`;
-    } catch (error) {
-      console.warn('[KU Redesign] failed to store syllabus auto payload', error);
-    }
+    const statePayload = readSyllabusWindowState();
+    writeSyllabusWindowState({
+      pending: payload,
+      remembered: statePayload.remembered
+    });
   }
 
 function readPendingSyllabusNavigation() {
-    const raw = String(window.name || '');
-    if (!raw.startsWith('__KU_SYLLABUS_AUTO__')) return null;
-    try {
-      return JSON.parse(raw.slice('__KU_SYLLABUS_AUTO__'.length));
-    } catch (error) {
-      return null;
-    }
+    return readSyllabusWindowState().pending || null;
   }
 
 function clearPendingSyllabusNavigation() {
-    if (String(window.name || '').startsWith('__KU_SYLLABUS_AUTO__')) {
-      window.name = '';
+    const statePayload = readSyllabusWindowState();
+    writeSyllabusWindowState({
+      pending: null,
+      remembered: statePayload.remembered
+    });
+  }
+
+function readSyllabusWindowState() {
+    const raw = String(window.name || '');
+    if (raw.startsWith(SYLLABUS_WINDOW_STATE_PREFIX)) {
+      try {
+        const parsed = JSON.parse(raw.slice(SYLLABUS_WINDOW_STATE_PREFIX.length));
+        return {
+          pending: parsed?.pending || null,
+          remembered: parsed?.remembered || {}
+        };
+      } catch (error) {
+        return { pending: null, remembered: {} };
+      }
+    }
+    if (raw.startsWith(SYLLABUS_PENDING_PREFIX)) {
+      try {
+        return {
+          pending: JSON.parse(raw.slice(SYLLABUS_PENDING_PREFIX.length)),
+          remembered: {}
+        };
+      } catch (error) {
+        return { pending: null, remembered: {} };
+      }
+    }
+    return { pending: null, remembered: {} };
+  }
+
+function writeSyllabusWindowState({ pending = null, remembered = {} } = {}) {
+    const hasPending = !!pending;
+    const hasRemembered = !!Object.keys(remembered || {}).length;
+    try {
+      if (!hasPending && !hasRemembered) {
+        window.name = '';
+        return;
+      }
+      window.name = `${SYLLABUS_WINDOW_STATE_PREFIX}${JSON.stringify({
+        pending: hasPending ? pending : null,
+        remembered: hasRemembered ? remembered : {}
+      })}`;
+    } catch (error) {
+      console.warn('[KU Redesign] failed to store syllabus window state', error);
     }
   }
 
@@ -329,6 +408,7 @@ async function autoResolveSyllabusResult(pending, candidates) {
     const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedTitle);
     if (exactMatches.length === 1) {
       document.documentElement.dataset.kuSyllabusAssist = 'redirect-exact';
+      await rememberSyllabusDetail(pending, buildSyllabusDetailUrl(exactMatches[0], pending.title, pending.year));
       clearPendingSyllabusNavigation();
       window.location.replace(buildSyllabusDetailUrl(exactMatches[0], pending.title, pending.year));
       return;
@@ -336,6 +416,7 @@ async function autoResolveSyllabusResult(pending, candidates) {
     const exactResolved = await resolveSyllabusCandidateByCourseCode(exactMatches, pending);
     if (exactResolved) {
       document.documentElement.dataset.kuSyllabusAssist = 'redirect-course-code';
+      await rememberSyllabusDetail(pending, exactResolved);
       clearPendingSyllabusNavigation();
       window.location.replace(exactResolved);
       return;

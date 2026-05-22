@@ -24,17 +24,31 @@ assert(testSpec.includes('Review Follow-up Fixes'), 'Review follow-ups test spec
 const redirects = [];
 const sandbox = {
   console,
+  URL,
   encodeURIComponent,
+  SYLLABUS_DETAIL_CACHE_KEY: 'ku-redesign-syllabus-detail-v1',
+  SYLLABUS_WINDOW_STATE_PREFIX: '__KU_SYLLABUS_STATE__',
+  SYLLABUS_PENDING_PREFIX: '__KU_SYLLABUS_AUTO__',
+  MAX_REMEMBERED_SYLLABUS_DETAILS: 32,
+  cleanText: (value = '') => String(value || '').replace(/\s+/g, ' ').trim(),
   redirects,
+  readRememberedSyllabusDetailFromBackground: async () => '',
+  rememberSyllabusDetailInBackground: async () => {},
   document: { documentElement: { dataset: {} }, getElementById() { return null; } },
   window: {
     name: '__KU_SYLLABUS_AUTO__pending',
-    location: { replace(url) { redirects.push(url); } }
+    location: { origin: 'https://kulms.tl.kansai-u.ac.jp', replace(url) { redirects.push(url); } },
+    sessionStorage: {
+      store: new Map(),
+      getItem(key) { return this.store.has(key) ? this.store.get(key) : null; },
+      setItem(key, value) { this.store.set(key, String(value)); },
+      removeItem(key) { this.store.delete(key); }
+    }
   }
 };
 vm.createContext(sandbox);
 for (const name of [
-  'normalizeSyllabusCourseQuery', 'clearPendingSyllabusNavigation', 'clearSyllabusAssistOverlay', 'buildSyllabusDetailUrl',
+  'normalizeSyllabusCourseQuery', 'extractCourseId', 'deriveSyllabusCourseCode', 'buildSyllabusResolvedDetailKey', 'isRememberedSyllabusDetailUrl', 'readSyllabusResolvedDetails', 'writeSyllabusResolvedDetails', 'readRememberedSyllabusDetail', 'rememberSyllabusDetail', 'readSyllabusWindowState', 'writeSyllabusWindowState', 'clearPendingSyllabusNavigation', 'clearSyllabusAssistOverlay', 'buildSyllabusDetailUrl',
   'resolveSyllabusCandidateByCourseCode', 'autoResolveSyllabusResult'
 ]) {
   vm.runInContext(extractFunction(source, name), sandbox, { filename: 'kulms-source.js' });
@@ -57,7 +71,8 @@ await sandbox.autoResolveSyllabusResult({ title: '経済学', year: '2026', cour
 ]);
 assert(redirects.length === 1 && redirects[0].includes('UJikanwari_cd=ID2'), 'Course-code disambiguation should still resolve safe multi-candidate syllabus matches.');
 assert(sandbox.document.documentElement.dataset.kuSyllabusAssist === 'redirect-course-code', 'Assist state should record course-code redirects.');
-assert(sandbox.window.name === '', 'Pending syllabus navigation marker should clear after course-code resolution.');
+assert(sandbox.window.name.includes('__KU_SYLLABUS_STATE__'), 'Course-code resolution should preserve a remembered same-tab detail state after clearing pending search state.');
+assert((await sandbox.readRememberedSyllabusDetail({ title: '経済学', year: '2026', courseCode: 'ABCD1234' })).includes('UJikanwari_cd=ID2'), 'Assist-side course-code resolution should remember the safe detail URL for same-tab repeats.');
 
 redirects.length = 0;
 sandbox.window.name = '__KU_SYLLABUS_AUTO__pending';
