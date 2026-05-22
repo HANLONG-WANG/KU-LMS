@@ -148,11 +148,12 @@ function renderSyllabusChip({ title = '', href = '', year = '' } = {}) {
   }
 
 function renderCourseHeader(course, currentTab) {
+    const displayTitle = shortenCourseTitle(course.title);
     return `
       <div class="ku-route-header">
         <section class="ku-card ku-route-header-card">
           <div class="ku-page-subtitle"><a class="ku-title-link" href="${escapeAttr(state.currentContext.links.courses)}">← コース一覧に戻る</a></div>
-          <div class="ku-title-inline ku-title-inline-large" style="margin-top:12px"><h1 class="ku-page-title">${escapeHtml(course.title)}</h1>${renderSyllabusChip({ title: course.title, href: course.links.info || course.links.materials, year: course.meta.year })}</div>
+          <div class="ku-title-inline ku-title-inline-large" style="margin-top:12px"><h1 class="ku-page-title">${escapeHtml(displayTitle)}</h1>${renderSyllabusChip({ title: course.title, href: course.links.info || course.links.materials, year: course.meta.year })}</div>
           <div class="ku-hero-meta"><span>${icon('calendar')} ${escapeHtml(course.meta.year)}年 ${escapeHtml(course.meta.semester)}</span><span>${icon('clock')} ${escapeHtml(course.meta.weekdayPeriod)}</span><span>${icon('pin')} 教室: ${escapeHtml(course.meta.room || '—')}</span></div>
           <nav class="ku-subnav"><a class="ku-subnav-link ${currentTab === 'materials' ? 'active' : ''}" href="${escapeAttr(course.links.materials || '#')}">教材</a><a class="ku-subnav-link ${currentTab === 'myreports' ? 'active' : ''}" href="${escapeAttr(course.links.myreports || '#')}">マイレポート</a><a class="ku-subnav-link" href="${escapeAttr(course.links.attendance || '#')}">出席</a><a class="ku-subnav-link" href="${escapeAttr(course.links.materials || '#')}">その他</a><a class="ku-subnav-link" href="${escapeAttr(state.currentContext.links.courses)}">コース</a></nav>
         </section>

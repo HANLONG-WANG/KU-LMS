@@ -139,8 +139,12 @@ async function collectContext(route) {
     links.canonicalMessageHref = messageContext.canonicalMessageHref;
     links.observedMobileMessageHref = messageContext.observedMobileMessageHref;
     links.messages = messageContext.globalInboxHref;
+    const rawUserName = route.name === 'login' || route.name === 'logout' ? '' : (parseUserName(current) || 'ユーザー');
+    const userName = route.name === 'course-materials' || route.name === 'course-myreports'
+      ? shortenCourseTitle(rawUserName)
+      : rawUserName;
     return {
-      userName: route.name === 'login' || route.name === 'logout' ? '' : (parseUserName(current) || 'ユーザー'),
+      userName,
       language: route.name === 'login' ? parseLoginLanguageLabel(current) : (parseLanguage(current) || '日本語'),
       links,
       messageContext,

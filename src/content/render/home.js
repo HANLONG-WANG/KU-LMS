@@ -73,7 +73,7 @@ function renderHome(view) {
                 <div class="ku-other-group-title">${escapeHtml(group.title)}</div>
                 ${group.items.map((item) => {
                   const hasReminder = Boolean(item.hasNativeDueReminder || isDueFlagNote(item.note));
-                  return `<div class="ku-other-row"><div class="ku-course-link-stack"><div class="ku-title-inline ku-other-course-title-row"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>${hasReminder ? `<div class="ku-chip red" title="ホーム画面の既存表示を反映しています">${escapeHtml(dueSoonReminderText())}</div>` : ''}${renderSyllabusChip({ title: item.title, href: item.href, year: view.filters.year })}</div><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div></div></div>`;
+                  return `<div class="ku-other-row"><div class="ku-course-link-stack"><div class="ku-title-inline ku-other-course-title-row"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(shortenCourseTitle(item.title))}</a>${hasReminder ? `<div class="ku-chip red" title="ホーム画面の既存表示を反映しています">${escapeHtml(dueSoonReminderText())}</div>` : ''}${renderSyllabusChip({ title: item.title, href: item.href, year: view.filters.year })}</div><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div></div></div>`;
                 }).join('')}
               </section>`).join('') || `<div class="ku-empty">一致するコースがありません。</div>`}
           </section>

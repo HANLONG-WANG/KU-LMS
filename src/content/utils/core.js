@@ -180,7 +180,7 @@ function materialTypeTone(type = '', title = '') {
   }
 
 function shortenCourseTitle(title) {
-    return title.replace(/\(\d{4}-.+?\)/, '').replace(/\[\s*\d+\]/, '').trim();
+    return normalizeSyllabusCourseQuery(title);
   }
 
 function sanitizeCourseItemTitle(text) {

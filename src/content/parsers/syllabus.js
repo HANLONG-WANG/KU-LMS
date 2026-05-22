@@ -94,7 +94,7 @@ function parseSyllabusSections(root) {
 function parseSyllabusSection(section, index) {
     const headingNode = getDirectChildrenByTag(section, 'DT')[0] || null;
     const bodyNode = getDirectChildrenByTag(section, 'DD')[0] || null;
-    const title = cleanText(headingNode?.textContent || '').replace(/\s*\/\s*/g, ' / ');
+    const title = normalizeSyllabusTopLevelSectionTitle(headingNode?.textContent || '');
     if (!title || !bodyNode) return null;
     const innerDl = getDirectChildrenByTag(bodyNode, 'DL')[0] || null;
     const rows = innerDl ? parseSyllabusSectionRows(innerDl) : [];
@@ -105,6 +105,32 @@ function parseSyllabusSection(section, index) {
       rows,
       text
     };
+  }
+
+function normalizeSyllabusTopLevelSectionTitle(title = '') {
+    const normalized = cleanText(title).replace(/\s*\/\s*/g, ' / ');
+    if (!/[ぁ-んァ-ヶ一-龠々]/.test(normalized) || !/[A-Za-z]/.test(normalized)) return normalized;
+    const englishMarkers = [
+      'Course Description',
+      'Course Objective',
+      'Course Objectives',
+      'Course Content',
+      'Grading Policies / Evaluation Criteria',
+      'Grading Policies',
+      'Evaluation Criteria',
+      'Textbooks',
+      'References',
+      'Feedback Method',
+      'Contacts',
+      'Other Comments'
+    ];
+    const englishStart = englishMarkers
+      .map((marker) => normalized.indexOf(marker))
+      .filter((index) => index >= 0)
+      .sort((a, b) => a - b)[0];
+    if (typeof englishStart !== 'number') return normalized;
+    const trimmed = cleanText(normalized.slice(0, englishStart)).replace(/[\/:：・\-]+$/g, '').trim();
+    return trimmed || normalized;
   }
 
 function parseSyllabusSectionRows(innerDl) {

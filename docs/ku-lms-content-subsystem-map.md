@@ -69,7 +69,7 @@ src/content/
 - `hydrate/*` may bind events and request rerenders, but should not own fetch/session-storage policy.
 - `services/refresh.js` is the only content-side owner of refresh sessionStorage state and refresh overlay synchronization.
 - `services/cache.js` may expose display-only cache helpers for homepage deadline hinting, but it must not absorb refresh-state ownership or widen refresh eligibility.
-- `services/syllabus.js` owns syllabus chip navigation, pending marker state, and assist-page auto-resolution.
+- `services/syllabus.js` owns syllabus chip navigation, pending marker state, remembered same-tab safe-detail URLs, and assist-page auto-resolution.
 - Public syllabus detail parsing/rendering, when present, must remain syllabus-domain-only and read-only: parse from the current public detail DOM, render only source-backed article data, and expose at most a source action to the current detail URL.
 - Public syllabus detail route gating requires `actionClass=syllabus.search.DetailKeySearchSt` plus non-empty `UJikanwari_cd`; malformed or insufficient parses must fall back to the native public page.
 - `services/documents.js` and `services/timeline.js` own same-tab fetches and must preserve abortable request behavior.

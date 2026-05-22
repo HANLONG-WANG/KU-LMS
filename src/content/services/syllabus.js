@@ -1,5 +1,8 @@
 /* src/content/services/syllabus.js */
 
+var SYLLABUS_DETAIL_CACHE_KEY = 'ku-redesign-syllabus-detail-v1';
+var MAX_REMEMBERED_SYLLABUS_DETAILS = 32;
+
 async function handleSyllabusNavigation(anchor) {
     if (anchor.dataset.loading === 'true') return;
     anchor.dataset.loading = 'true';
@@ -11,9 +14,13 @@ async function handleSyllabusNavigation(anchor) {
         courseHref: anchor.dataset.syllabusHref || '',
         year: anchor.dataset.syllabusYear || ''
       };
+      const remembered = readRememberedSyllabusDetail(payload);
       const resolved = await resolveSyllabusUrl(payload);
       if (resolved) {
+        rememberSyllabusDetail(payload, resolved);
         window.location.href = resolved;
+      } else if (remembered) {
+        window.location.href = remembered;
       } else {
         await submitSyllabusSearchNavigation(payload);
       }
@@ -34,6 +41,69 @@ async function resolveSyllabusUrl({ title = '', courseHref = '', year = '' } = {
     });
     if (direct) return direct;
     return '';
+  }
+
+function buildSyllabusResolvedDetailKey({ title = '', courseHref = '', year = '' } = {}) {
+    const query = normalizeSyllabusCourseQuery(title);
+    const courseId = extractCourseId(courseHref);
+    const courseCode = deriveSyllabusCourseCode(courseHref);
+    const normalizedYear = String(year || '').trim();
+    const identity = courseCode || courseId;
+    return query && identity ? `${normalizedYear}::${identity}::${query}` : '';
+  }
+
+function readSyllabusResolvedDetails() {
+    try {
+      return JSON.parse(window.sessionStorage?.getItem(SYLLABUS_DETAIL_CACHE_KEY) || '{}');
+    } catch (error) {
+      return {};
+    }
+  }
+
+function writeSyllabusResolvedDetails(cache) {
+    try {
+      window.sessionStorage?.setItem(SYLLABUS_DETAIL_CACHE_KEY, JSON.stringify(cache || {}));
+    } catch (error) {
+      console.warn('[KU Redesign] failed to persist remembered syllabus detail', error);
+    }
+  }
+
+function readRememberedSyllabusDetail(payload = {}) {
+    const key = buildSyllabusResolvedDetailKey(payload);
+    if (!key) return '';
+    const entry = readSyllabusResolvedDetails()[key];
+    if (!entry || !isRememberedSyllabusDetailUrl(entry.url)) return '';
+    return entry.url;
+  }
+
+function rememberSyllabusDetail(payload = {}, detailUrl = '') {
+    if (!isRememberedSyllabusDetailUrl(detailUrl)) return;
+    const key = buildSyllabusResolvedDetailKey(payload);
+    if (!key) return;
+    const cache = readSyllabusResolvedDetails();
+    cache[key] = {
+      url: detailUrl,
+      storedAt: new Date().toISOString()
+    };
+    const entries = Object.entries(cache);
+    if (entries.length > MAX_REMEMBERED_SYLLABUS_DETAILS) {
+      entries
+        .sort(([, a], [, b]) => String(a?.storedAt || '').localeCompare(String(b?.storedAt || '')))
+        .slice(0, entries.length - MAX_REMEMBERED_SYLLABUS_DETAILS)
+        .forEach(([staleKey]) => delete cache[staleKey]);
+    }
+    writeSyllabusResolvedDetails(cache);
+  }
+
+function isRememberedSyllabusDetailUrl(url = '') {
+    try {
+      const parsed = new URL(String(url || ''), window.location.origin);
+      return /\/syllabus\//.test(parsed.pathname)
+        && parsed.searchParams.get('actionClass') === 'syllabus.search.DetailKeySearchSt'
+        && !!cleanText(parsed.searchParams.get('UJikanwari_cd') || '');
+    } catch (error) {
+      return false;
+    }
   }
 
 async function lookupSyllabusDirectUrl(payload) {

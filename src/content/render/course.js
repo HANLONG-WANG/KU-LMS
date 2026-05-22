@@ -28,7 +28,7 @@ function renderCourseMaterials(view) {
             </section>`).join('')}
         </section>
         <aside class="ku-card ku-rightnav-card">
-          <div class="ku-card-title">${escapeHtml(course.title.split('(')[0].trim())}</div>
+          <div class="ku-card-title">${escapeHtml(shortenCourseTitle(course.title))}</div>
           <ul class="ku-rightnav-list">${view.course.anchors.map((anchor, index) => `<li><a class="ku-rightnav-link ${index === 0 ? 'active' : ''}" href="#${escapeAttr(anchor.target)}">${escapeHtml(anchor.title)}</a></li>`).join('')}</ul>
         </aside>
       </div>`;
