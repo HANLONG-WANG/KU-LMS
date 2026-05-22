@@ -907,6 +907,11 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   background: var(--ku-blue);
 }
 
+.ku-subnav-link.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .ku-course-grid {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr) 260px;
@@ -1382,6 +1387,218 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   width: 18px;
   height: 18px;
   accent-color: var(--ku-blue);
+}
+
+.ku-input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--ku-border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ku-text);
+  font: inherit;
+  padding: 10px 12px;
+}
+
+.ku-score-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+}
+
+.ku-score-main,
+.ku-score-aside {
+  display: grid;
+  gap: 18px;
+}
+
+.ku-score-filter-form {
+  display: grid;
+  gap: 12px;
+}
+
+.ku-score-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ku-score-filter-section {
+  border: 1px solid #edf2fb;
+  border-radius: 16px;
+  background: #f9fbff;
+  padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  height: 100%;
+}
+
+.ku-score-filter-title,
+.ku-score-aside-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1d2940;
+}
+
+.ku-score-aside .ku-sidebar-card {
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.ku-score-aside-title {
+  font-size: clamp(18px, 1.7vw, 24px);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ku-score-option-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ku-score-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #edf2fb;
+  padding: 8px 10px;
+  font-weight: 700;
+  color: #34425f;
+  min-height: 52px;
+}
+
+.ku-score-option input {
+  margin: 0;
+  accent-color: var(--ku-blue);
+}
+
+.ku-score-date-row,
+.ku-score-filter-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ku-score-date-row .ku-input {
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.ku-score-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ku-score-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 170px;
+  padding: 18px 20px;
+}
+
+.ku-score-overview-value {
+  font-size: clamp(18px, 1.7vw, 24px);
+  line-height: 1.3;
+  font-weight: 800;
+  color: #1d2940;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ku-score-overview-card .ku-mini-meta {
+  margin-top: auto;
+}
+
+.ku-score-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.ku-score-table {
+  width: 100%;
+  border: 1px solid #edf2fb;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ku-score-table-head,
+.ku-score-table-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(140px, 0.75fr) minmax(120px, 0.65fr);
+}
+
+.ku-score-table-head {
+  background: #f7faff;
+  font-weight: 800;
+  color: #34425f;
+}
+
+.ku-score-table-row {
+  border-top: 1px solid rgba(233, 238, 246, 0.92);
+}
+
+.ku-score-table-head > div,
+.ku-score-table-row > div {
+  padding: 14px 16px;
+  border-right: 1px solid #edf2fb;
+  min-width: 0;
+}
+
+.ku-score-table-head > div:last-child,
+.ku-score-table-row > div:last-child {
+  border-right: none;
+}
+
+.ku-score-table-row-total {
+  background: #fbfdff;
+  font-weight: 800;
+}
+
+.ku-score-note-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ku-score-note {
+  border: 1px solid #edf2fb;
+  border-radius: 14px;
+  background: #f9fbff;
+  color: #41506f;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+@media (max-width: 1200px) {
+  .ku-score-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ku-score-overview-grid,
+  .ku-score-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .ku-score-option-list,
+  .ku-score-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .ku-message-footer {

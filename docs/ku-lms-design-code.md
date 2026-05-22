@@ -14,6 +14,7 @@
   - Home dashboard
   - Course materials page
   - Course my-reports page
+  - Course score-summary page
   - Notifications list page
   - Notice detail page
   - Messages inbox page
@@ -96,6 +97,7 @@
   - Home = overview / triage surface
   - Course materials = course activity surface
   - My-reports = submission status surface
+  - Course score summary = grade / progress snapshot surface
   - Notifications = system/course notice browsing surface
   - Notice detail = notice reading/detail surface
   - Public syllabus detail = standalone read-only academic article surface
@@ -431,6 +433,14 @@
 - Must remain table-first.
 - Reading-heavy preview cells are allowed because they match the workflow.
 - Display settings are secondary and unobtrusive.
+
+### Course score summary
+- Must remain source-backed and trust-preserving: filters, period, grouped rows, totals, and notes come from the native `集計` page.
+- Must feel like a course workspace surface, not a generic analytics dashboard.
+- Filter controls belong near the top, grouped by metric mode and period.
+- Overview cards may summarize only source-backed labels/counts already visible on the native page.
+- Grouped score rows should stay link-forward so users can reach the native content/result detail quickly.
+- `テスト結果` remains an adjacent course-header exit, not a redesigned in-page subsection for this phase.
 
 ### Notifications
 - Must remain list/card browsing with clear importance and date/expiry visibility.

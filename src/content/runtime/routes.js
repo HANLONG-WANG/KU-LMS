@@ -8,6 +8,7 @@ function detectRoute(locationObj) {
     if (normalized === '/webclass/index.php') return { supported: true, name: 'home' };
     if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };
     if (normalized === '/webclass/logout.php') return { supported: true, name: 'logout' };
+    if (/\/webclass\/course\.php\/[^/]+\/scores$/.test(normalized)) return { supported: true, name: 'course-scores' };
     if (/\/webclass\/course\.php\/[^/]+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
     if (/\/webclass\/course\.php\/[^/]+(?:\/login)?$/.test(normalized)) return { supported: true, name: 'course-materials' };
     if (normalized === '/webclass/information.php' || normalized === '/webclass/information.php/mbl') return { supported: true, name: 'notifications' };
@@ -27,6 +28,7 @@ function routeLabel(name) {
       home: 'ホーム',
       'course-materials': '教材',
       'course-myreports': 'マイレポート',
+      'course-scores': '成績',
       notifications: 'お知らせ',
       'notifications-detail': 'お知らせ',
       'messages-inbox': 'メッセージ',
@@ -38,7 +40,7 @@ function routeLabel(name) {
   }
 
 function isActiveNav(routeName, itemKey) {
-    if (routeName === 'course-materials' || routeName === 'course-myreports') return itemKey === 'courses';
+    if (routeName === 'course-materials' || routeName === 'course-myreports' || routeName === 'course-scores') return itemKey === 'courses';
     if (routeName === 'manual') return itemKey === 'manual';
     if (routeName === 'notifications-detail') return itemKey === 'notifications';
     if (routeName === 'messages-detail') return itemKey === 'messages-inbox';

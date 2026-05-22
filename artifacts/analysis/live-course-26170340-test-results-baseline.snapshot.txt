@@ -1,0 +1,30 @@
+uid=2_0 RootWebArea "言語学 (2026-春学期-木曜日-1限-70340) - 関大LMS" url="https://kulms.tl.kansai-u.ac.jp/webclass/reslt_frame.php"
+  uid=2_1 Iframe
+    uid=2_2 RootWebArea "- 関大LMS" url="https://kulms.tl.kansai-u.ac.jp/webclass/title.php?t=0&rnd=d3dbe&content_mode=r&acs_=08dacb82"
+      uid=2_3 link "教材一覧に戻る" url="https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/"
+        uid=2_4 StaticText "教材一覧に戻る"
+      uid=2_5 StaticText " "
+  uid=2_6 Iframe
+    uid=2_7 RootWebArea url="https://kulms.tl.kansai-u.ac.jp/webclass/reslt_menu.php?t=0&rnd=d3dbe&content_mode=r&acs_=08dacb82"
+      uid=2_8 link "» 言語学 (2026-春学期-木曜日-1限-70340)" description="コースメニュートップに戻ります" url="https://kulms.tl.kansai-u.ac.jp/webclass/login.php?acs_=bf34ae3c"
+        uid=2_9 StaticText "» 言語学 (2026-春学期-木曜日-1限-70340)"
+      uid=2_10 heading "成績一覧" level="2"
+      uid=2_11 StaticText "王　漢隆 さんがログイン中"
+      uid=2_12 link "» 解説フレームを広く表示" url="https://kulms.tl.kansai-u.ac.jp/webclass/reslt_frame.php?set_contents_id=&answer_id=&set_view_mode=description&set_user_id="
+        uid=2_13 StaticText "» 解説フレームを広く表示"
+      uid=2_14 StaticText " "
+      uid=2_15 StaticText "検索条件"
+      uid=2_16 StaticText "テスト名"
+      uid=2_17 combobox expandable haspopup="menu" value="選択してください"
+        uid=2_18 option "選択してください" selectable selected value="選択してください"
+        uid=2_19 option "第四回授業課題" selectable value="第四回授業課題"
+        uid=2_20 option "第四回授業課題（締め切り後提出）" selectable value="第四回授業課題（締め切り後提出）"
+  uid=2_21 Iframe
+    uid=2_22 RootWebArea url="https://kulms.tl.kansai-u.ac.jp/webclass/blank.html?acs_=08dacb82"
+  uid=2_23 Iframe
+    uid=2_24 RootWebArea url="https://kulms.tl.kansai-u.ac.jp/webclass/blank.html?acs_=08dacb82"
+  uid=2_25 Iframe
+    uid=2_26 RootWebArea url="https://kulms.tl.kansai-u.ac.jp/webclass/blank.html?acs_=08dacb82"
+  uid=2_27 StaticText "set "
+  uid=2_28 StaticText "限制解除"
+  uid=2_29 checkbox

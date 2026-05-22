@@ -89,3 +89,91 @@ function renderMyReportSettings() {
       ['score', '得点 / 配点']
     ].map(([key, label]) => `<label class="ku-settings-item"><span>${escapeHtml(label)}</span><input class="ku-checkbox" type="checkbox" data-setting-key="${escapeAttr(key)}" ${state.myReportColumns[key] ? 'checked' : ''}></label>`).join('')}</div>`;
   }
+
+function renderCourseScores(view) {
+    const { course, scores } = view;
+    return `
+      ${renderCourseHeader(course, view.currentTab)}
+      <section class="ku-score-layout">
+        <section class="ku-score-main">
+          <section class="ku-card ku-main-card">
+            <div class="ku-main-card-header">
+              <div>
+                <div class="ku-page-subtitle">成績サマリー</div>
+                <h2 class="ku-card-title">${escapeHtml(scores.title || '集計')}</h2>
+              </div>
+              <div class="ku-chip blue">${escapeHtml(scores.metricLabel || '表示データ')}</div>
+            </div>
+            <form class="ku-score-filter-form" action="${escapeAttr(scores.formAction || course.links.scores || '')}" method="${escapeAttr(scores.formMethod || 'post')}">
+              ${scores.hiddenFields.map((field) => `<input type="hidden" name="${escapeAttr(field.name)}" value="${escapeAttr(field.value)}">`).join('')}
+              <div class="ku-score-filter-grid">
+                <section class="ku-score-filter-section">
+                  <div class="ku-score-filter-title">得点</div>
+                  <div class="ku-score-option-list">${scores.scoreOptions.map((option) => renderScoreRadio(option)).join('')}</div>
+                </section>
+                <section class="ku-score-filter-section">
+                  <div class="ku-score-filter-title">進捗状況</div>
+                  <div class="ku-score-option-list">${scores.progressOptions.map((option) => renderScoreRadio(option)).join('')}</div>
+                </section>
+                <section class="ku-score-filter-section">
+                  <div class="ku-score-filter-title">集計期間</div>
+                  <div class="ku-score-date-row">
+                    <input class="ku-input" type="date" name="summaryOption[dateRangeStart]" value="${escapeAttr(scores.dateRangeStart || '')}">
+                    <span class="ku-mini-meta">から</span>
+                    <input class="ku-input" type="date" name="summaryOption[dateRangeEnd]" value="${escapeAttr(scores.dateRangeEnd || '')}">
+                  </div>
+                </section>
+              </div>
+              <div class="ku-score-filter-actions">
+                <input class="ku-button" type="submit" name="${escapeAttr(scores.submitControl?.name || 'search')}" value="${escapeAttr(scores.submitControl?.value || '再表示')}">
+                ${course.links.testResults ? `<a class="ku-button ghost" href="${escapeAttr(course.links.testResults)}">テスト結果を開く</a>` : ''}
+              </div>
+            </form>
+          </section>
+          <section class="ku-score-overview-grid">
+            ${renderScoreOverviewCard('表示データ', scores.metricLabel || '—', '現在のネイティブ集計モード')}
+            ${renderScoreOverviewCard('集計期間', scores.periodLabel || `${scores.dateRangeStart || '—'} - ${scores.dateRangeEnd || '—'}`, 'ネイティブフォームの期間設定')}
+            ${renderScoreOverviewCard('セクション', String(scores.sectionCount || 0), 'グループ化された教材カテゴリ')}
+            ${renderScoreOverviewCard('教材件数', String(scores.rowCount || 0), '現在表示中の教材行数')}
+          </section>
+          <section class="ku-score-groups">
+            ${scores.groups.length ? scores.groups.map((group) => renderScoreGroup(group, scores.headers)).join('') : '<div class="ku-card ku-empty">表示できる成績データがありません。</div>'}
+          </section>
+        </section>
+        <aside class="ku-score-aside">
+          <section class="ku-card ku-sidebar-card">
+            <h2 class="ku-card-title">表示中の集計</h2>
+            <div class="ku-score-aside-title">${escapeHtml(scores.summaryHeading || scores.metricLabel || '集計')}</div>
+            <div class="ku-mini-meta">ネイティブ集計ページの値をそのまま整形して表示しています。</div>
+            <div class="ku-score-note-list">${scores.notes.length ? scores.notes.map((note) => `<div class="ku-score-note">${escapeHtml(note)}</div>`).join('') : '<div class="ku-empty">追加の注意書きはありません。</div>'}</div>
+          </section>
+        </aside>
+      </section>`;
+  }
+
+function renderScoreRadio(option) {
+    return `<label class="ku-score-option"><input type="radio" name="showdata" value="${escapeAttr(option.value || '')}" ${option.checked ? 'checked' : ''}><span>${escapeHtml(option.label || option.value || '')}</span></label>`;
+  }
+
+function renderScoreOverviewCard(label, value, caption) {
+    return `<section class="ku-card ku-score-overview-card"><div class="ku-page-subtitle">${escapeHtml(label)}</div><div class="ku-score-overview-value">${escapeHtml(value)}</div><div class="ku-mini-meta">${escapeHtml(caption)}</div></section>`;
+  }
+
+function renderScoreGroup(group, headers = []) {
+    const headerCells = [
+      headers[0] || '教材',
+      headers[1] || '得点',
+      headers[2] || 'コース平均'
+    ];
+    return `<section class="ku-card ku-main-card ku-score-group-card">
+      <div class="ku-main-card-header">
+        <h2 class="ku-card-title">${escapeHtml(group.title || '集計')}</h2>
+        <div class="ku-mini-meta">${escapeHtml(`${group.rows.length} 件`)}</div>
+      </div>
+      <div class="ku-score-table">
+        <div class="ku-score-table-head">${headerCells.map((cell) => `<div>${escapeHtml(cell)}</div>`).join('')}</div>
+        ${group.rows.map((row) => `<div class="ku-score-table-row"><div>${row.href ? `<a class="ku-table-link" href="${escapeAttr(row.href)}">${escapeHtml(row.title)}</a>` : escapeHtml(row.title || '—')}</div><div>${row.valueHref ? `<a class="ku-table-link" href="${escapeAttr(row.valueHref)}">${escapeHtml(row.valueText || '—')}</a>` : escapeHtml(row.valueText || '—')}</div><div>${escapeHtml(row.averageText || '—')}</div></div>`).join('')}
+        ${group.total ? `<div class="ku-score-table-row ku-score-table-row-total"><div>${escapeHtml(group.total.title || '合計')}</div><div>${group.total.valueHref ? `<a class="ku-table-link" href="${escapeAttr(group.total.valueHref)}">${escapeHtml(group.total.valueText || '—')}</a>` : escapeHtml(group.total.valueText || '—')}</div><div>${escapeHtml(group.total.averageText || '—')}</div></div>` : ''}
+      </div>
+    </section>`;
+  }

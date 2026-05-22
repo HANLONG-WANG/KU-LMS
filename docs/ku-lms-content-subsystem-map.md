@@ -63,10 +63,13 @@ src/content/
 - `runtime/state.js` owns shared mutable in-memory state (`state`, page lifecycle guards, cached DOM/form references).
 - `runtime/state.js` also owns the same-tab persisted message-context slot that separates global inbox routing from course-context inbox routing.
 - `runtime/boot-kulms.js` owns KU-LMS boot sequencing and the single rerender loop.
+- `runtime/routes.js` plus `runtime/boot-kulms.js` now also own the supported `/course.php/:courseId/scores` course-surface route classification and view handoff.
 - KU-LMS history restores on supported routes must leave JS-intercepted controls live again before users fall through to raw fallback anchors; runtime/boot plus hydrate remain responsible for that restore-time rebinding contract.
 - `runtime/boot-syllabus.js` owns syllabus-domain boot. It keeps search/results pages assist-only and may gate eligible public detail pages into a standalone read-only article render path.
 - `parsers/*` stay DOM-in / normalized-data-out and must remain side-effect free.
+- `parsers/course.js` owns the DOM-to-view-model contract for the native score-summary page, including native score-filter fields, grouped rows, totals, and notes.
 - `render/*` stay string-generation only and must not perform I/O or storage writes.
+- `render/course.js` owns the redesigned course score-summary presentation, while preserving native form field names and result/detail hrefs.
 - `hydrate/*` may bind events and request rerenders, but should not own fetch/session-storage policy.
 - `services/refresh.js` is the only content-side owner of refresh sessionStorage state and refresh overlay synchronization.
 - `services/cache.js` may expose display-only cache helpers for homepage deadline hinting, but it must not absorb refresh-state ownership or widen refresh eligibility.
@@ -88,4 +91,5 @@ src/content/
 ## Verification surface
 - Existing route/safety verifiers now inspect the ordered KU-LMS content-script subsystem instead of assuming all logic lives in `src/content/main.js`.
 - Modularization-specific verifiers live under `scripts/verify-content-*.mjs`, including dedicated load-order and syllabus-contract checks for the syllabus domain.
+- `scripts/verify-course-grades-tabs.mjs` protects the `/scores` route contract, parser/render wiring, header-tab exposure, and native score-form field preservation.
 - Syllabus verifiers should protect the narrowed contract: search/results assist-only, eligible detail pages read-only, native fallback on malformed detail parse, and no `bootKulms()` on the public syllabus domain.

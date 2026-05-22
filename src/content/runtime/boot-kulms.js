@@ -155,7 +155,7 @@ async function collectContext(route) {
     links.observedMobileMessageHref = messageContext.observedMobileMessageHref;
     links.messages = messageContext.globalInboxHref;
     const rawUserName = route.name === 'login' || route.name === 'logout' ? '' : (parseUserName(current) || 'ユーザー');
-    const userName = route.name === 'course-materials' || route.name === 'course-myreports'
+    const userName = route.name === 'course-materials' || route.name === 'course-myreports' || route.name === 'course-scores'
       ? shortenCourseTitle(rawUserName)
       : rawUserName;
     return {
@@ -243,6 +243,8 @@ async function buildView(route, context) {
         return buildCourseMaterialsView(document, context);
       case 'course-myreports':
         return buildMyReportsView(document, context);
+      case 'course-scores':
+        return buildCourseScoresView(document, context);
       case 'notifications':
       case 'notifications-detail':
         return buildNotificationsView(document, context, route);
@@ -341,6 +343,12 @@ function buildMyReportsView(doc, context) {
     const course = parseCourseMeta(doc);
     const reports = parseMyReports(doc);
     return { course, reports, currentTab: 'myreports' };
+  }
+
+function buildCourseScoresView(doc, context) {
+    const course = parseCourseMeta(doc);
+    const scores = parseCourseScores(doc);
+    return { course, scores, currentTab: 'scores' };
   }
 
 function buildNotificationsView(doc, context, route) {

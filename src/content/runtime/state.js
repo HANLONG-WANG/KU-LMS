@@ -34,7 +34,7 @@ function getDefaultGlobalInboxHref() {
 }
 
 function isSupportedMessageContextSourceRoute(routeName = '') {
-  return routeName === 'course-materials' || routeName === 'course-myreports';
+  return routeName === 'course-materials' || routeName === 'course-myreports' || routeName === 'course-scores';
 }
 
 function isMessageRouteName(routeName = '') {

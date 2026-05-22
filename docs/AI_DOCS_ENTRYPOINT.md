@@ -38,7 +38,7 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `.omx/plans/prd-ku-lms-home-upcoming-session-safety.md` — earlier homepage upcoming/session-safety PRD.
 - `.omx/plans/test-spec-ku-lms-home-upcoming-session-safety.md` — corresponding verification requirements.
 
-### Deadline / syllabus / course-materials subsystem
+### Deadline / syllabus / course-materials / course-grades subsystem
 - `.omx/plans/prd-ku-lms-syllabus-detail-redesign.md` — approved public syllabus detail redesign PRD: search/results stay assist-only, eligible detail pages may render standalone read-only article surfaces, and the syllabus domain never boots the authenticated KU-LMS shell.
 - `.omx/plans/test-spec-ku-lms-syllabus-detail-redesign.md` — verification requirements for resolver safety, detail route gating, malformed-parse native fallback, source-action limits, and no `bootKulms()` on the syllabus domain.
 - `.omx/plans/prd-ku-lms-deadlines-syllabus-session-safety.md` — deadline detail recovery / direct syllabus / session-safety PRD.
@@ -53,6 +53,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `.omx/plans/test-spec-ku-lms-home-syllabus-history-rebind.md` — verification requirements for homepage syllabus-chip history-restore rebinding, repeated-click detail safety, and search-fallback containment.
 - `.omx/plans/prd-ku-lms-course-timeline-materials-parity.md` — focused PRD for timeline layout/html parity plus native materials clickability/link-target parity on the course materials page.
 - `.omx/plans/test-spec-ku-lms-course-timeline-materials-parity.md` — verification requirements for timeline formatting/layout parity, native title launch parity, and inactive-material non-clickable state.
+- `.omx/plans/prd-ku-lms-course-grades-tabs.md` — authoritative PRD for adding `成績` / `テスト結果` course tabs, redesigning native `/course.php/:courseId/scores`, and preserving native `reslt_frame.php` entry behavior.
+- `.omx/plans/test-spec-ku-lms-course-grades-tabs.md` — verification requirements for `/scores` route support, native score-form preservation, redesigned grouped score rendering, and `テスト結果` native-entry continuity.
 - `.omx/plans/prd-ku-lms-width-deadlines-materials.md` — prior width/deadline/materials PRD.
 - `.omx/plans/test-spec-ku-lms-width-deadlines-materials.md` — corresponding verification requirements.
 

@@ -30,12 +30,16 @@ function parseCourseMeta(doc) {
     const title = brand ? brand.textContent.trim() : (doc.title || '').replace(' - 関大LMS', '');
     const meta = deriveCourseMetaFromTitle(title);
     const courseId = extractCourseId(brand?.getAttribute('href') || window.location.pathname);
+    const anchors = Array.from(doc.querySelectorAll('a[href]'));
+    const linkByText = (pattern, fallback = '') => absoluteUrl(anchors.find((a) => pattern.test(cleanText(a.textContent || '')))?.getAttribute('href') || fallback);
     const links = {
       materials: canonicalizeCourseMaterialsHref(doc.querySelector('a[href*="#contents"], a[href*="/course.php/"]')?.getAttribute('href') || window.location.pathname),
-      myreports: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('マイレポート'))?.getAttribute('href') || ''),
-      attendance: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('出席'))?.getAttribute('href') || ''),
-      manual: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('マニュアル'))?.getAttribute('href') || ''),
-      info: absoluteUrl(Array.from(doc.querySelectorAll('a')).find((a) => a.textContent.includes('開講情報'))?.getAttribute('href') || (courseId ? `/webclass/course.php/${courseId}/info` : ''))
+      myreports: linkByText(/マイレポート/),
+      scores: linkByText(/^集計$/),
+      testResults: linkByText(/^テスト結果$/),
+      attendance: linkByText(/出席/),
+      manual: linkByText(/マニュアル/),
+      info: linkByText(/開講情報/, courseId ? `/webclass/course.php/${courseId}/info` : '')
     };
     return { title, meta, courseId, links };
   }
@@ -184,4 +188,89 @@ function parseMyReports(doc) {
       };
     }).filter((row) => row.task);
     return { rows };
+  }
+
+function parseCourseScores(doc) {
+    const form = doc.querySelector('form[action*="/scores"]') || Array.from(doc.forms || []).find((candidate) => /\/scores(?:[?#]|$)/.test(candidate.action || ''));
+    const radios = Array.from(form?.querySelectorAll('input[type="radio"][name="showdata"]') || []);
+    const hiddenFields = Array.from(form?.querySelectorAll('input[type="hidden"][name]') || []).map((input) => ({
+      name: input.name || '',
+      value: input.value || ''
+    })).filter((field) => field.name);
+    const submitControl = Array.from(form?.querySelectorAll('input[type="submit"], button[type="submit"]') || [])
+      .map((control) => ({
+        name: control.getAttribute('name') || '',
+        value: control.getAttribute('value') || cleanText(control.textContent || '') || '再表示'
+      }))
+      .find((control) => control.value) || { name: 'search', value: '再表示' };
+    const options = radios.map((radio) => ({
+      value: radio.value || '',
+      label: cleanText(radio.parentElement?.textContent || radio.closest('label')?.textContent || ''),
+      checked: !!radio.checked
+    })).filter((option) => option.label);
+    const scoreOptions = options.filter((option) => /^score/.test(option.value));
+    const progressOptions = options.filter((option) => !/^score/.test(option.value));
+    const dateRangeStart = form?.querySelector('input[name="summaryOption[dateRangeStart]"]')?.value || '';
+    const dateRangeEnd = form?.querySelector('input[name="summaryOption[dateRangeEnd]"]')?.value || '';
+    const headings = Array.from(doc.querySelectorAll('main h3, main h4, main h5, h3.page-header, .page-header'))
+      .map((node) => cleanText(node.textContent || ''))
+      .filter(Boolean);
+    const summaryHeading = Array.from(doc.querySelectorAll('main h3, h3.page-header'))
+      .map((node) => cleanText(node.textContent || ''))
+      .find((text) => text !== '集計' && /期間|得点|回数|時間/.test(text)) || '';
+    const periodLabel = cleanText(summaryHeading.match(/期間\s*([^)]+)/)?.[1] || '');
+    const table = doc.querySelector('#PersonalScoreSheet') || doc.querySelector('table.table.table-striped.table-bordered');
+    const headers = Array.from(table?.querySelectorAll('thead th') || []).map((node) => cleanText(node.textContent || '')).filter(Boolean);
+    const groups = [];
+    let currentGroup = null;
+    Array.from(table?.querySelectorAll('tbody tr') || []).forEach((row) => {
+      const cells = Array.from(row.children);
+      if (!cells.length) return;
+      if (row.classList.contains('unittitle')) {
+        currentGroup = { title: cleanText(row.textContent || ''), rows: [], total: null };
+        groups.push(currentGroup);
+        return;
+      }
+      const entry = {
+        title: cleanText(cells[0]?.textContent || ''),
+        href: absoluteUrl(cells[0]?.querySelector('a[href]')?.getAttribute('href') || ''),
+        valueText: cleanText(cells[1]?.textContent || ''),
+        valueHref: absoluteUrl(cells[1]?.querySelector('a[href]')?.getAttribute('href') || ''),
+        averageText: cleanText(cells[2]?.textContent || '')
+      };
+      if (!currentGroup) {
+        currentGroup = { title: '集計', rows: [], total: null };
+        groups.push(currentGroup);
+      }
+      if (row.classList.contains('foot')) {
+        currentGroup.total = entry;
+        return;
+      }
+      if (entry.title) currentGroup.rows.push(entry);
+    });
+    const notes = Array.from(doc.querySelectorAll('main *'))
+      .map((node) => cleanText(node.textContent || ''))
+      .filter((text, index, all) => text && /^¤/.test(text) && all.indexOf(text) === index);
+    const selectedOption = options.find((option) => option.checked) || null;
+    const rowCount = groups.reduce((total, group) => total + group.rows.length, 0);
+    return {
+      title: headings[0] || '集計',
+      summaryHeading,
+      metricLabel: selectedOption?.label || cleanText(summaryHeading.replace(/\(.*$/, '')) || '',
+      periodLabel,
+      formAction: form?.action || window.location.href,
+      formMethod: String(form?.method || 'post').toLowerCase(),
+      hiddenFields,
+      submitControl,
+      scoreOptions,
+      progressOptions,
+      selectedOption,
+      dateRangeStart,
+      dateRangeEnd,
+      headers,
+      groups,
+      notes,
+      sectionCount: groups.length,
+      rowCount
+    };
   }

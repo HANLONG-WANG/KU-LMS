@@ -11,6 +11,8 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - `/webclass/course.php/:courseId/`
 - `/webclass/course.php/:courseId/login` is treated as an internal same-tab refresh-transport alias for the course-materials route, not as a separate user-facing surface.
 - `/webclass/course.php/:courseId/my-reports`
+- `/webclass/course.php/:courseId/scores`
+- `/webclass/reslt_frame.php` remains native in this phase, but the redesigned course shell now exposes it as the `テスト結果` entry target.
 - `/webclass/course.php/:courseId/contents/*`, `/history`, and `/info` are intentionally left native so original KU-LMS detail-style pages remain usable.
 - `/webclass/information.php/`
 - `/webclass/information.php/mbl/` (canonicalized to `/webclass/information.php/` before redesigned rendering)
@@ -67,6 +69,9 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - For the homepage deadline CTA, target the first aggregated upcoming item's `courseHref`, and fall back to the native course list when no upcoming item resolves.
 - Refresh-mode course visits must suppress nonessential side effects such as timeline/API enrichment so the traversal stays focused on cache refresh and restoration.
 - Preserve original href targets for detail pages and downloads.
+- On the course score-summary route (`/course.php/:courseId/scores`), treat the current page DOM as the authoritative source for the native metric mode, date-range form, grouped score rows, detail/result links, totals, and explanatory notes.
+- The redesigned score-summary form must preserve the native form action/method/field names and submit in the same tab; do not synthesize alternate score-query semantics in JS.
+- Preserve the native `集計` href and `テスト結果` href in the course link model so the redesigned course header can expose both destinations while only `/scores` is redesigned in this phase.
 - On the course materials route, native title-anchor presence is authoritative for primary material clickability: if the native title is plain text, the redesign must keep it non-clickable.
 - Primary material title launches are distinct from secondary detail/history actions. Preserve a separate native title-launch target (for example `do_contents.php?...`) rather than collapsing it into `detailHref`, and do not widen that contract into shared consumers without explicit audit.
 - For syllabus jumping, do not fetch KU-LMS `/course.php/:courseId/info` during chip-click handling.

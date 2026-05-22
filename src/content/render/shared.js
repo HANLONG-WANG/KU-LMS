@@ -7,6 +7,7 @@ function renderPage(route, view) {
       case 'home': return renderHome(view);
       case 'course-materials': return renderCourseMaterials(view);
       case 'course-myreports': return renderMyReports(view);
+      case 'course-scores': return renderCourseScores(view);
       case 'notifications': return renderNotifications(view);
       case 'notifications-detail': return renderNotifications(view);
       case 'messages-inbox': return renderMessages(view);
@@ -149,15 +150,31 @@ function renderSyllabusChip({ title = '', href = '', year = '' } = {}) {
 
 function renderCourseHeader(course, currentTab) {
     const displayTitle = shortenCourseTitle(course.title);
+    const subnavItems = [
+      { key: 'materials', label: '教材', href: course.links.materials },
+      { key: 'myreports', label: 'マイレポート', href: course.links.myreports },
+      { key: 'scores', label: '成績', href: course.links.scores },
+      { key: 'test-results', label: 'テスト結果', href: course.links.testResults },
+      { key: 'attendance', label: '出席', href: course.links.attendance },
+      { key: 'courses', label: 'コース', href: state.currentContext.links.courses }
+    ];
     return `
       <div class="ku-route-header">
         <section class="ku-card ku-route-header-card">
           <div class="ku-page-subtitle"><a class="ku-title-link" href="${escapeAttr(state.currentContext.links.courses)}">← コース一覧に戻る</a></div>
           <div class="ku-title-inline ku-title-inline-large" style="margin-top:12px"><h1 class="ku-page-title">${escapeHtml(displayTitle)}</h1>${renderSyllabusChip({ title: course.title, href: course.links.info || course.links.materials, year: course.meta.year })}</div>
           <div class="ku-hero-meta"><span>${icon('calendar')} ${escapeHtml(course.meta.year)}年 ${escapeHtml(course.meta.semester)}</span><span>${icon('clock')} ${escapeHtml(course.meta.weekdayPeriod)}</span><span>${icon('pin')} 教室: ${escapeHtml(course.meta.room || '—')}</span></div>
-          <nav class="ku-subnav"><a class="ku-subnav-link ${currentTab === 'materials' ? 'active' : ''}" href="${escapeAttr(course.links.materials || '#')}">教材</a><a class="ku-subnav-link ${currentTab === 'myreports' ? 'active' : ''}" href="${escapeAttr(course.links.myreports || '#')}">マイレポート</a><a class="ku-subnav-link" href="${escapeAttr(course.links.attendance || '#')}">出席</a><a class="ku-subnav-link" href="${escapeAttr(course.links.materials || '#')}">その他</a><a class="ku-subnav-link" href="${escapeAttr(state.currentContext.links.courses)}">コース</a></nav>
+          <nav class="ku-subnav">${subnavItems.map((item) => renderCourseSubnavItem(item, currentTab)).join('')}</nav>
         </section>
       </div>`;
+  }
+
+function renderCourseSubnavItem(item, currentTab) {
+    const isActive = item.key === currentTab;
+    if (!item.href) {
+      return `<span class="ku-subnav-link disabled">${escapeHtml(item.label)}</span>`;
+    }
+    return `<a class="ku-subnav-link ${isActive ? 'active' : ''}" href="${escapeAttr(item.href)}">${escapeHtml(item.label)}</a>`;
   }
 
 function icon(name) {
