@@ -5,6 +5,7 @@ function renderPage(route, view) {
       case 'login': return renderLogin(view);
       case 'logout': return renderLogout(view);
       case 'home': return renderHome(view);
+      case 'home-all-upcoming': return renderAllUpcoming(view);
       case 'course-materials': return renderCourseMaterials(view);
       case 'course-myreports': return renderMyReports(view);
       case 'course-scores': return renderCourseScores(view);

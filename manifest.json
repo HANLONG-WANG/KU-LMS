@@ -50,6 +50,7 @@
         "src/content/services/timeline.js",
         "src/content/services/syllabus.js",
         "src/content/services/refresh.js",
+        "src/content/services/all-upcoming.js",
         "src/content/runtime/boot-kulms.js",
         "src/content/main.js"
       ],

@@ -43,6 +43,7 @@ function isMessageRouteName(routeName = '') {
 
 function isGlobalMessageResetRoute(routeName = '') {
   return routeName === 'home'
+    || routeName === 'home-all-upcoming'
     || routeName === 'notifications'
     || routeName === 'notifications-detail'
     || routeName === 'manual'

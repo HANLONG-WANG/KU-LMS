@@ -260,6 +260,10 @@ function shouldSuppressRefreshSideEffects(courseHref = '') {
     return buildCourseCacheKey(target.courseHref || target.href) === buildCourseCacheKey(courseHref || window.location.href);
   }
 
+function shouldSuppressCourseTraversalSideEffects(courseHref = '') {
+    return shouldSuppressRefreshSideEffects(courseHref) || shouldSuppressAllUpcomingSideEffects(courseHref);
+  }
+
 function readHomeRefreshState() {
     try {
       const raw = window.sessionStorage?.getItem(HOME_REFRESH_STATE_KEY) || '';

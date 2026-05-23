@@ -8,6 +8,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - `/webclass/logout.php`
 - `/webclass/`
 - `/webclass/index.php`
+- `/webclass/#ku-all-upcoming` is a redesigned home-route variant for the dedicated all-course near-deadline assignments page; it is extension-owned UI state on top of the native home surface, not a new native server route.
 - `/webclass/course.php/:courseId/`
 - `/webclass/course.php/:courseId/login` is treated as an internal same-tab refresh-transport alias for the course-materials route, not as a separate user-facing surface.
 - `/webclass/course.php/:courseId/my-reports`
@@ -59,7 +60,9 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Cache-only other-course detailed items remain supplemental and must not create refresh targets by themselves.
 - Same-tab session cache is the authoritative homepage source for course-specific near-deadline details; explicit course visits update that cache automatically.
 - Homepage cached course items are shown only when they are still inside their `利用可能期間`, have no `利用回数`, and their due date is within 7 days.
+- Homepage deadline-card `すべて見る` no longer jumps to the first aggregated course. It now starts a separate same-tab all-course traversal and returns to `/webclass/#ku-all-upcoming`, which lists all assignments due within five days across all visible home-scope courses regardless of native reminder presence or `利用回数`.
 - Homepage exposes an explicit validation-gated refresh control for near-deadline tasks. That refresh must actually re-fetch the latest data for timetable red-flag rows plus `その他のコース` rows whose native homepage reminder is already present, through top-level same-tab navigation using the native course-entry URLs rather than hidden content-script or service-worker fetches.
+- The all-upcoming traversal is separate from the homepage refresh control: it has its own session-storage state, its own blocking overlay, and its own broader item filter, while the homepage card itself keeps the narrower frozen 7-day unused-item logic.
 - While that manual refresh is active, the UI must show a full-screen blocking mask with a clear wait message and visible progress so users do not interact with the shell mid-refresh.
 - That refresh overlay must explicitly remain visible through the takeover hide rules; it is not allowed to be hidden as an ordinary `body` sibling during `booting`/`ready` redesign state.
 - To reduce cross-page flicker during that manual refresh, the overlay should be rehydrated during `document_start` boot immediately after `dataset='booting'` and before the generic boot shell mounts; this early sync is visual-only, while route/auth decisions still belong to the later `init()` path after the existing `DOMContentLoaded` gate.
@@ -99,6 +102,7 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Avoid multi-course hidden prefetch bursts from the homepage; they risk triggering KU-LMS cross-course/session warnings.
 - Avoid treating service-worker background fetches to `/webclass/course.php/:courseId/login?...` as session-safe just because they are serialized or off-page; live evidence suggests they can still poison session state.
 - Homepage refresh must not use hidden content-script fetches or service-worker fetches to course login/material pages; if refresh is enabled, it must use top-level same-tab navigation only and remain validation-gated.
+- The dedicated `/webclass/#ku-all-upcoming` collection flow must follow the same same-tab fail-closed posture: on `login.php`, `logout.php`, conflict pages, unexpected routes, or manual interruption it must abort instead of continuing to steer navigation.
 - If refresh lands on `login.php`, `logout.php`, a conflict page, or any unexpected route while active, it must fail closed, clear or tombstone refresh state, and stop auto-navigation instead of bouncing back to `homeUrl`.
 - If the user manually interrupts refresh by returning home, moving to a non-target course, or traversing browser history, refresh must abort instead of reclaiming navigation control.
 - Persisted refresh state must expire automatically; stale refresh state may not revive itself on a later unrelated navigation.

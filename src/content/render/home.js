@@ -3,6 +3,7 @@
 function renderHome(view) {
     const filteredGroups = filterOtherCourses(view.otherCourses, state.homeSearch);
     const now = Date.now();
+    const allUpcomingHref = buildAllUpcomingUrl(state.currentContext.links.home || window.location.href);
     const displayOtherCourseUpcoming = typeof loadDisplayUpcomingFromOtherCourses === 'function'
       ? loadDisplayUpcomingFromOtherCourses(view.otherCourses, view.schedule.entries)
       : [];
@@ -77,9 +78,44 @@ function renderHome(view) {
           </section>
         </div>
         <aside class="ku-side-stack">
-          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><span class="ku-chip neutral" title="この更新は検証中の fail-closed 方式です">検証中</span><button class="ku-button ghost" data-action="refresh-upcoming" title="検証中の安全更新を実行" ${refreshActive ? 'disabled aria-disabled=\"true\"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(deadlineTarget)}">すべて見る</a></div></div>${upcomingHtml}</section>
+          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><span class="ku-chip neutral" title="この更新は検証中の fail-closed 方式です">検証中</span><button class="ku-button ghost" data-action="refresh-upcoming" title="検証中の安全更新を実行" ${refreshActive ? 'disabled aria-disabled=\"true\"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(allUpcomingHref)}" data-action="open-all-upcoming">すべて見る</a></div></div>${upcomingHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">最新のお知らせ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.notifications)}">すべて見る</a></div>${announcementsHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">メッセージ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.messages)}">すべて見る</a></div>${messagesHtml}</section>
         </aside>
       </div>`;
+  }
+
+function renderAllUpcoming(view) {
+    const summaryMeta = [
+      `<span class="ku-chip blue">5日以内</span>`,
+      `<span class="ku-chip neutral">${escapeHtml(`${view.courseCount} コース`)}</span>`,
+      `<span class="ku-chip neutral">${escapeHtml(`${view.items.length} 件`)}</span>`
+    ];
+    if (view.collectedAtLabel) {
+      summaryMeta.push(`<span class="ku-mini-meta">更新: ${escapeHtml(view.collectedAtLabel)}</span>`);
+    }
+    const itemsHtml = view.items.length
+      ? renderPanelList(view.items.map((item) => ({
+          badge: `<span class="ku-chip ${materialTypeTone(item.type, item.title)}">${escapeHtml(item.type || '課題')}</span>`,
+          title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
+          subtitle: escapeHtml(buildUpcomingSubtitle(item)),
+          trailing: `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>`
+        })))
+      : `<div class="ku-empty">${escapeHtml(view.emptyMessage)}</div>`;
+    return `
+      <section class="ku-card ku-main-card">
+        <div class="ku-main-card-header">
+          <div>
+            <h1 class="ku-page-title">全コースの期限が近い課題</h1>
+            <div class="ku-page-subtitle">${escapeHtml(view.subtitle)}</div>
+          </div>
+          <div class="ku-card-actions">
+            <a class="ku-button ghost" href="${escapeAttr(view.homeHref)}">ホームへ戻る</a>
+          </div>
+        </div>
+        <div style="padding:0 20px 20px">
+          <div class="ku-inline">${summaryMeta.join('')}</div>
+        </div>
+        ${itemsHtml}
+      </section>`;
   }

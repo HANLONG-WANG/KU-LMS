@@ -4,9 +4,15 @@ var ROOT_ID = 'ku-redesign-root';
 var SYLLABUS_ROOT_ID = 'ku-syllabus-root';
 var COURSE_UPCOMING_CACHE_KEY = 'ku-redesign-course-upcoming-v1';
 var HOME_REFRESH_STATE_KEY = 'ku-redesign-home-refresh-v1';
+var ALL_UPCOMING_STATE_KEY = 'ku-redesign-all-upcoming-v1';
+var ALL_UPCOMING_ROUTE_HASH = '#ku-all-upcoming';
 var HOME_REFRESH_MAX_AGE_MS = 5 * 60 * 1000;
 var HOME_REFRESH_STALL_MS = 45 * 1000;
 var HOME_REFRESH_MAX_RESTORE_ATTEMPTS = 2;
+var ALL_UPCOMING_MAX_AGE_MS = 15 * 60 * 1000;
+var ALL_UPCOMING_STALL_MS = 60 * 1000;
+var ALL_UPCOMING_MAX_RESTORE_ATTEMPTS = 2;
+var ALL_UPCOMING_WINDOW_DAYS = 5;
 var PERIOD_TIMES = {
   '1限': '08:50–10:20',
   '2限': '10:30–12:00',

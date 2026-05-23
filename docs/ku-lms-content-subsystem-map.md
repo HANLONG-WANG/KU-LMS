@@ -47,6 +47,7 @@ src/content/
     auth.js
     shared.js
   services/
+    all-upcoming.js
     documents.js
     cache.js
     timeline.js
@@ -71,6 +72,7 @@ src/content/
 - `render/*` stay string-generation only and must not perform I/O or storage writes.
 - `render/course.js` owns the redesigned course score-summary presentation, while preserving native form field names and result/detail hrefs.
 - `hydrate/*` may bind events and request rerenders, but should not own fetch/session-storage policy.
+- `services/all-upcoming.js` owns the dedicated all-course upcoming aggregation traversal, result-state storage, dedicated blocking overlay, and the `/webclass/#ku-all-upcoming` restoration/result workflow.
 - `services/refresh.js` is the only content-side owner of refresh sessionStorage state and refresh overlay synchronization.
 - `services/cache.js` may expose display-only cache helpers for homepage deadline hinting, but it must not absorb refresh-state ownership or widen refresh eligibility.
 - `services/syllabus.js` owns syllabus chip navigation, pending marker state, remembered same-tab safe-detail URLs, and assist-page auto-resolution.
@@ -81,6 +83,7 @@ src/content/
 
 ## Safety-sensitive rules
 - The refresh FSM remains validation-gated, same-tab only, and fail-closed on `login.php`, `logout.php`, conflict pages, unexpected routes, manual interruption, and stale state.
+- The all-course upcoming aggregation traversal is likewise same-tab only and fail-closed, but it is a separate workflow with its own state key/overlay and a broader five-day, usage-agnostic result filter. It must not mutate the homepage card's existing narrower cache/refresh logic.
 - The early boot refresh overlay sync remains **visual-only** and must not absorb route/auth branching.
 - Public syllabus search/results pages remain assist-only; they may use the pending overlay / auto-resolution path but must not be fully redesigned.
 - Public syllabus detail pages may render a standalone read-only article surface, but they must not render the authenticated KU-LMS redesign shell, top navigation, user context, or `bootKulms()` route semantics.

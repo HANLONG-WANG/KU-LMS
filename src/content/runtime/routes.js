@@ -4,8 +4,9 @@ function detectRoute(locationObj) {
     const pathname = locationObj.pathname;
     const query = new URLSearchParams(locationObj.search);
     const normalized = pathname.replace(/\/$/, '');
-    if (normalized === '/webclass') return { supported: true, name: 'home' };
-    if (normalized === '/webclass/index.php') return { supported: true, name: 'home' };
+    if (normalized === '/webclass' || normalized === '/webclass/index.php') {
+      return { supported: true, name: isAllUpcomingRouteHash(locationObj) ? 'home-all-upcoming' : 'home' };
+    }
     if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };
     if (normalized === '/webclass/logout.php') return { supported: true, name: 'logout' };
     if (/\/webclass\/course\.php\/[^/]+\/scores$/.test(normalized)) return { supported: true, name: 'course-scores' };
@@ -26,6 +27,7 @@ function routeLabel(name) {
       login: 'ログイン',
       logout: 'ログアウト',
       home: 'ホーム',
+      'home-all-upcoming': '全コースの締切課題',
       'course-materials': '教材',
       'course-myreports': 'マイレポート',
       'course-scores': '成績',
@@ -40,6 +42,7 @@ function routeLabel(name) {
   }
 
 function isActiveNav(routeName, itemKey) {
+    if (routeName === 'home-all-upcoming') return itemKey === 'home';
     if (routeName === 'course-materials' || routeName === 'course-myreports' || routeName === 'course-scores') return itemKey === 'courses';
     if (routeName === 'manual') return itemKey === 'manual';
     if (routeName === 'notifications-detail') return itemKey === 'notifications';

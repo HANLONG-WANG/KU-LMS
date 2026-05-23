@@ -4,6 +4,10 @@ function dueSoonReminderText() {
   return '締切が近い課題があります。';
 }
 
+function isAllUpcomingRouteHash(locationObj = window.location) {
+  return String(locationObj?.hash || '') === ALL_UPCOMING_ROUTE_HASH;
+}
+
 function getAvatarInitial(name) {
     const source = (name || '').trim();
     if (!source) return 'U';
@@ -110,6 +114,13 @@ function isUpcomingDueSoonUnused(item) {
     if (now < range.start.getTime() || now > range.end.getTime()) return false;
     const remaining = dueDate.getTime() - now;
     return remaining >= 0 && remaining <= 7 * 86400000;
+  }
+
+function isUpcomingDueWithinDays(item, days = ALL_UPCOMING_WINDOW_DAYS) {
+    const dueDate = item?.dueDate;
+    if (!dueDate || Number.isNaN(dueDate.getTime())) return false;
+    const remaining = dueDate.getTime() - Date.now();
+    return remaining >= 0 && remaining <= Number(days || 0) * 86400000;
   }
 
 function filterOtherCourses(groups, query) {
@@ -222,6 +233,12 @@ function canonicalizeCourseMaterialsHref(href) {
     const normalized = new URL(`/webclass/course.php/${courseId}/`, window.location.origin);
     normalized.search = source.search;
     return normalized.toString();
+  }
+
+function buildAllUpcomingUrl(baseHref = '') {
+    const url = new URL(absoluteUrl(baseHref || '/webclass/'), window.location.origin);
+    url.hash = String(ALL_UPCOMING_ROUTE_HASH || '#ku-all-upcoming').replace(/^#/, '');
+    return url.toString();
   }
 
 function parseUpcomingFromAnnouncements(items, scheduleEntries, year = '') {

@@ -58,6 +58,10 @@ const sandbox = {
   URL,
   COURSE_UPCOMING_CACHE_KEY: 'ku-redesign-course-upcoming-v1',
   window: {
+    location: {
+      href: 'https://kulms.tl.kansai-u.ac.jp/webclass/',
+      origin: 'https://kulms.tl.kansai-u.ac.jp'
+    },
     sessionStorage: {
       getItem(key) { return storage.has(key) ? storage.get(key) : null; },
       setItem(key, value) { storage.set(key, String(value)); },
@@ -90,6 +94,7 @@ const sandbox = {
   renderWeekLabel() { return '2026/05/18 〜 05/24'; },
   renderSchedule() { return '<div>schedule</div>'; },
   renderSyllabusChip() { return ''; },
+  buildAllUpcomingUrl(value = '') { return `${value || '/webclass/'}#ku-all-upcoming`; },
   readHomeRefreshState() { return null; },
   isHomeRefreshActive() { return false; }
 };
@@ -97,7 +102,7 @@ vm.createContext(sandbox);
 for (const name of [
   'extractCourseId', 'buildCourseCacheKey', 'dueSoonReminderText', 'isDueFlagNote', 'parseAvailabilityRange', 'isUpcomingDueSoonUnused',
   'readCourseUpcomingCache', 'writeCourseUpcomingCache', 'serializeCourseUpcomingItem', 'pruneUpcomingItems',
-  'hydrateCourseUpcomingItem', 'areUpcomingCacheEntriesEqual', 'shortenCourseTitle', 'rememberCourseUpcoming',
+  'hydrateCourseUpcomingItem', 'areUpcomingCacheEntriesEqual', 'normalizeSyllabusCourseQuery', 'shortenCourseTitle', 'rememberCourseUpcoming',
   'loadUpcomingFromCourseCache', 'loadDisplayUpcomingFromCourses', 'loadDisplayUpcomingFromOtherCourses',
   'mergeUpcomingSources', 'buildUpcomingIdentityKey', 'upcomingPriorityRank', 'compareUpcomingItems', 'renderHome', 'getRefreshEntries'
 ]) {
