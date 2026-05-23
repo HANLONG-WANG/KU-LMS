@@ -12,7 +12,7 @@ const buildCourseMaterialsViewSource = extractFunction(source, 'buildCourseMater
 assert(buildCourseMaterialsViewSource.includes('rememberCourseUpcoming('), 'Explicit course-page visits should continue to refresh the course cache.');
 assert(buildCourseMaterialsViewSource.includes('shouldSuppressRefreshSideEffects('), 'Course-page refresh mode should suppress nonessential side effects.');
 const enrichHomeAsyncSource = extractFunction(source, 'enrichHomeAsync');
-assert(enrichHomeAsyncSource.includes('loadNotificationFeed('), 'Home enrich should still load the announcements feed.');
+assert(!enrichHomeAsyncSource.includes('loadNotificationFeed('), 'Home enrich should no longer load the announcements feed for the homepage notice card.');
 assert(enrichHomeAsyncSource.includes('loadUpcomingFromDueCourses('), 'Home enrich should still load homepage upcoming data.');
 assert(!enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements('), 'Home upcoming should no longer rely on notice-title parsing.');
 assert(!source.includes('ku:lms:fetch-upcoming-courses'), 'Content script should no longer reference the retired background upcoming-course message.');

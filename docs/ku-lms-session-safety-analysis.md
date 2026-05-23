@@ -17,13 +17,12 @@ Why can the homepage appear normal, finish loading `期限が近い課題` / `�
 - In the same browser context, opening a real course URL from the homepage also redirected immediately to `login.php` and again deleted `WCAC`.
 
 ### Repository evidence
-- Homepage async enrichment runs only on the home route and starts three post-render branches:
-  - notifications
+- Homepage async enrichment runs only on the home route and now starts two post-render branches:
   - messages
   - due-course enrichment
-- Notifications and messages fetch only:
-  - `/webclass/information.php/...`
+- Messages fetch only:
   - `/webclass/msg_editor.php?msgappmode=inbox`
+- The homepage notice card now stays on the current-page DOM preview instead of late-fetching `/webclass/information.php/` into the visible home panel.
 - The due-course branch:
   - reads timetable cells with `締切が近い課題があります`
   - preserves the native timetable anchor as `supplementalHref`
@@ -36,7 +35,7 @@ The best-supported explanation is:
 
 > The homepage's hidden auto-probe for `期限が近い課題` is still touching real course `login` URLs in the background, and KU-LMS treats those requests as session-relevant enough to poison or invalidate the current course/auth context.
 
-This makes the due-card background probing the main suspect. The `最新のお知らせ` and `メッセージ` cards are secondary suspects only because they also load after render, but the code evidence for them is much weaker: they do not touch course routes.
+This makes the due-card background probing the main suspect. The homepage `メッセージ` card remains a secondary suspect only because it still loads after render, but the code evidence for it is much weaker: it does not touch course routes. The homepage `最新のお知らせ` card now stays on the native home DOM preview instead of post-render feed replacement.
 
 ## Design rule for future work
 Future agents should treat the following rule as binding unless the user explicitly overrides it:
@@ -45,9 +44,11 @@ Future agents should treat the following rule as binding unless the user explici
 
 Preferred safe homepage data sources:
 - current-page DOM
-- `information.php`
 - `msg_editor.php?msgappmode=inbox`
 - same-tab cache populated only after the user explicitly visits a course in that tab
+
+Safe KU-LMS source for the standalone notifications surface:
+- `information.php`
 
 Unsafe or unproven homepage strategies:
 - hidden background probes to course `login` URLs

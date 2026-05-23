@@ -263,7 +263,7 @@ async function buildView(route, context) {
 function buildHomeView(doc, context) {
     const schedule = parseSchedule(doc);
     const filters = parseHomeFilters(doc);
-    const homeNotices = parseHomeAnnouncements(doc);
+    const homeNotices = normalizeHomeAnnouncementItems(parseHomeAnnouncements(doc));
     const otherCourses = parseOtherCourses(doc);
     const today = new Date();
     return {
@@ -274,7 +274,7 @@ function buildHomeView(doc, context) {
       week: getWeekDays(today, state.weekOffset),
       upcoming: { loading: true, items: [] },
       messages: { loading: true, items: [], total: 0 },
-      announcements: { loading: true, items: homeNotices }
+      announcements: { loading: false, items: homeNotices }
     };
   }
 
@@ -295,15 +295,7 @@ async function buildLogoutView(doc, context) {
   }
 
 async function enrichHomeAsync(context, view) {
-    const nextView = { ...view, upcoming: { loading: false, items: [] }, announcements: { loading: false, items: [] }, messages: { loading: false, items: [], total: 0 } };
-    const fallbackAnnouncements = normalizeHomeAnnouncementItems(view.homeNotices);
-
-    try {
-      const noticeFeed = await loadNotificationFeed(context.links.notifications || '/webclass/information.php/');
-      nextView.announcements = { loading: false, items: noticeFeed.previewItems.slice(0, 5) };
-    } catch (error) {
-      console.warn('[KU Redesign] notices enrichment failed', error);
-    }
+    const nextView = { ...view, upcoming: { loading: false, items: [] }, announcements: view.announcements, messages: { loading: false, items: [], total: 0 } };
 
     try {
       const messagesDoc = await loadSupplementalDocument(context.links.messages || '/webclass/msg_editor.php?msgappmode=inbox');

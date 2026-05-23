@@ -25,6 +25,8 @@ This file is the documentation entrypoint for AI agents working on the KU-LMS ex
 - `.omx/plans/test-spec-ku-lms-home-refresh-cross-page-overlay-persistence.md` — verification requirements for boot ordering, no-body startup safety, abort-taxonomy preservation, and early overlay cleanup.
 - `.omx/plans/prd-ku-lms-home-other-courses-deadline-reminder.md` — focused PRD for first-render parity of homepage `その他のコース` reminder chips via the native home DOM reminder field.
 - `.omx/plans/test-spec-ku-lms-home-other-courses-deadline-reminder.md` — verification requirements for native other-course reminder parsing, row-level chip rendering, and refresh eligibility driven by native other-course reminders.
+- `.omx/plans/prd-ku-lms-home-notice-card-parity.md` — focused PRD for keeping the redesigned homepage `最新のお知らせ` card aligned with the native homepage `管理者からのお知らせ` block while leaving the standalone notifications list route on `information.php`.
+- `.omx/plans/test-spec-ku-lms-home-notice-card-parity.md` — verification requirements for native-home notice parsing, stable homepage-card rendering, and preserving the `information.php` notifications-list contract.
 - `.omx/plans/prd-ku-lms-home-refresh-login-loop-safety.md` — prior fail-closed refresh/login-loop safety PRD.
 - `.omx/plans/test-spec-ku-lms-home-refresh-login-loop-safety.md` — verification requirements for terminal auth-invalid handling, loop breakers, and validation-gated refresh posture.
 - `.omx/plans/prd-ku-lms-home-refresh-progress-overlay.md` — follow-up PRD for explicit wait/progress UI during manual refresh.

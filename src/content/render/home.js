@@ -25,14 +25,12 @@ function renderHome(view) {
           trailing: `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>`
         }))) : `<div class="ku-empty">表示できる近い締切はありません。その他のコースの行内リマインダーはホームの既存表示を反映します。右側カードの詳細は、このタブで最近開いたコースの同一タブキャッシュがある場合のみ表示されます。</div>`);
     const announcementSource = view.announcements.items.length ? view.announcements.items : normalizeHomeAnnouncementItems(view.homeNotices);
-    const announcementsHtml = view.announcements.loading
-      ? `<div class="ku-loading"><div class="ku-spinner"></div><div>お知らせを読み込み中…</div></div>`
-      : (announcementSource.length ? renderPanelList(announcementSource.map((item) => ({
+    const announcementsHtml = announcementSource.length ? renderPanelList(announcementSource.map((item) => ({
           marker: `<span class="ku-badge-dot"></span>`,
           title: `<a class="ku-panel-title ${item.important ? 'danger' : ''}" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
           subtitle: escapeHtml(item.source || ''),
           trailing: `<div class="ku-mini-meta">${escapeHtml(item.deadline || '')}</div>`
-        }))) : `<div class="ku-empty">お知らせはありません。</div>`);
+        }))) : `<div class="ku-empty">お知らせはありません。</div>`;
     const messagesHtml = view.messages.loading
       ? `<div class="ku-loading"><div class="ku-spinner"></div><div>メッセージを読み込み中…</div></div>`
       : ((view.messages.items.length ? renderPanelList(view.messages.items.map((item) => ({

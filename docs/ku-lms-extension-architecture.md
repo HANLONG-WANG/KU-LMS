@@ -48,8 +48,9 @@ Rebuild selected KU-LMS pages with a Chrome MV3 extension that overlays a modern
 - Bare relative KU-LMS PHP links (for example `msg_editor.php?...`) should normalize back under `/webclass/` so message-detail return/navigation links do not escape the supported route tree.
 - Reuse native links and same-origin endpoints for counts/actions where needed.
 - Prefer session-safe same-origin `fetch()` for supplemental documents instead of hidden iframe course preloads.
-- On the homepage, render immediately from the current page DOM (`schedule`, `homeNotices`, filters, and course links), then asynchronously enrich the three right-column panels (`announcements`, `messages`, `upcoming`).
-- Homepage announcements enrichment fetches `/webclass/information.php/`, parses notification rows across pagination, and uses that full feed for the visible `最新のお知らせ` panel.
+- On the homepage, render immediately from the current page DOM (`schedule`, `homeNotices`, filters, and course links), then asynchronously enrich only the remaining right-column panels that still require supplemental data (`messages`, `upcoming`).
+- Homepage notice-card rendering stays on the current home DOM preview (`管理者からのお知らせ`) and must preserve that block's native order/count semantics for the visible `最新のお知らせ` panel.
+- The standalone notifications list route remains backed by `/webclass/information.php/`; homepage notice-card parity must not rewrite that route's parser/render contract.
 - The concrete `期限が近い課題` card now focuses on timetable courses already marked with `締切が近い課題があります`.
 - Homepage automatic near-deadline rendering is now cache-first: it reads same-tab course cache only and does not fetch course login/material pages during automatic homepage enrichment.
 - Homepage `その他のコース` row-level reminder chips should mirror the native homepage `.course-contents-info` field when it exists, so those chips appear on first render without requiring a prior course visit.

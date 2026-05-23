@@ -53,11 +53,17 @@ function parseSchedule(doc) {
   }
 
 function parseHomeAnnouncements(doc) {
-    return Array.from(doc.querySelectorAll('a[href*="information.php/post"]')).slice(0, 5).map((anchor) => ({
-      title: anchor.textContent.trim(),
-      href: absoluteUrl(anchor.getAttribute('href')),
-      meta: anchor.parentElement?.textContent.replace(anchor.textContent, '').trim() || ''
-    }));
+    const rows = Array.from(doc.querySelectorAll('#NewestInformations .info-short-list li, #NewestInformations .info-list.info-short-list li'));
+    return uniqueBy(rows.map((row) => {
+      if (row.classList.contains('head')) return null;
+      const anchor = row.querySelector('.hidden-xs a[href*="information.php/post"], a.title[href*="information.php/post"]');
+      if (!anchor) return null;
+      const title = anchor.textContent.replace(/\s+/g, ' ').trim();
+      const href = normalizeNotificationsUrl(anchor.getAttribute('href'));
+      const meta = row.querySelector('.exhibitionInfo, .data')?.textContent.replace(/\s+/g, ' ').trim() || '';
+      const important = anchor.classList.contains('mark1');
+      return title && href ? { title, href, meta, important } : null;
+    }).filter(Boolean), (item) => item.href || item.title).slice(0, 5);
   }
 
 function normalizeHomeAnnouncementItems(items) {

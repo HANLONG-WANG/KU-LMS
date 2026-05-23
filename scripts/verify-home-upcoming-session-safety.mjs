@@ -7,7 +7,7 @@ const entrypointDoc = read('docs/AI_DOCS_ENTRYPOINT.md');
 const designCodeDoc = read('docs/ku-lms-design-code.md');
 
 const enrichHomeAsyncSource = extractFunction(source, 'enrichHomeAsync');
-assert(enrichHomeAsyncSource.includes('loadNotificationFeed('), 'Home enrich should still fetch paginated notifications.');
+assert(!enrichHomeAsyncSource.includes('loadNotificationFeed('), 'Home enrich should no longer replace the homepage notice card with the notifications feed.');
 assert(enrichHomeAsyncSource.includes('msgappmode=inbox'), 'Home enrich should still fetch inbox preview.');
 assert(enrichHomeAsyncSource.includes('loadUpcomingFromDueCourses('), 'Home enrich should still build homepage upcoming items.');
 assert(!enrichHomeAsyncSource.includes('loadUpcomingFromDueCoursesViaBackground('), 'Home enrich must not trigger background course-page fetches.');
@@ -43,8 +43,11 @@ assert(entrypointDoc.includes('prd-ku-lms-home-safe-refresh-deadlines.md'), 'AI 
 assert(entrypointDoc.includes('test-spec-ku-lms-home-safe-refresh-deadlines.md'), 'AI docs entrypoint should point to the active safe-refresh test spec.');
 assert(entrypointDoc.includes('prd-ku-lms-home-other-courses-deadline-reminder.md'), 'AI docs entrypoint should point to the active native other-course reminder parity PRD.');
 assert(entrypointDoc.includes('test-spec-ku-lms-home-other-courses-deadline-reminder.md'), 'AI docs entrypoint should point to the active native other-course reminder parity test spec.');
+assert(entrypointDoc.includes('prd-ku-lms-home-notice-card-parity.md'), 'AI docs entrypoint should point to the homepage notice-card parity PRD.');
+assert(entrypointDoc.includes('test-spec-ku-lms-home-notice-card-parity.md'), 'AI docs entrypoint should point to the homepage notice-card parity test spec.');
 assert(architectureDoc.includes('Homepage automatic near-deadline rendering is now cache-first'), 'Architecture doc should describe cache-first homepage upcoming data.');
 assert(architectureDoc.includes('top-level same-tab navigation only'), 'Architecture doc should document the refresh transport rule.');
+assert(architectureDoc.includes('Homepage notice-card rendering stays on the current home DOM preview'), 'Architecture doc should document the native homepage notice-card source contract.');
 assert(designCodeDoc.includes('native homepage `.course-contents-info` field'), 'Design code should describe native homepage DOM as the source of row-level other-course reminder chips.');
 assert(designCodeDoc.includes('row-level `その他のコース` chips must not depend on prior course visits'), 'Design code should distinguish native row-level reminder chips from cache-backed detailed items.');
 assert(designCodeDoc.includes('homepage refresh button should refresh timetable red-flag rows and any `その他のコース` row that already exposes the native homepage reminder'), 'Design code should document the expanded refresh target contract for native-reminder other-course rows.');
