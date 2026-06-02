@@ -1,0 +1,10 @@
+FROM localhost/codex-base:latest
+
+USER root
+
+RUN dnf -y install \
+    zip \
+ && dnf clean all
+
+USER dev
+WORKDIR /workspace
