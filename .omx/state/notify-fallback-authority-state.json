@@ -1,13 +1,14 @@
 {
   "owner": "hud",
-  "pid": 241,
+  "pid": 662,
   "cwd": "/workspace",
-  "heartbeat_at": "2026-06-02T04:31:59.636Z",
+  "heartbeat_at": "2026-06-02T04:40:03.252Z",
   "cooldown_ms": 5000,
-  "jitter_ms": 216,
-  "skip_count": 15,
-  "last_status": "spawned",
-  "last_reason": "spawned",
-  "last_spawn_at": "2026-06-02T04:31:59.636Z",
-  "next_allowed_at": "2026-06-02T04:32:04.852Z"
+  "jitter_ms": 228,
+  "skip_count": 46,
+  "last_status": "skipped",
+  "last_reason": "rate_limited",
+  "last_spawn_at": "2026-06-02T04:40:02.251Z",
+  "last_skip_at": "2026-06-02T04:40:03.252Z",
+  "next_allowed_at": "2026-06-02T04:40:07.479Z"
 }
