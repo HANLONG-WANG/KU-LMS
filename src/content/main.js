@@ -3,5 +3,7 @@
 (() => {
   if (document.documentElement.dataset.kuRedesignBooted === 'true') return;
   document.documentElement.dataset.kuRedesignBooted = 'true';
-  bootKulms();
+  bootKulms().catch((error) => {
+    console.error('[KU Redesign] boot failed', error);
+  });
 })();

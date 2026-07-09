@@ -37,6 +37,7 @@ function hydrateLoginForm(root) {
       button.removeAttribute('style');
     });
     host.replaceChildren(nativeForm);
+    fillAndMaybeSubmitLoginForm(nativeForm);
   }
 
 function markHydratedLoginFormDecorations(form) {
@@ -107,4 +108,86 @@ function restoreLoginFormSnapshot(snapshot = []) {
       if (entry.style == null) entry.element.removeAttribute('style');
       else entry.element.setAttribute('style', entry.style);
     });
+  }
+
+function fillAndMaybeSubmitLoginForm(form) {
+    if (!form || state.currentRoute?.name !== 'login') return;
+    const settings = state.extensionSettings || kuNormalizeExtensionSettings(KU_LMS_DEFAULT_SETTINGS);
+    if (!settings.enabled || !settings.username || !settings.password) return;
+    const usernameInput = form.querySelector('input[name="username"], input[type="text"], input[autocomplete="username"]');
+    const passwordInput = form.querySelector('input[name="val"], input[type="password"], input[autocomplete="current-password"]');
+    if (!usernameInput || !passwordInput) return;
+
+    setLoginInputValue(usernameInput, settings.username);
+    setLoginInputValue(passwordInput, settings.password);
+
+    if (parseLoginAlert(document, form) || hasAutoLoginAttempted()) return;
+    if (!markAutoLoginAttempted()) return;
+    window.setTimeout(() => submitLoginForm(form), 100);
+  }
+
+function setLoginInputValue(input, value) {
+    try {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+      if (setter) setter.call(input, value);
+      else input.value = value;
+    } catch (error) {
+      input.value = value;
+    }
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+function submitLoginForm(form) {
+    const submitter = form.querySelector('input[type="submit"], button[type="submit"]');
+    const loginControl = submitter || form.querySelector('input[name="login"], button[name="login"]');
+    if (typeof form.requestSubmit === 'function') {
+      try {
+        form.requestSubmit(submitter || undefined);
+        return;
+      } catch (error) {
+        // Fall through to the native click/submit path for older form variants.
+      }
+    }
+    if (loginControl && typeof loginControl.click === 'function') {
+      loginControl.click();
+      return;
+    }
+    form.submit();
+  }
+
+function autoLoginAttemptStorageKey() {
+    return 'KU_LMS_AUTO_LOGIN_ATTEMPTED_V1';
+  }
+
+function hasAutoLoginAttempted() {
+    try {
+      const raw = window.sessionStorage?.getItem(autoLoginAttemptStorageKey()) || '';
+      if (!raw) return false;
+      const attempted = JSON.parse(raw);
+      return attempted?.username === (state.extensionSettings?.username || '');
+    } catch (error) {
+      return true;
+    }
+  }
+
+function markAutoLoginAttempted() {
+    try {
+      window.sessionStorage?.setItem(autoLoginAttemptStorageKey(), JSON.stringify({
+        username: state.extensionSettings?.username || '',
+        attemptedAt: new Date().toISOString()
+      }));
+      return window.sessionStorage?.getItem(autoLoginAttemptStorageKey()) ? true : false;
+    } catch (error) {
+      // If sessionStorage is unavailable, fail closed and do not submit automatically.
+      return false;
+    }
+  }
+
+function clearAutoLoginAttempt() {
+    try {
+      window.sessionStorage?.removeItem(autoLoginAttemptStorageKey());
+    } catch (error) {
+      // Ignore storage failures; the user can still submit the filled form manually.
+    }
   }

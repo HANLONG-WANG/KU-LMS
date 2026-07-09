@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KU-LMS 设置</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup-header">
+        <img src="../../assets/icons/icon48.png" alt="" class="popup-icon">
+        <div>
+          <h1>KU-LMS</h1>
+          <p>扩展设置</p>
+        </div>
+      </header>
+
+      <form id="settings-form" class="settings-form">
+        <label class="switch-row">
+          <span>
+            <strong>启用扩展</strong>
+            <small>关闭后当前页面会恢复原始 KU-LMS 页面。</small>
+          </span>
+          <input id="enabled" type="checkbox" role="switch">
+        </label>
+
+        <label class="field">
+          <span>用户名</span>
+          <input id="username" name="username" type="text" autocomplete="username" spellcheck="false">
+        </label>
+
+        <label class="field">
+          <span>密码</span>
+          <input id="password" name="password" type="password" autocomplete="current-password">
+        </label>
+
+        <label class="reveal-row">
+          <input id="show-password" type="checkbox">
+          <span>显示密码</span>
+        </label>
+
+        <button id="save" type="submit">保存</button>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </form>
+    </main>
+    <script src="../shared/settings.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

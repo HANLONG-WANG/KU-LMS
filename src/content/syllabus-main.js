@@ -3,5 +3,7 @@
 (() => {
   if (document.documentElement.dataset.kuSyllabusAssistBooted === 'true') return;
   document.documentElement.dataset.kuSyllabusAssistBooted = 'true';
-  bootSyllabus();
+  bootSyllabus().catch((error) => {
+    console.warn('[KU Redesign] syllabus boot failed', error);
+  });
 })();

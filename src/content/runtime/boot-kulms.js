@@ -1,10 +1,16 @@
 /* src/content/runtime/boot-kulms.js */
 
-function bootKulms() {
-  window.addEventListener('pagehide', abortInFlightPageRequests);
-  window.addEventListener('beforeunload', abortInFlightPageRequests);
-  window.addEventListener('pageshow', resetPageLifecycleGuards);
-  window.addEventListener('pageshow', rebindHomeInterceptionOnHistoryRestore);
+async function bootKulms(options = {}) {
+  bindKulmsLifecycleListeners();
+  bindKulmsExtensionSettingsListener();
+
+  if (!options.skipSettingsCheck) {
+    state.extensionSettings = await kuReadExtensionSettings();
+    if (!state.extensionSettings.enabled) {
+      releaseNative();
+      return;
+    }
+  }
 
   document.documentElement.dataset.kuRedesignState = 'booting';
   syncBootRefreshOverlay();
@@ -16,6 +22,36 @@ function bootKulms() {
   } else {
     init();
   }
+}
+
+function bindKulmsLifecycleListeners() {
+  if (state.kulmsLifecycleBound) return;
+  state.kulmsLifecycleBound = true;
+  window.addEventListener('pagehide', abortInFlightPageRequests);
+  window.addEventListener('beforeunload', abortInFlightPageRequests);
+  window.addEventListener('pageshow', resetPageLifecycleGuards);
+  window.addEventListener('pageshow', rebindHomeInterceptionOnHistoryRestore);
+}
+
+function bindKulmsExtensionSettingsListener() {
+  if (state.kulmsSettingsListenerBound) return;
+  state.kulmsSettingsListenerBound = kuOnExtensionSettingsChanged((settings) => {
+    const previous = state.extensionSettings || kuNormalizeExtensionSettings(KU_LMS_DEFAULT_SETTINGS);
+    const credentialsChanged = previous.username !== settings.username || previous.password !== settings.password;
+    state.extensionSettings = settings;
+    if (!settings.enabled) {
+      releaseNative();
+      return;
+    }
+    if (!document.documentElement.dataset.kuRedesignState) {
+      bootKulms({ skipSettingsCheck: true }).catch((error) => console.warn('[KU Redesign] settings re-enable failed', error));
+      return;
+    }
+    if (credentialsChanged && state.currentRoute?.name === 'login') {
+      clearAutoLoginAttempt();
+      fillAndMaybeSubmitLoginForm(state.loginNativeForm);
+    }
+  });
 }
 
 async function init() {

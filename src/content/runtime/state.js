@@ -26,7 +26,11 @@ var state = {
   loginNativeFormParent: null,
   loginNativeFormNextSibling: null,
   loginNativeFormSnapshot: null,
-  loginNoticeSyncTimer: null
+  loginNoticeSyncTimer: null,
+  extensionSettings: kuNormalizeExtensionSettings(KU_LMS_DEFAULT_SETTINGS),
+  kulmsLifecycleBound: false,
+  kulmsSettingsListenerBound: false,
+  syllabusSettingsListenerBound: false
 };
 
 function getDefaultGlobalInboxHref() {
