@@ -143,7 +143,7 @@ check('missing usage stays unknown in upcoming items and never claims unused', (
   assert.equal(items[0].usageKnown, false);
   assert.doesNotMatch(runtime.buildUpcomingSubtitle(items[0]), /未利用|未提出/);
   const soon = { dueDate: new Date(Date.now() + 3600000), availability: '2020/01/01 00:00 ～ 2050/01/01 23:59', hasUsage: false };
-  assert.equal(runtime.isUpcomingDueSoonUnused({ ...soon, usageKnown: false }), false);
+  assert.equal(runtime.isUpcomingDueSoonUnused({ ...soon, usageKnown: false }), true);
   assert.equal(runtime.isUpcomingDueSoonUnused({ ...soon, usageKnown: true }), true);
 });
 check('report native column order, extra column, long preview and multiple attachments remain visible', () => {

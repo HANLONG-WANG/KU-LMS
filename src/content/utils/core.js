@@ -112,12 +112,13 @@ function extractPublishDate(text) {
 
 function isUpcomingDueSoonUnused(item) {
     const dueDate = item?.dueDate;
-    if (!dueDate || Number.isNaN(dueDate.getTime()) || item?.usageKnown !== true || item?.hasUsage) return false;
+    // Missing usage information must not hide a deadline or imply it was used.
+    if (!dueDate || Number.isNaN(dueDate.getTime()) || item?.hasUsage) return false;
     const range = parseAvailabilityRange(item?.availability || '');
     const now = Date.now();
     if (!range.start || !range.end || now < range.start.getTime() || now > range.end.getTime()) return false;
     const remaining = dueDate.getTime() - now;
-    return remaining >= 0 && remaining <= 5 * 86400000;
+    return remaining >= 0 && remaining <= 7 * 86400000;
   }
 
 function isUpcomingDueWithinDays(item, days = ALL_UPCOMING_WINDOW_DAYS) {

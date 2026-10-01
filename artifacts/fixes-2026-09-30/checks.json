@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-01T03:08:27.375Z",
-  "passed": 31,
-  "total": 31,
+  "generatedAt": "2026-10-01T03:22:34.391Z",
+  "passed": 32,
+  "total": 32,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -172,6 +172,14 @@
       "error": ""
     },
     {
+      "script": "verify-home-unknown-usage.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: unknown usage survives course collection, refresh preparation and cache reads without being labeled unused\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
       "script": "verify-home-upcoming-session-safety.mjs",
       "passed": true,
       "exitCode": 0,
@@ -183,7 +191,7 @@
       "script": "verify-home-week-window-schedule.mjs",
       "passed": true,
       "exitCode": 0,
-      "stdout": "PASS: five-day home, seven-day collection/results, five weekday periods\n",
+      "stdout": "PASS: seven-day home and collection/results, five weekday periods\n",
       "stderr": "",
       "error": ""
     },

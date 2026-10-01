@@ -15,7 +15,12 @@ const item = (days) => ({
   availability: '2026/09/01 00:00 ～ 2026/11/01 23:59'
 });
 assert.equal(sandbox.isUpcomingDueSoonUnused(item(5)), true);
-assert.equal(sandbox.isUpcomingDueSoonUnused(item(6)), false);
+assert.equal(sandbox.isUpcomingDueSoonUnused(item(6)), true);
+assert.equal(sandbox.isUpcomingDueSoonUnused(item(7)), true);
+assert.equal(sandbox.isUpcomingDueSoonUnused(item(7.001)), false);
+assert.equal(sandbox.isUpcomingDueSoonUnused(item(-1)), false);
+assert.equal(sandbox.isUpcomingDueSoonUnused({ ...item(6), hasUsage: true }), false);
+assert.equal(sandbox.isUpcomingDueSoonUnused({ ...item(6), usageKnown: false }), true);
 sandbox.parseUpcomingFromCourse = () => [item(-1), item(5), item(6), item(7), item(7.001)];
 assert.deepEqual(Array.from(sandbox.collectAllUpcomingCourseItems({}, {}), x => x.title), ['Due 5', 'Due 6', 'Due 7']);
 sandbox.parseHomeFilters = () => ({ label: '2026 秋' });
@@ -45,4 +50,4 @@ assert.equal(document.querySelectorAll('.ku-schedule-cell').length, 25);
 assert.equal(document.querySelectorAll('.ku-class-card').length, 3);
 assert.doesNotMatch(html, /Excluded/);
 fs.writeFileSync('/tmp/ku-lms-schedule-preview.html', `<!doctype html><meta charset="utf-8"><style>${fs.readFileSync('src/content/critical.css', 'utf8')}</style><div id="ku-redesign-root"><div class="ku-app"><main class="ku-page">${html}</main></div></div>`);
-console.log('PASS: five-day home, seven-day collection/results, five weekday periods');
+console.log('PASS: seven-day home and collection/results, five weekday periods');
