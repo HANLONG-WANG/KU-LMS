@@ -62,16 +62,19 @@ function renderTopbar(route, context) {
   }
 
 function renderSchedule(schedule, week, year = '') {
+    const today = new Date(Date.now()).toDateString();
+    const todayIndex = week.findIndex((day) => day?.date?.toDateString() === today);
     const cells = ['<div class="ku-schedule-head" role="columnheader"></div>'];
     DAY_LABELS.slice(0, 5).forEach((label, index) => {
-      cells.push(`<div class="ku-schedule-head" role="columnheader">${escapeHtml(label)} ${escapeHtml(week[index]?.monthDay || '')}</div>`);
+      const isToday = index === todayIndex;
+      cells.push(`<div class="ku-schedule-head${isToday ? ' is-today' : ''}" role="columnheader"${isToday ? ' aria-current="date"' : ''}><span>${escapeHtml(label)} ${escapeHtml(week[index]?.monthDay || '')}</span>${isToday ? '<span class="ku-schedule-today-badge">今日</span>' : ''}</div>`);
     });
     const periods = Object.keys(PERIOD_TIMES);
     periods.forEach((period) => {
       cells.push(`<div class="ku-schedule-period" role="rowheader"><div class="ku-period-title">${escapeHtml(period)}</div><div class="ku-period-time">${escapeHtml(PERIOD_TIMES[period] || '')}</div></div>`);
       DAY_NAMES.slice(0, 5).forEach((weekday, weekdayIndex) => {
         const entries = schedule.entries.filter((item) => item.period === period && item.weekdayIndex === weekdayIndex);
-        cells.push(`<div class="ku-schedule-cell" role="cell">${entries.map((entry) => renderScheduleCard(entry, year)).join('')}</div>`);
+        cells.push(`<div class="ku-schedule-cell${weekdayIndex === todayIndex ? ' is-today' : ''}" role="cell">${entries.map((entry) => renderScheduleCard(entry, year)).join('')}</div>`);
       });
     });
     return `<div class="ku-schedule-scroll" tabindex="0" aria-label="時間割。横にスクロールできます"><div class="ku-schedule-grid">${cells.join('')}</div></div>`;

@@ -649,7 +649,7 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   overflow: hidden;
   display: grid;
   grid-template-columns: 108px repeat(5, minmax(0, 1fr));
-  grid-template-rows: 56px repeat(5, minmax(144px, auto));
+  grid-template-rows: 56px repeat(5, minmax(112px, auto));
   background: #fff;
 }
 
@@ -698,6 +698,31 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   text-align: center;
 }
 
+.ku-schedule-head.is-today {
+  flex-direction: column;
+  gap: 3px;
+  padding-block: 6px;
+  color: var(--ku-blue-strong);
+  background: #e7efff;
+  box-shadow: inset 0 3px 0 var(--ku-blue);
+}
+
+.ku-schedule-today-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ku-blue-strong);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+}
+
+.ku-schedule-cell.is-today {
+  background: var(--ku-blue-soft);
+  box-shadow: inset 1px 0 0 #d5e2ff, inset -1px 0 0 #d5e2ff;
+}
+
 .ku-period-title {
   font-weight: 800;
 }
@@ -711,7 +736,7 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   padding: 8px;
   min-width: 0;
   display: grid;
-  grid-auto-rows: minmax(164px, auto);
+  grid-auto-rows: minmax(128px, auto);
   align-content: start;
   gap: 8px;
 }
@@ -719,7 +744,7 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 .ku-class-card {
   width: 100%;
   height: 100%;
-  min-height: 156px;
+  min-height: 128px;
   min-width: 0;
   padding: 10px 12px;
   border-radius: 12px;
@@ -2463,4 +2488,4 @@ button.ku-collapse-head {
 .ku-todo-dialog-header { padding: 16px 20px; border-bottom: 1px solid #e3eaf5; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .ku-todo-dialog-header h2 { margin: 0; font-size: 20px; }
 .ku-todo-dialog-body { padding: 18px 20px; overflow-y: auto; overscroll-behavior: contain; flex: 1; }
-@media (pointer: coarse) { .ku-class-actions .ku-chip { min-height: 44px !important; } .ku-class-card { min-height: 184px; } .ku-schedule-grid { grid-auto-rows: minmax(192px, auto); } }
+@media (pointer: coarse) { .ku-class-actions .ku-chip { min-height: 44px !important; } .ku-class-card { min-height: 148px; } }
