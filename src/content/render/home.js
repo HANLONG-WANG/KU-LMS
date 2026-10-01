@@ -89,7 +89,7 @@ function renderHomeOtherCourses(view) {
 
 function renderAllUpcoming(view) {
     const summaryMeta = [
-      `<span class="ku-chip blue">5日以内</span>`,
+      `<span class="ku-chip blue">${ALL_UPCOMING_WINDOW_DAYS}日以内</span>`,
       `<span class="ku-chip neutral">${escapeHtml(`${view.courseCount} コース`)}</span>`,
       `<span class="ku-chip neutral">${escapeHtml(`${view.items.length} 件`)}</span>`
     ];

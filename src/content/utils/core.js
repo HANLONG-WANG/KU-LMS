@@ -52,7 +52,7 @@ function getWeekDays(baseDate, offset) {
     const day = date.getDay();
     const mondayDistance = day === 0 ? -6 : 1 - day;
     date.setDate(date.getDate() + mondayDistance + offset * 7);
-    return DAY_LABELS.map((label, index) => {
+    return DAY_LABELS.slice(0, 5).map((label, index) => {
       const current = new Date(date);
       current.setDate(date.getDate() + index);
       return {
@@ -117,7 +117,7 @@ function isUpcomingDueSoonUnused(item) {
     const now = Date.now();
     if (!range.start || !range.end || now < range.start.getTime() || now > range.end.getTime()) return false;
     const remaining = dueDate.getTime() - now;
-    return remaining >= 0 && remaining <= 7 * 86400000;
+    return remaining >= 0 && remaining <= 5 * 86400000;
   }
 
 function isUpcomingDueWithinDays(item, days = ALL_UPCOMING_WINDOW_DAYS) {

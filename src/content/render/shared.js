@@ -63,13 +63,13 @@ function renderTopbar(route, context) {
 
 function renderSchedule(schedule, week, year = '') {
     const cells = ['<div class="ku-schedule-head" role="columnheader"></div>'];
-    DAY_LABELS.forEach((label, index) => {
+    DAY_LABELS.slice(0, 5).forEach((label, index) => {
       cells.push(`<div class="ku-schedule-head" role="columnheader">${escapeHtml(label)} ${escapeHtml(week[index]?.monthDay || '')}</div>`);
     });
-    const periods = uniqueBy([...Object.keys(PERIOD_TIMES), ...schedule.entries.map((entry) => entry.period)], (period) => period).sort((a, b) => parseInt(a) - parseInt(b));
+    const periods = Object.keys(PERIOD_TIMES);
     periods.forEach((period) => {
       cells.push(`<div class="ku-schedule-period" role="rowheader"><div class="ku-period-title">${escapeHtml(period)}</div><div class="ku-period-time">${escapeHtml(PERIOD_TIMES[period] || '')}</div></div>`);
-      DAY_NAMES.forEach((weekday, weekdayIndex) => {
+      DAY_NAMES.slice(0, 5).forEach((weekday, weekdayIndex) => {
         const entries = schedule.entries.filter((item) => item.period === period && item.weekdayIndex === weekdayIndex);
         cells.push(`<div class="ku-schedule-cell" role="cell">${entries.map((entry) => renderScheduleCard(entry, year)).join('')}</div>`);
       });
@@ -80,7 +80,7 @@ function renderSchedule(schedule, week, year = '') {
 function renderScheduleCard(entry, year = '') {
     const palette = pickPalette(entry.title);
     const meta = entry.title.match(/(\d限-\d+)/)?.[1] || entry.weekday;
-    return `<div class="ku-class-card ${palette}"><div class="ku-class-title-row"><a class="ku-card-link ku-class-title-link" href="${escapeAttr(entry.href)}">${escapeHtml(shortenCourseTitle(entry.title))}</a>${renderSyllabusChip({ title: entry.title, href: entry.href, year })}</div><div class="ku-class-sub">${escapeHtml(meta)}</div>${entry.note ? `<div class="ku-chip red">${escapeHtml(entry.note)}</div>` : ''}</div>`;
+    return `<div class="ku-class-card ${palette}"><a class="ku-card-link ku-class-title-link" href="${escapeAttr(entry.href)}" title="${escapeAttr(entry.title)}">${escapeHtml(shortenCourseTitle(entry.title))}</a><div class="ku-class-meta"><div class="ku-class-sub">${escapeHtml(meta)}</div>${renderSyllabusChip({ title: entry.title, href: entry.href, year })}</div>${entry.note ? `<div class="ku-class-reminder" title="${escapeAttr(entry.note)}"><span aria-hidden="true">●</span><span>${escapeHtml(isDueFlagNote(entry.note) ? '締切間近' : entry.note)}</span></div>` : ''}</div>`;
   }
 
 function renderSidebar(active) {

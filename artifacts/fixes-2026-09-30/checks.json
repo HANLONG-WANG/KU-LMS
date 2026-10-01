@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-01T01:52:02.678Z",
-  "passed": 30,
-  "total": 30,
+  "generatedAt": "2026-10-01T03:08:27.375Z",
+  "passed": 31,
+  "total": 31,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -176,6 +176,14 @@
       "passed": true,
       "exitCode": 0,
       "stdout": "{\"ok\":true,\"checks\":[\"home-enrich-retired-worker-fetch-path\",\"home-upcoming-cache-first\",\"home-display-only-other-course-details-separated-from-refresh-targeting\",\"refresh-button-exposed-on-home-card\",\"due-flag-contract-explicit-redflag-only\",\"cache-pruning-persists-valid-items-only\",\"refresh-targets-schedule-and-native-other-course-reminders\",\"other-course-native-reminders-render-on-first-home-render\",\"docs-point-to-native-reminder-parity-phase\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-home-week-window-schedule.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: five-day home, seven-day collection/results, five weekday periods\n",
       "stderr": "",
       "error": ""
     },

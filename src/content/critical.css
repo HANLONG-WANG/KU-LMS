@@ -648,7 +648,8 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   border-radius: 16px;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 108px repeat(6, minmax(0, 1fr));
+  grid-template-columns: 108px repeat(5, minmax(0, 1fr));
+  grid-template-rows: 56px repeat(5, minmax(144px, auto));
   background: #fff;
 }
 
@@ -663,13 +664,11 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   outline-offset: -2px;
 }
 
-.ku-schedule-cell .ku-class-card + .ku-class-card { margin-top: 8px; }
-
 .ku-schedule-cell,
 .ku-schedule-head,
 .ku-schedule-period {
-  border-right: 1px solid var(--ku-border);
-  border-bottom: 1px solid var(--ku-border);
+  border-right: 1px solid rgba(230, 235, 245, 0.6);
+  border-bottom: 1px solid rgba(230, 235, 245, 0.6);
   min-height: 82px;
   background: rgba(255,255,255,0.96);
 }
@@ -709,12 +708,18 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 }
 
 .ku-schedule-cell {
-  padding: 6px;
+  padding: 8px;
+  min-width: 0;
+  display: grid;
+  grid-auto-rows: 128px;
+  align-content: start;
+  gap: 8px;
 }
 
 .ku-class-card {
   width: 100%;
-  min-height: 84px;
+  height: 128px;
+  min-width: 0;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1.5px solid #dbe5ff;
@@ -736,7 +741,6 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   line-height: 1.35;
 }
 
-.ku-class-title-row,
 .ku-title-inline {
   display: flex;
   align-items: flex-start;
@@ -744,16 +748,47 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   flex-wrap: wrap;
 }
 
-.ku-class-title-row {
+.ku-class-meta {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ku-class-reminder {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: auto;
+  flex-shrink: 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: #d92d45;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ku-class-reminder > span:first-child {
+  font-size: 8px;
 }
 
 .ku-class-title-link {
-  flex: 1;
+  flex: 0 1 auto;
+  margin-top: 4px;
+  min-height: 0;
   min-width: 0;
+  overflow-wrap: anywhere;
+  overflow: auto;
+  line-height: 1.4;
 }
 
 .ku-class-sub {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 13px;
   color: rgba(0,0,0,.62);
   line-height: 1.3;
@@ -2394,8 +2429,8 @@ button.ku-collapse-head {
   }
 
   .ku-schedule-grid {
-    grid-template-columns: 84px repeat(6, minmax(120px, 1fr));
-    min-width: 804px;
+    grid-template-columns: 84px repeat(5, minmax(120px, 1fr));
+    min-width: 684px;
   }
 }
 

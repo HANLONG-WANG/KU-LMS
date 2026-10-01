@@ -12,16 +12,13 @@ var HOME_REFRESH_MAX_RESTORE_ATTEMPTS = 2;
 var ALL_UPCOMING_MAX_AGE_MS = 15 * 60 * 1000;
 var ALL_UPCOMING_STALL_MS = 60 * 1000;
 var ALL_UPCOMING_MAX_RESTORE_ATTEMPTS = 2;
-var ALL_UPCOMING_WINDOW_DAYS = 5;
+var ALL_UPCOMING_WINDOW_DAYS = 7;
 var PERIOD_TIMES = {
-  '1限': '08:50–10:20',
-  '2限': '10:30–12:00',
+  '1限': '09:00–10:30',
+  '2限': '10:40–12:10',
   '3限': '13:00–14:30',
   '4限': '14:40–16:10',
-  '5限': '16:20–17:50',
-  '6限': '18:00–19:30',
-  '7限': '19:40–21:10',
-  '8限': '21:20–22:50'
+  '5限': '16:20–17:50'
 };
 var DAY_LABELS = ['月', '火', '水', '木', '金', '土'];
 var DAY_NAMES = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];

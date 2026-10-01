@@ -430,9 +430,9 @@ function buildHomeAllUpcomingView(doc, context) {
       collectedAt,
       collectedAtLabel: formatAllUpcomingCollectedAt(collectedAt),
       homeHref: state.currentContext?.links?.home || absoluteUrl('/webclass/'),
-      subtitle: `現在のホーム対象（${filters.label || '全期間'}）から、5日以内に締切の課題をコース詳細ページ経由で集約しました。`,
+      subtitle: `現在のホーム対象（${filters.label || '全期間'}）から、${ALL_UPCOMING_WINDOW_DAYS}日以内に締切の課題をコース詳細ページ経由で集約しました。`,
       emptyMessage: payload?.phase === 'completed'
-        ? '5日以内に締切の課題はありません。'
+        ? `${ALL_UPCOMING_WINDOW_DAYS}日以内に締切の課題はありません。`
         : 'ホームの「すべて見る」から集約を開始してください。'
     };
   }
