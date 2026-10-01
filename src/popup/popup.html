@@ -18,6 +18,7 @@
       </header>
 
       <nav class="popup-tabs" role="tablist" aria-label="扩展功能"><button id="todo-tab" type="button" role="tab" aria-selected="true" aria-controls="todo-page">TODO</button><button id="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-form">设置</button></nav>
+      <section id="google-sync-panel" aria-label="Google 同步"></section>
       <section id="todo-page" role="tabpanel" aria-labelledby="todo-tab"></section>
       <form id="settings-form" class="settings-form" role="tabpanel" aria-labelledby="settings-tab" hidden>
         <label class="switch-row">
@@ -60,5 +61,6 @@
     <script src="../shared/todo-client.js"></script>
     <script src="../shared/todo-ui.js"></script>
     <script src="todo-popup.js"></script>
+    <script src="google-sync.js"></script>
   </body>
 </html>

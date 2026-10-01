@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KU-LMS · Google 同步配置</title><link rel="stylesheet" href="google-sync-setup.css"></head>
+<body><main>
+<h1>连接两台电脑的 TODO</h1>
+<p>一次性配置完成后，两台电脑使用同一份扩展文件、连接同一 Google 账号。只授权应用专用存储，不读取普通 Drive 文件。</p>
+<ol>
+<li><h2>先导出已有 TODO</h2><p>在扩展中分别选择需要保留的本地资料，打开「备份与恢复」并导出。首次固定扩展 ID 后，Chrome 会使用新的本地存储空间；不要在确认恢复成功前移除旧扩展。</p></li>
+<li><h2>建立 Google Cloud 项目</h2><p>打开 <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>，创建或选择项目，启用 <strong>Google Drive API</strong>。</p></li>
+<li><h2>配置 Google Auth Platform</h2><p>填写应用名称和联系邮箱，选择适合你的受众类型。个人账号使用 External；测试状态下把自己的 Google 邮箱加入测试用户。在 Data Access 中只添加：</p><code>https://www.googleapis.com/auth/drive.appdata</code><p>测试模式可能需要重新授权；长期使用时可按 Google 控制台要求切换发布状态。</p></li>
+<li><h2>建立 Chrome Extension OAuth 客户端</h2><p>在 Clients 中创建 <strong>Chrome Extension</strong> 类型的 OAuth 客户端，Item ID 填入以下目标 ID：</p><code id="extension-id">读取中…</code><p>复制生成的 Client ID。不要创建 Web Application 客户端，也不要把 Client Secret 填入扩展。</p></li>
+<li><h2>应用配置</h2><p>在项目目录执行以下命令，将占位符替换为 Client ID。只有已完成第一步备份时才使用确认参数：</p><pre><code>node scripts/configure-google-sync.mjs --apply --client-id "你的ClientID.apps.googleusercontent.com" --confirm-backup</code></pre><p>此命令会将公开 OAuth 配置和固定 ID 写入 manifest.json。两台电脑复制同一份配置后的扩展；按 Chrome 提示重新加载或加载为新扩展。若显示空列表，导入第一步备份，不代表旧数据被主动删除。</p></li>
+<li><h2>连接并确认合并</h2><p>打开扩展的「Google 同步」，选择本地资料，点击「连接 Google 账号」。核对账号与合并数量，再确认开启。第二台电脑使用同一账号连接即可拉取课程和 TODO。</p></li>
+</ol>
+<p>配置状态：<span id="configured">读取中…</span>。当前安装 ID：<code id="current-id"></code></p>
+<p>本机显示“已上传”仅表示服务器接收，不表示另一台电脑已经刷新。保留外部导出备份；从 Google Drive 中主动删除应用数据也会删除云端历史。</p>
+</main><script src="google-sync-setup.js"></script></body></html>

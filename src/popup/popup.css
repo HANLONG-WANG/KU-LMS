@@ -163,3 +163,17 @@ button:disabled {
 .popup-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .popup-tabs button { flex: 1; background: #eef3ff; color: #315ee8; }
 .popup-tabs button[aria-selected="true"] { background: #315ee8; color: #fff; }
+
+.google-sync { border: 1px solid #dfe6f3; border-radius: 10px; background: #fff; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; }
+.google-sync summary { cursor: pointer; font-weight: 700; }
+.google-sync summary span { float: right; color: #61708b; font-weight: 400; }
+.google-sync p { margin: 9px 0; overflow-wrap: anywhere; }
+.google-sync-hint { color: #61708b; font-size: 12px; }
+.google-sync a { color: #315ee8; }
+.google-sync-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.google-sync button { min-height: 32px; padding: 6px 9px; font-size: 12px; }
+.google-sync [data-sync-preview] { margin-top: 12px; border-top: 1px solid #e3eaf4; padding-top: 4px; }
+.google-sync-conflict { border-top: 1px solid #e3eaf4; margin-top: 12px; padding-top: 10px; }
+.google-sync-conflict h3 { font-size: 13px; margin: 0; }
+.google-sync-conflict > div { padding: 6px 0; }
+.google-sync .error { color: #a6243b; }

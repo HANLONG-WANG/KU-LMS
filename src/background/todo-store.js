@@ -55,15 +55,20 @@ var KuTodoStore = (() => {
       return { id: id(d.id), courseKey: d.courseKey, todoId: d.todoId ? id(d.todoId) : null, text: d.text, updatedAt: date(d.updatedAt), baseRevision: revision(d.baseRevision) };
     });
     unique(drafts, 'id');
-    return { id: id(value.id), name: text(value.name, 60), courses, todos, drafts, operations: value.operations.map(id).slice(-512) };
+    const result = { id: id(value.id), name: text(value.name, 60), courses, todos, drafts, operations: value.operations.map(id).slice(-512) };
+    if (value.replica) {
+      if (typeof KuTodoReplica === 'undefined') fail('VERSION', '同步模块不可用，原数据未改动。');
+      result.replica = KuTodoReplica.validate(value.replica);
+    }
+    return result;
   }
   function database(value) {
-    if (value?.schemaVersion !== 1) fail('VERSION', '无法读取此版本的 TODO；原数据已保留。请更新扩展或恢复备份。');
+    if (![1, 2].includes(value?.schemaVersion)) fail('VERSION', '无法读取此版本的 TODO；原数据已保留。请更新扩展或恢复备份。');
     if (!Array.isArray(value.workspaces) || !value.workspaces.length) fail('INVALID', 'TODO 资料格式异常，未覆盖原数据。');
     const workspaces = value.workspaces.map(workspace);
     unique(workspaces, 'id');
     if (!workspaces.some(w => w.id === value.activeId)) fail('INVALID', '当前资料不存在。');
-    return { schemaVersion: 1, revision: revision(value.revision), activeId: value.activeId, workspaces };
+    return { schemaVersion: value.schemaVersion, revision: revision(value.revision), activeId: value.activeId, workspaces };
   }
   const blankWorkspace = (value = 'local', name = '本地待办') => ({ id: value, name, courses: [], todos: [], drafts: [], operations: [] });
   const empty = () => ({ schemaVersion: 1, revision: 0, activeId: 'local', workspaces: [blankWorkspace()] });
@@ -85,18 +90,38 @@ var KuTodoStore = (() => {
       if (message.action === 'read') return db;
       const w = db.workspaces.find(w => w.id === message.workspaceId);
       if (!w && !['createWorkspace', 'selectWorkspace', 'restoreBackup'].includes(message.action)) fail('INVALID', '请选择本地资料。');
-      if (message.action === 'export') return { format: 'ku-lms-todo', schemaVersion: 1, exportedAt: new Date().toISOString(), courses: w.courses, todos: w.todos };
+      if (message.action === 'export') return { format: 'ku-lms-todo', schemaVersion: 1, exportedAt: new Date().toISOString(), courses: w.courses, todos: w.replica ? KuTodoReplica.exportTodos(w) : w.todos };
       if (message.action === 'previewImport') {
         size(message.data);
         const incoming = imported(message.data);
         return { courses: incoming.courses.length, added: incoming.todos.filter(t => !w.todos.some(old => old.id === t.id)).length,
           conflicts: incoming.todos.filter(t => w.todos.some(old => old.id === t.id && JSON.stringify(old) !== JSON.stringify(t))).length, revision: db.revision };
       }
+      if (message.action === '__syncRead') return clone(w);
+      const beforeSync = w?.replica ? { courses: clone(w.courses), todos: clone(w.todos) } : null;
       const operationId = id(message.operationId);
       if (w?.operations.includes(operationId)) return db;
       const now = new Date().toISOString();
       let changed = true;
       switch (message.action) {
+        case '__syncAttach':
+          await storage.set({ [BACKUP_KEY]: db });
+          KuTodoReplica.attach(w, text(message.accountId, 100), () => crypto.randomUUID());
+          db.schemaVersion = 2; // Old extensions reject v2 rather than stripping replication history.
+          break;
+        case '__syncMerge':
+        case '__syncAck':
+        case '__syncResolve': {
+          if (!w.replica || w.replica.accountId !== message.accountId) fail('ACCOUNT', '同步账号与此资料不匹配。');
+          if (message.action === '__syncMerge') KuTodoReplica.merge(w, message.events, message.files);
+          if (message.action === '__syncAck') {
+            const acknowledged = new Set(message.ids);
+            w.replica.outbox = w.replica.outbox.filter(id => !acknowledged.has(id));
+            w.replica.files = [...new Set([...w.replica.files, ...message.files])];
+          }
+          if (message.action === '__syncResolve') KuTodoReplica.resolve(w, message.id, message.heads, message.eventId, () => crypto.randomUUID());
+          break;
+        }
         case 'createWorkspace':
           if (db.workspaces.some(w => w.id === operationId)) return db;
           db.workspaces.push(blankWorkspace(operationId, text(message.name, 60))); db.activeId = operationId; break;
@@ -162,6 +187,7 @@ var KuTodoStore = (() => {
           break;
         }
         case 'restoreBackup': {
+          if (db.workspaces.some(w => w.replica)) fail('SYNC_BOUND', '已绑定同步的资料不能整库回退。请导出备份，并使用合并导入恢复内容。');
           if (db.revision !== message.expectedRevision) fail('CONFLICT', '数据已改变，请刷新后再恢复。');
           const raw = await storage.get(BACKUP_KEY);
           if (!raw[BACKUP_KEY]) fail('INVALID', '还没有导入前快照。');
@@ -172,6 +198,7 @@ var KuTodoStore = (() => {
       }
       if (!changed) return db;
       if (w) w.operations = [...w.operations, operationId].slice(-512);
+      if (w?.replica && beforeSync && !message.action.startsWith('__')) KuTodoReplica.record(w.replica, beforeSync, w, () => crypto.randomUUID());
       db.revision += 1; size(db);
       await storage.set({ [KEY]: db });
       return db;
@@ -187,11 +214,12 @@ if (globalThis.chrome?.runtime?.onMessage && globalThis.chrome?.storage?.local) 
     set(value) { return new Promise((resolve, reject) => chrome.storage.local.set(value, () => chrome.runtime.lastError ? reject(new Error('保存失败，可能空间不足。请重试或导出备份。')) : resolve())); }
   };
   const store = KuTodoStore.create(storage);
+  if (typeof KuTodoSync !== 'undefined') KuTodoSync.install({ chrome, store });
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
     if (message?.type !== 'ku:todo') return undefined;
     const extension = sender?.id === chrome.runtime.id;
     const allowed = extension && (sender.url?.startsWith(chrome.runtime.getURL('')) || /^https:\/\/kulms\.tl\.kansai-u\.ac\.jp\/webclass\//.test(sender.url || ''));
-    if (!allowed) { respond({ ok: false, code: 'ACCESS', error: '无法访问 TODO。' }); return false; }
+    if (!allowed || String(message.action || '').startsWith('__')) { respond({ ok: false, code: 'ACCESS', error: '无法访问 TODO。' }); return false; }
     store.dispatch(message).then(data => respond({ ok: true, data })).catch(error => respond({ ok: false, code: error.code || 'STORAGE', error: error.code ? error.message : '读取或保存 TODO 失败。原数据未被清空，请重试。' }));
     return true;
   });

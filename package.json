@@ -1,6 +1,6 @@
 {
   "name": "ku-lms-extension",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Offline verification for the KU-LMS browser extension",
   "scripts": {

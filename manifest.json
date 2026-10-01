@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "KU-LMS",
-  "description": "为关西大学 KU-LMS 提供更现代的界面，优化仪表盘、消息与通知阅读体验，并支持快速访问课程大纲。",
-  "version": "0.1.0",
+  "description": "为关西大学 KU-LMS 提供现代界面、课程大纲入口和持久化课程 TODO，支持通过 Google Drive 在多台电脑间同步待办。",
+  "version": "1.0.0",
   "icons": {
     "16": "assets/icons/icon16.png",
     "32": "assets/icons/icon32.png",
@@ -10,11 +10,14 @@
     "128": "assets/icons/icon128.png"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "identity",
+    "alarms"
   ],
   "host_permissions": [
     "https://kulms.tl.kansai-u.ac.jp/webclass/*",
-    "https://syllabus3.jm.kansai-u.ac.jp/*"
+    "https://syllabus3.jm.kansai-u.ac.jp/*",
+    "https://www.googleapis.com/*"
   ],
   "action": {
     "default_title": "KU-LMS",
@@ -110,5 +113,12 @@
       ],
       "run_at": "document_start"
     }
-  ]
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy6o/UiXJimSTsnPLD9oLboGnrHnXhVQK46nrMiDhyEwNZ/RZLh2vqv8adIzij5azbV0WDr/yxD0ukjamvMiERjN7k1JTKARcSZgZM7mC/kWHMTG/SLlCWF2uV/XcHUwDyadrAJRMr7qrnaLEeCYqt7K+Om2/yvTlUmS6qenqHs9HEdEb9yfI5Y5ziQ6WKK7SEExUBhHmgVZV4+FtEaBz1/poFTo2drcoWty9jlHZYBeowLsGgUBuj1VzNE30dVVtNR8mxGKnTFGVLjoIkQkwkilWkAvYcmO5mKYx1veJtOqPRc4xJ5IrTzNSwM83R6Wb9W6NG14vueALA2Kky6BtgQIDAQAB",
+  "oauth2": {
+    "client_id": "1044365962804-qk6i9f2ka2n9dphhsggmnv7ij63ougd9.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.appdata"
+    ]
+  }
 }

@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {parseHTML} from 'linkedom';
+const {document,window}=parseHTML('<html><body><section id="google-sync-panel"></section></body></html>');
+let configured=false,confirmFails=true;
+const state=()=>({configured,enabled:false,running:false,activeWorkspaceId:'local',activeWorkspaceName:'本地待办',conflicts:[],pending:0});
+const calls=[];
+const chrome={runtime:{sendMessage(message,reply){calls.push(message);if(message.action==='status')reply({ok:true,data:state()});else if(message.action==='prepare')reply({ok:true,data:{ticket:'preview',account:{email:'me@example.test'},workspaceName:'本地待办',localCount:1,mergedCount:2,conflicts:0}});else if(message.action==='confirm'&&confirmFails)reply({ok:false,error:'确认时账号已改变，请重新连接。'});else reply({ok:true,data:{...state(),enabled:true,account:{email:'me@example.test'},workspaceId:'local',workspaceName:'本地待办'}});}},storage:{onChanged:{addListener(fn){chrome.change=fn;}}}};
+vm.runInNewContext(fs.readFileSync('src/popup/google-sync.js','utf8'),{document,window:{confirm:()=>true},chrome,Date});
+const tick=async()=>{for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));};await tick();
+assert.equal(document.querySelector('[data-sync-connect]').disabled,true);assert.match(document.querySelector('[data-sync-badge]').textContent,/尚未配置/);assert.equal(calls.filter(c=>c.action==='prepare').length,0,'no surprise OAuth on load');
+configured=true;chrome.change({kuLmsGoogleSyncV1:{}},'local');await tick();document.querySelector('[data-sync-connect]').click();await tick();assert.equal(document.querySelector('[data-sync-preview]').hidden,false);assert.match(document.querySelector('[data-sync-preview-text]').textContent,/me@example.test/);assert.equal(calls.filter(c=>c.action==='confirm').length,0,'preview does not confirm itself');
+document.querySelector('[data-sync-confirm]').click();await tick();assert.match(document.querySelector('[data-sync-status]').textContent,/确认时账号已改变/,'refresh must not hide a failed confirmation');
+console.log('PASS: missing configuration, user-initiated OAuth, merge preview and persistent failure UI');

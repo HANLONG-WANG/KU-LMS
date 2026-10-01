@@ -1,0 +1,26 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+const ctx=vm.createContext({URLSearchParams,TextEncoder,AbortController,setTimeout,clearTimeout,crypto:webcrypto});vm.runInContext(fs.readFileSync('src/background/todo-drive.js','utf8'),ctx);
+const seen=[];let result={user:{permissionId:'account',emailAddress:'me@example.test'}},status=200,removed='',calls=0;
+const fetcher=async(url,options)=>{seen.push({url,options});calls++;return new Response(JSON.stringify(result),{status,headers:{'Content-Type':'application/json'}});};
+const driver=ctx.KuTodoDrive.create({getToken:async()=> 'private-token',removeToken:async value=>{removed=value;},fetch:fetcher});
+await driver.authorize(true);assert.equal((await driver.account()).id,'account');assert.equal(seen[0].options.headers.Authorization,'Bearer private-token');assert.equal(seen[0].options.credentials,'omit');assert.equal(seen[0].options.redirect,'error');
+let page=0;
+const paged=ctx.KuTodoDrive.create({getToken:async()=> 'token',removeToken:async()=>{},fetch:async url=>{page++;assert.ok(url.includes('spaces=appDataFolder'));return new Response(JSON.stringify(page===1?{files:[{id:'one',size:'10'}],nextPageToken:'next'}:{files:[{id:'two',size:'10'}]}));}});await paged.authorize();assert.equal((await paged.list()).length,2);
+result={id:'uploaded'};await driver.upload([{id:'change'}],'account');const request=seen.at(-1);assert.ok(request.url.startsWith('https://www.googleapis.com/upload/drive/v3/files?'));assert.match(request.options.body,/appDataFolder/);assert.match(request.options.body,/ku-lms-todo-v1/);assert.ok(!request.options.body.includes('private-token'));
+result={format:'ku-lms-todo-v1',schemaVersion:1,accountId:'wrong',events:[]};await assert.rejects(driver.download('one','account'),{code:'SYNC_DATA'});
+result={error:{errors:[{reason:'authError'}]}};status=401;const before=calls;await assert.rejects(driver.account(),{code:'AUTH'});assert.equal(removed,'private-token');assert.equal(calls,before+1,'401 never retries upload with a potentially different account');
+await driver.authorize();status=429;await assert.rejects(driver.account(),e=>e.code==='RETRY'&&e.retryable===true);
+status=403;result={error:{errors:[{reason:'storageQuotaExceeded'}]}};await assert.rejects(driver.account(),{code:'QUOTA'});
+status=500;result={};await assert.rejects(driver.account(),e=>e.code==='RETRY'&&e.retryable===true);
+status=200;result={files:[],incompleteSearch:true};await assert.rejects(driver.list(),{code:'DRIVE'});
+const offline=ctx.KuTodoDrive.create({getToken:async()=> 'token',removeToken:async()=>{},fetch:async()=>{throw Error('disconnected');}});await offline.authorize();await assert.rejects(offline.account(),{code:'NETWORK'});
+const denied=ctx.KuTodoDrive.create({getToken:async()=>{throw Error('denied');},removeToken:async()=>{},fetch:fetcher});await assert.rejects(denied.authorize(true),{code:'AUTH'});
+console.log('PASS: Drive appData requests, pagination, multipart, account validation, token invalidation, 401/403/429/5xx and offline handling');
+const repeating=ctx.KuTodoDrive.create({getToken:async()=> 'token',removeToken:async()=>{},fetch:async()=>new Response(JSON.stringify({files:[],nextPageToken:'repeated'}))});
+await repeating.authorize();
+// Must terminate a repeated page token rather than looping forever.
+await assert.rejects(repeating.list(),{code:'DRIVE'});
+console.log('PASS: malformed repeated pagination token terminates safely');

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-01T12:19:29.094Z",
-  "passed": 34,
-  "total": 34,
+  "generatedAt": "2026-10-01T13:19:25.512Z",
+  "passed": 39,
+  "total": 39,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -140,6 +140,30 @@
       "error": ""
     },
     {
+      "script": "verify-google-sync-config.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: stable extension identity preparation, backup gate, OAuth validation and idempotent configuration\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-google-sync-popup.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: missing configuration, user-initiated OAuth, merge preview and persistent failure UI\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-google-sync-runtime.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: service worker imports, OAuth boundary, preview gate, real message routing, alarm initialization and restart\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
       "script": "verify-home-all-upcoming-assignments-page.mjs",
       "passed": true,
       "exitCode": 0,
@@ -260,10 +284,26 @@
       "error": ""
     },
     {
+      "script": "verify-todo-drive.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: Drive appData requests, pagination, multipart, account validation, token invalidation, 401/403/429/5xx and offline handling\nPASS: malformed repeated pagination token terminates safely\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
       "script": "verify-todo-store.mjs",
       "passed": true,
       "exitCode": 0,
       "stdout": "PASS: TODO durability, concurrency, conflict, drafts, recovery, import validation, future schema and sender boundary\nPASS: popup and LMS message handlers persist and acknowledge writes\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-todo-sync.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: two-device offline merge, causal conflicts, delete/edit, restart/outbox, lost upload ACK, account isolation, consent preview and internal message boundary\nPASS: identical backup migration does not create false concurrent conflicts\nPASS: external export preserves unresolved text versions\nPASS: schema migration protects replication metadata from accidental downgrade\n",
       "stderr": "",
       "error": ""
     },
