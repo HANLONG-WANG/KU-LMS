@@ -20,13 +20,26 @@ function kuBindTodos(root, route, view) {
     kuOpenTodoDialog(target.dataset.todoOpen || '', target);
   };
   root.addEventListener('click', kuTodoHome.click);
-  if (kuTodoHome.dialog) { root.append(kuTodoHome.dialog); root.querySelector('.ku-app')?.setAttribute('inert', ''); }
+  if (kuTodoHome.dialog) {
+    root.append(kuTodoHome.dialog);
+    root.querySelector('.ku-app')?.setAttribute('inert', '');
+    kuTodoHome.editor.setScope(kuTodoScopeFromView(view));
+  }
   if (!kuTodoHome.unsubscribe) kuTodoHome.unsubscribe = KuTodoClient.subscribe(() => void kuLoadHomeTodos());
+  if (!kuTodoHome.scopeCleanup) {
+    const capture = () => { if (kuTodoPageIsActive()) void kuLoadHomeTodos({ captureScope: true }); };
+    window.addEventListener?.('focus', capture);
+    document.addEventListener('visibilitychange', capture);
+    kuTodoHome.scopeCleanup = () => {
+      window.removeEventListener?.('focus', capture);
+      document.removeEventListener('visibilitychange', capture);
+    };
+  }
   kuPaintHomeTodos();
-  void kuLoadHomeTodos();
+  void kuLoadHomeTodos({ captureScope: true });
 }
 
-async function kuLoadHomeTodos() {
+async function kuLoadHomeTodos({ captureScope = false } = {}) {
   const token = ++kuTodoHome.request, root = kuTodoHome.root;
   if (!root) return;
   try {
@@ -38,18 +51,33 @@ async function kuLoadHomeTodos() {
       if (!key || seen.has(key)) return [];
       seen.add(key); return [{ key, title: shortenCourseTitle(entry.title), term: view.filters.label }];
     });
+    const scope = kuTodoScopeFromView(view);
+    const w = db.workspaces.find(w => w.id === db.activeId);
+    // Storage notifications refresh data only. They must not let inactive tabs
+    // continually overwrite the popup's last-visible-page snapshot.
+    const setScope = captureScope && kuTodoPageIsActive();
+    const scopeChanged = JSON.stringify(w?.courseScope) !== JSON.stringify(scope);
     const signature = JSON.stringify([db.activeId, courses]);
-    if (signature !== kuTodoHome.catalogSignature) {
+    if (signature !== kuTodoHome.catalogSignature || (setScope && scopeChanged)) {
       kuTodoHome.catalogSignature = signature;
-      try { db = await KuTodoClient.request('catalog', { workspaceId: db.activeId, courses, operationId: KuTodoClient.uuid() }); }
-      catch (error) { kuTodoHome.catalogSignature = ''; throw error; }
+      try {
+        db = await KuTodoClient.request('catalog', {
+          workspaceId: db.activeId, courses, scopeLabel: scope.label, setScope,
+          operationId: KuTodoClient.uuid()
+        });
+      } catch (error) { kuTodoHome.catalogSignature = ''; throw error; }
     }
     if (token !== kuTodoHome.request || root !== kuTodoHome.root) return;
     kuTodoHome.db = db; kuPaintHomeTodos();
   } catch (error) {
     if (token !== kuTodoHome.request || root !== kuTodoHome.root) return;
     const body = root.querySelector('[data-todo-summary-body]');
-    if (body) { body.replaceChildren(); const p = document.createElement('p'); p.textContent = error.message; body.append(p); const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'ku-button ghost'; retry.textContent = '重试'; retry.addEventListener('click', () => void kuLoadHomeTodos()); body.append(retry); }
+    if (body) {
+      body.replaceChildren();
+      const p = document.createElement('p'); p.textContent = error.message; body.append(p);
+      const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'ku-button ghost'; retry.textContent = '重试';
+      retry.addEventListener('click', () => void kuLoadHomeTodos({ captureScope: true })); body.append(retry);
+    }
   }
 }
 
@@ -67,7 +95,7 @@ function kuPaintHomeTodos() {
   body.className = 'ku-todo-home-list'; body.replaceChildren();
   const visible = new Set([...view.schedule.entries, ...view.otherCourses.flatMap(g => g.items)].map(c => KuTodoClient.courseKey(c.href)));
   const todos = w.todos.filter(t => !t.deletedAt && !t.completedAt), scoped = todos.filter(t => visible.has(t.courseKey));
-  const meta = document.createElement('p'); meta.className = 'ku-todo-home-meta'; meta.textContent = `${w.name} · 表示中 ${scoped.length} 件 / 全 ${todos.length} 件`; body.append(meta);
+  const meta = document.createElement('p'); meta.className = 'ku-todo-home-meta'; meta.textContent = `${w.name} · ${scoped.length} 件`; body.append(meta);
   scoped.slice(0, 5).forEach(t => {
     const row = document.createElement('div'); row.className = 'ku-todo-home-row';
     const check = document.createElement('input'); check.type = 'checkbox'; check.setAttribute('aria-label', `完了：${t.text}`);
@@ -81,7 +109,7 @@ function kuPaintHomeTodos() {
     const course = document.createElement('small'); course.textContent = w.courses.find(c => c.key === t.courseKey)?.title || '';
     button.append(title, course); row.append(check, button); body.append(row);
   });
-  if (!scoped.length) { const empty = document.createElement('p'); empty.className = 'ku-todo-home-meta'; empty.textContent = todos.length ? 'ほかの学期のTODOは「すべて見る」で確認できます。' : 'TODOはありません。カードの ☑ から追加できます。'; body.append(empty); }
+  if (!scoped.length) { const empty = document.createElement('p'); empty.className = 'ku-todo-home-meta'; empty.textContent = '表示中の学期にTODOはありません。カードの ☑ から追加できます。'; body.append(empty); }
   if (scoped.length > 5) { const more = document.createElement('button'); more.type = 'button'; more.className = 'ku-button ghost'; more.dataset.todoOpen = ''; more.textContent = `残り ${scoped.length - 5} 件を見る`; body.append(more); }
 }
 
@@ -92,7 +120,7 @@ function kuOpenTodoDialog(key = '', trigger = null) {
   overlay.innerHTML = '<section class="ku-todo-dialog" role="dialog" aria-modal="true" aria-labelledby="ku-todo-dialog-title"><header class="ku-todo-dialog-header"><h2 id="ku-todo-dialog-title">TODO</h2><button type="button" class="ku-button ghost" data-todo-close aria-label="TODOを閉じる">閉じる</button></header><div class="ku-todo-dialog-body"></div></section>';
   root.append(overlay); root.querySelector('.ku-app')?.setAttribute('inert', '');
   kuTodoHome.dialog = overlay; kuTodoHome.trigger = trigger;
-  kuTodoHome.editor = KuTodoUI.mount(overlay.querySelector('.ku-todo-dialog-body'), { courseKey: key, onUpdate(db) { kuTodoHome.db = db; kuPaintHomeTodos(); } });
+  kuTodoHome.editor = KuTodoUI.mount(overlay.querySelector('.ku-todo-dialog-body'), { courseKey: key, courseScope: kuTodoScopeFromView(kuTodoHome.view), onUpdate(db) { kuTodoHome.db = db; kuPaintHomeTodos(); } });
   const close = () => kuCloseTodoDialog();
   overlay.querySelector('[data-todo-close]').addEventListener('click', close);
   overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
@@ -120,6 +148,17 @@ function kuCloseTodoDialog() {
 function kuCleanupTodos() {
   kuCloseTodoDialog(); kuTodoHome.request += 1;
   kuTodoHome.unsubscribe?.(); kuTodoHome.unsubscribe = null;
+  kuTodoHome.scopeCleanup?.(); kuTodoHome.scopeCleanup = null;
   if (kuTodoHome.root && kuTodoHome.click) kuTodoHome.root.removeEventListener('click', kuTodoHome.click);
   kuTodoHome.root = null; kuTodoHome.view = null; kuTodoHome.click = null; kuTodoHome.catalogSignature = '';
+}
+
+
+function kuTodoScopeFromView(view) {
+  const entries = [...view.schedule.entries, ...view.otherCourses.flatMap(group => group.items)];
+  return { keys: [...new Set(entries.map(entry => KuTodoClient.courseKey(entry.href)).filter(Boolean))].sort(), label: String(view.filters.label || '').slice(0, 100) };
+}
+
+function kuTodoPageIsActive() {
+  return document.visibilityState !== 'hidden' && (typeof document.hasFocus !== 'function' || document.hasFocus());
 }

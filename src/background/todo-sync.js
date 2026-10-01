@@ -14,7 +14,7 @@ var KuTodoSync = (() => {
       return {
         configured: configured(), enabled: config.enabled === true, running,
         account: config.account || null, workspaceId: config.workspaceId || '', workspaceName: linked?.name || '',
-        activeWorkspaceId: active.id, activeWorkspaceName: active.name,
+        activeWorkspaceId: active.id, activeWorkspaceName: active.name, courseScope: active.courseScope || null,
         boundAccount: active.replica?.accountId || '', pending: linked?.replica?.outbox.length || 0,
         conflicts: linked?.replica ? KuTodoReplica.conflicts(linked.replica) : [],
         lastCheck: config.lastCheck || null, lastUpload: config.lastUpload || null,

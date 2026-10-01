@@ -22,10 +22,13 @@
   const message = (text, error = false) => { q('status').textContent = text; q('status').classList.toggle('error', error); };
   function render(data) {
     state = data;
-    const label = !data.configured ? '尚未配置' : data.running ? '同步中' : !data.enabled ? '未连接' : data.error ? '需要处理' : data.conflicts?.length ? `${data.conflicts.length} 条冲突` : data.pending ? '待上传' : '已检查';
+    const keys = new Set(data.courseScope?.keys || []);
+    const conflicts = data.workspaceId === data.activeWorkspaceId
+      ? (data.conflicts || []).filter(conflict => conflict.versions.some(version => version.value && keys.has(version.value.courseKey))) : [];
+    const label = !data.configured ? '尚未配置' : data.running ? '同步中' : !data.enabled ? '未连接' : data.error ? '需要处理' : conflicts.length ? `${conflicts.length} 条冲突` : data.pending ? '待上传' : '已检查';
     q('badge').textContent = label;
     q('account').textContent = data.enabled ? `${data.account?.email || data.account?.name || 'Google 账号'} · ${data.workspaceName}` : `当前本地资料：${data.activeWorkspaceName}`;
-    message(data.error || (!data.configured ? '先完成一次性 Google Cloud 配置。本地 TODO 可正常使用。' : !data.enabled ? '一个 Google 账号对应一个云端待办库。连接前会预览合并结果。' : data.conflicts?.length ? `有 ${data.conflicts.length} 条 TODO 需要选择版本，所有分支已保留。` : data.pending ? `已保存到本机，${data.pending} 条变更待上传。` : '本机没有待上传变更；另一台电脑会在检查云端后更新。'), !!data.error);
+    message(data.error || (!data.configured ? '先完成一次性 Google Cloud 配置。本地 TODO 可正常使用。' : !data.enabled ? '一个 Google 账号对应一个云端待办库。连接前会预览合并结果。' : conflicts.length ? `有 ${conflicts.length} 条 TODO 需要选择版本，所有分支已保留。` : data.pending ? `已保存到本机，${data.pending} 条变更待上传。` : '本机没有待上传变更；另一台电脑会在检查云端后更新。'), !!data.error);
     const format = value => value ? new Date(value).toLocaleString() : '尚无';
     q('times').textContent = data.enabled ? `上次检查：${format(data.lastCheck)}；上次上传：${format(data.lastUpload)}` : '';
     q('connect').disabled = busy || !data.configured;
@@ -33,7 +36,7 @@
     q('now').disabled = busy || !data.enabled;
     q('disconnect').disabled = busy || !data.enabled;
     q('conflicts').replaceChildren();
-    for (const conflict of data.conflicts || []) {
+    for (const conflict of conflicts) {
       const section = document.createElement('section'); section.className = 'google-sync-conflict';
       const title = document.createElement('h3'); title.textContent = '这条 TODO 有多个版本'; section.append(title);
       for (const version of conflict.versions) {

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-01T13:19:25.512Z",
-  "passed": 39,
-  "total": 39,
+  "generatedAt": "2026-10-01T14:28:02.410Z",
+  "passed": 40,
+  "total": 40,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -280,6 +280,14 @@
       "passed": true,
       "exitCode": 0,
       "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"public syllabus fixtures describe search and direct-open detail pages\",\n    \"syllabus manifest remains standalone and never loads the KU-LMS shell\",\n    \"direct-open detail rendering is booted without pending resolver state\",\n    \"detail-only takeover is guarded to public detail pages\",\n    \"resolver-first ambiguity checks are preserved\",\n    \"detail parser contract targets stable native fixture labels\",\n    \"native fallback contract is explicit and fail-open\",\n    \"syllabus detail table-of-contents hydration is explicit\",\n    \"shared syllabus css stays ku-scoped or dataset-gated\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-todo-course-scope.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: semester-scoped creation/list/drafts/trash, preserved history, persistent last view, per-page scope, inactive-tab isolation and local-only sync metadata\nPASS: Google conflict panel follows the local course scope without discarding conflicts\n",
       "stderr": "",
       "error": ""
     },

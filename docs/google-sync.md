@@ -1,6 +1,6 @@
 # Google Drive TODO 同步
 
-同步使用 Google Drive 的 `appDataFolder` 和 `drive.appdata` 权限。一个 Google 账号对应一个云端待办库；每台电脑选择一份本地资料接入。正式待办、完成/删除状态和课程目录同步，草稿、LMS 密码、登录参数及本地偏好不上传。
+同步使用 Google Drive 的 `appDataFolder` 和 `drive.appdata` 权限。一个 Google 账号对应一个云端待办库；每台电脑选择一份本地资料接入。正式待办、完成/删除状态和课程目录同步，草稿、LMS 密码、登录参数及本地偏好不上传。当前页面的课程显示范围也只保存在本机；两台电脑可以分别查看不同学期，历史 TODO 仍完整同步。
 
 ## 首次配置
 

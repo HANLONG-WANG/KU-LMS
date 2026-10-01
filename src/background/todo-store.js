@@ -56,6 +56,12 @@ var KuTodoStore = (() => {
     });
     unique(drafts, 'id');
     const result = { id: id(value.id), name: text(value.name, 60), courses, todos, drafts, operations: value.operations.map(id).slice(-512) };
+    if (value.courseScope) {
+      const scope = value.courseScope;
+      if (!Array.isArray(scope.keys) || scope.keys.length > 1000 || scope.keys.some(key => !keys.has(key))
+        || typeof scope.label !== 'string' || scope.label.length > 100) fail('INVALID', '课程显示范围无效，历史 TODO 未改动。');
+      result.courseScope = { keys: [...new Set(scope.keys)].sort(), label: scope.label };
+    }
     if (value.replica) {
       if (typeof KuTodoReplica === 'undefined') fail('VERSION', '同步模块不可用，原数据未改动。');
       result.replica = KuTodoReplica.validate(value.replica);
@@ -135,6 +141,11 @@ var KuTodoStore = (() => {
             const c = course(raw); const old = w.courses.find(v => v.key === c.key);
             if (!old) { w.courses.push(c); changed = true; }
             else if (old.title !== c.title || (c.term && old.term !== c.term)) { Object.assign(old, c); changed = true; }
+          }
+          // The durable directory accumulates history; this device's UI scope is a replacement snapshot.
+          if (message.setScope !== false) {
+            const scope = { keys: [...new Set(message.courses.map(raw => course(raw).key))].sort(), label: String(message.scopeLabel || message.courses[0]?.term || '').slice(0, 100) };
+            if (JSON.stringify(w.courseScope) !== JSON.stringify(scope)) { w.courseScope = scope; changed = true; }
           }
           break;
         case 'add': {
