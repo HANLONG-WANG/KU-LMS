@@ -20,6 +20,7 @@ const context = {
   console,
   URL,
   URLSearchParams,
+  AbortController,
   window: {
     location: {
       href: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/scores',

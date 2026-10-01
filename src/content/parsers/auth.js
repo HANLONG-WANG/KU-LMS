@@ -124,27 +124,24 @@ function cleanLoginSupportLabel(text, fallback) {
   }
 
 function parseLoginNotices(doc) {
-    const items = Array.from(doc.querySelectorAll('#AjaxInfoBox li, #AnnounceBlock li')).map((row) => {
-      const link = row.querySelector('a[href]');
-      if (!link) return null;
-      const title = cleanText(row.querySelector('.title')?.textContent) || cleanText(link.textContent);
-      if (!title || /^»\s*通告/.test(title) || title === '通告') return null;
-      const metaText = cleanText(row.querySelector('.data')?.textContent);
-      const [source = '', deadline = ''] = metaText.split(/\s+-\s+/, 2);
-      return {
-        title,
-        href: absoluteUrl(link.getAttribute('href') || ''),
-        source,
-        deadline: deadline || extractPublishDate(metaText),
-        important: !!row.querySelector('.mark1') || /^【重要】/.test(title)
-      };
-    }).filter(Boolean);
-    const moreAnchor = Array.from(doc.querySelectorAll('a[href]')).find((anchor) => /^»\s*(通告|お知らせ画面)/.test(cleanText(anchor.textContent)));
+  const items = nativeQuerySelectorAll(doc, '#AjaxInfoBox li, #AnnounceBlock li').map((row) => {
+    const link = row.querySelector('a[href]');
+    if (!link) return null;
+    const title = cleanText(row.querySelector('.title')?.textContent) || cleanText(link.textContent);
+    if (!title || /^»\s*通告/.test(title) || title === '通告') return null;
+    const metaText = cleanText(row.querySelector('.data')?.textContent);
+    const [source = '', deadline = ''] = metaText.split(/\s+-\s+/, 2);
     return {
-      items,
-      moreHref: moreAnchor ? absoluteUrl(moreAnchor.getAttribute('href') || '') : ''
+      title,
+      href: absoluteUrl(link.getAttribute('href') || ''),
+      source,
+      deadline: deadline || '',
+      important: !!row.querySelector('.mark1') || /^【重要】/.test(title)
     };
-  }
+  }).filter(Boolean);
+  const moreAnchor = nativeQuerySelectorAll(doc, 'a[href]').find((anchor) => /^»\s*(通告|お知らせ画面)/.test(cleanText(anchor.textContent)));
+  return { items, moreHref: moreAnchor ? absoluteUrl(moreAnchor.getAttribute('href') || '') : '' };
+}
 
 function parseLoginVersion(doc) {
     const match = doc.body.textContent.match(/Ver\.[0-9.]+/i);

@@ -1,5 +1,5 @@
 import vm from 'node:vm';
-import { execFileSync } from 'node:child_process';
+import { inspectFixture as inspectLocalFixture } from './lib/fixture-dom.mjs';
 import { read, readKulmsSource, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
@@ -7,83 +7,12 @@ const css = read('src/content/critical.css');
 const architecture = read('docs/ku-lms-extension-architecture.md');
 const designCode = read('docs/ku-lms-design-code.md');
 const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
-const prd = read('.omx/plans/prd-ku-lms-notice-detail-outbox-recyclebox-redesign.md');
-const testSpec = read('.omx/plans/test-spec-ku-lms-notice-detail-outbox-recyclebox-redesign.md');
 const fixtureManifest = JSON.parse(read('artifacts/fixtures/fixture-manifest.json'));
 
 const checks = [];
 const record = (name, fn) => { fn(); checks.push(name); };
 
-function inspectFixture(relativePath, kind) {
-  const script = String.raw`
-import json, sys
-from pathlib import Path
-from bs4 import BeautifulSoup
-root = Path(sys.argv[1])
-rel = sys.argv[2]
-kind = sys.argv[3]
-html = json.loads((root / rel).read_text())
-soup = BeautifulSoup(html, 'html.parser')
-if kind == 'notice':
-    data = {
-      'title': (soup.select_one('.info-detail-head h4') or soup.select_one('.infopkg h4')).get_text(' ', strip=True) if (soup.select_one('.info-detail-head h4') or soup.select_one('.infopkg h4')) else '',
-      'pageTitle': soup.select_one('.infopkg h3').get_text(' ', strip=True) if soup.select_one('.infopkg h3') else '',
-      'errorMessage': soup.select_one('.autoreportmsg td').get_text(' ', strip=True) if soup.select_one('.autoreportmsg td') else '',
-      'bodyHtml': str(soup.select_one('.info-detail-body') or ''),
-      'issuer': next((node.get_text(' ', strip=True) for node in soup.select('.info-detail-head .postBy') if '発行元' in node.get_text(' ', strip=True)), ''),
-      'publishedAt': next((node.get_text(' ', strip=True) for node in soup.select('.info-detail-head .postBy') if '発行日' in node.get_text(' ', strip=True)), ''),
-      'deadline': soup.select_one('.info-detail-head .closedAt').get_text(' ', strip=True) if soup.select_one('.info-detail-head .closedAt') else '',
-      'audience': next((node.get_text(' ', strip=True) for node in soup.select('.info-detail-head .data > div') if '発行先' in node.get_text(' ', strip=True)), ''),
-      'authorLabel': soup.select_one('.info-detail-head .postBy a').get_text(' ', strip=True) if soup.select_one('.info-detail-head .postBy a') else '',
-      'authorHref': soup.select_one('.info-detail-head .postBy a')['href'] if soup.select_one('.info-detail-head .postBy a') else '',
-      'navLinks': [
-        {
-          'text': a.get_text(' ', strip=True),
-          'href': a.get('href', ''),
-          'title': a.get('title', '')
-        }
-        for a in soup.select('.pager a, .iterator a')
-      ]
-    }
-    print(json.dumps(data, ensure_ascii=False))
-elif kind == 'messages':
-    form = soup.select_one('form[name="condition"]')
-    header_cells = []
-    for th in soup.select('#MsgListTable thead th'):
-        header_cells.append({
-          'label': th.get_text(' ', strip=True).replace('▲', '').replace('▼', '').strip(),
-          'sortLinks': [{'text': a.get_text(' ', strip=True), 'href': a.get('href', '')} for a in th.select('a[href]')]
-        })
-    rows = []
-    for tr in soup.select('#MsgListTable tr.odd, #MsgListTable tr.even'):
-        row = []
-        for td in tr.find_all('td', recursive=False):
-            anchor = td.select_one('a[href]')
-            checkbox = td.select_one('input[type="checkbox"]')
-            row.append({
-              'text': td.get_text(' ', strip=True),
-              'href': anchor.get('href', '') if anchor else '',
-              'checkboxName': checkbox.get('name', '') if checkbox else '',
-              'checkboxValue': checkbox.get('value', '') if checkbox else ''
-            })
-        rows.append(row)
-    data = {
-      'heading': soup.select_one('.msg h3').get_text(' ', strip=True) if soup.select_one('.msg h3') else '',
-      'warning': soup.select_one('.msg h3 + div').get_text(' ', strip=True) if soup.select_one('.msg h3 + div') else '',
-      'actions': [{'name': node.get('name', ''), 'label': node.get('value', '').strip(), 'onclick': node.get('onclick', '')} for node in (form.select('input[type="submit"][name]') if form else [])],
-      'headers': header_cells,
-      'rows': rows,
-      'folders': [{'title': a.get_text(' ', strip=True).replace('» ', ''), 'href': a.get('href', '')} for a in soup.select('.navi a')],
-      'allAnchors': [{'text': a.get_text(' ', strip=True), 'href': a.get('href', '')} for a in soup.select('a[href]')],
-      'pageText': next((node.get_text(' ', strip=True) for node in soup.select('font') if '/' in node.get_text(' ', strip=True)), ''),
-      'formAction': form.get('action', '') if form else ''
-    }
-    print(json.dumps(data, ensure_ascii=False))
-else:
-    raise SystemExit('unknown kind')
-`;
-  return JSON.parse(execFileSync('python', ['-c', script, process.cwd(), relativePath, kind], { encoding: 'utf8' }));
-}
+function inspectFixture(relativePath, kind) { return inspectLocalFixture(relativePath, kind); }
 
 class StubNode {
   constructor({ text = '', attrs = {}, innerHTML = '', single = {}, many = {}, children = [] } = {}) {
@@ -193,6 +122,7 @@ function createRuntime() {
     console,
     URL,
     URLSearchParams,
+    AbortController,
     setTimeout,
     clearTimeout,
     window: { location: { origin: 'https://kulms.tl.kansai-u.ac.jp', pathname: '/webclass/' }, alert() {} },
@@ -300,14 +230,10 @@ record('durable docs and fixtures cover the expanded communication routes', () =
   for (const token of ['Notice detail page', 'Messages sent box page', 'Messages recycle box page', 'Communication-route guidance']) {
     assert(designCode.includes(token), `Design code missing token: ${token}`);
   }
-  for (const token of [
-    '.omx/plans/prd-ku-lms-notice-detail-outbox-recyclebox-redesign.md',
-    '.omx/plans/test-spec-ku-lms-notice-detail-outbox-recyclebox-redesign.md'
-  ]) {
+  for (const token of ['docs/ku-lms-design-code.md', 'docs/ku-lms-extension-architecture.md']) {
     assert(entrypoint.includes(token), `AI docs entrypoint missing token: ${token}`);
   }
-  assert(prd.includes('Notice Detail + Sent Box + Recycle Box Redesign'), 'PRD title/content missing.');
-  assert(testSpec.includes('Notice Detail + Sent Box + Recycle Box Redesign'), 'Test spec title/content missing.');
+  assert(designCode.includes('folder semantics') && designCode.includes('Recycle box warning copy must be clearly visible'), 'Versioned design contract should preserve folder-specific semantics and warning prominence.');
 });
 
 const report = { ok: true, checks };

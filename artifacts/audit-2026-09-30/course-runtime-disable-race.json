@@ -1,0 +1,13 @@
+{
+  "description": "Offline stubs only, no browser or network. Actual enrichHomeAsync + releaseNative + rerender + ensureRoot functions.",
+  "afterDisable": {
+    "rootExists": false,
+    "redesignState": null
+  },
+  "afterPendingEnrichment": {
+    "rootExists": true,
+    "redesignState": null,
+    "extensionEnabled": false,
+    "rootHtml": "<div>remounted extension</div>"
+  }
+}

@@ -1,89 +1,32 @@
 import { read, getKulmsScript, getSyllabusScript, assert } from './lib/content-source.mjs';
 
 function hasForbiddenTopLevelSideEffect(source) {
-  const forbidden = [
-    'window.addEventListener(', 'document.addEventListener(', 'window.location =', 'window.location.href =', 'window.location.replace(',
-    'fetch(', 'appendChild(', 'replaceChildren(', 'setTimeout(', 'setInterval(', 'chrome.runtime.sendMessage(', 'form.submit(', 'requestSubmit('
-  ];
+  // Keep the outer statement skeleton; callback/function bodies cannot be boot entries.
+  let skeleton = '';
   let depth = 0;
-  let inBlockComment = false;
-  let inLineComment = false;
-  let inSingle = false;
-  let inDouble = false;
-  let inTemplate = false;
-  let escape = false;
-  let currentLine = '';
-
-  const scrubStrings = (line) => line
-    .replace(/'[^']*'/g, "''")
-    .replace(/"[^"]*"/g, '""')
-    .replace(/`[^`]*`/g, '``');
-
-  const inspectLine = (line) => {
-    const trimmed = line.trim();
-    if (!trimmed) return false;
-    const normalized = scrubStrings(trimmed);
-    const matchesForbidden = forbidden.some((token) => normalized.includes(token));
-    if (!matchesForbidden) return false;
-    if (/^(function|async function)\b/.test(normalized)) return false;
-    return true;
-  };
-
-  for (let i = 0; i < source.length; i += 1) {
-    const char = source[i];
-    const next = source[i + 1] || '';
-
-    if (inLineComment) {
-      if (char === '\n') {
-        inLineComment = false;
-        if (depth === 0 && inspectLine(currentLine)) return true;
-        currentLine = '';
-      }
+  let quote = '';
+  let escaped = false;
+  let comment = '';
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index]; const next = source[index + 1];
+    if (comment === 'line') { if (char === '\n') { comment = ''; if (!depth) skeleton += '\n'; } continue; }
+    if (comment === 'block') { if (char === '*' && next === '/') { comment = ''; index += 1; } continue; }
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === quote) quote = '';
       continue;
     }
-    if (inBlockComment) {
-      if (char === '*' && next === '/') {
-        inBlockComment = false;
-        i += 1;
-      }
-      continue;
-    }
-    if (!inSingle && !inDouble && !inTemplate) {
-      if (char === '/' && next === '/') {
-        inLineComment = true;
-        i += 1;
-        continue;
-      }
-      if (char === '/' && next === '*') {
-        inBlockComment = true;
-        i += 1;
-        continue;
-      }
-    }
-
-    currentLine += char;
-
-    if (escape) {
-      escape = false;
-    } else if (char === '\\') {
-      escape = true;
-    } else if (!inDouble && !inTemplate && char === "'") {
-      inSingle = !inSingle;
-    } else if (!inSingle && !inTemplate && char === '"') {
-      inDouble = !inDouble;
-    } else if (!inSingle && !inDouble && char === '`') {
-      inTemplate = !inTemplate;
-    } else if (!inSingle && !inDouble && !inTemplate) {
-      if (char === '{') depth += 1;
-      if (char === '}') depth = Math.max(0, depth - 1);
-    }
-
-    if (char === '\n') {
-      if (depth === 0 && inspectLine(currentLine)) return true;
-      currentLine = '';
-    }
+    if (char === '/' && next === '/') { comment = 'line'; index += 1; continue; }
+    if (char === '/' && next === '*') { comment = 'block'; index += 1; continue; }
+    if (char === "'" || char === '"' || char === '`') { quote = char; if (!depth) skeleton += "''"; continue; }
+    if (char === '{') { if (!depth) skeleton += char; depth += 1; continue; }
+    if (char === '}') { depth = Math.max(0, depth - 1); if (!depth) skeleton += char; continue; }
+    if (!depth) skeleton += char;
   }
-  return depth === 0 && inspectLine(currentLine);
+  const bootIife = /\(\s*(?:async\s*)?(?:\([^()]*\)\s*=>|function(?:\s+\w+)?\s*\([^()]*\))\s*\{\s*\}\s*\)\s*\(/;
+  const forbidden = /(?:window|document)\s*\.\s*addEventListener\s*\(|window\s*\.\s*location(?:\s*\.\s*(?:href|replace))?\s*(?:=|\()|\bfetch\s*\(|\b(?:appendChild|replaceChildren|setTimeout|setInterval|requestSubmit)\s*\(|chrome\s*\.\s*runtime\s*\.\s*sendMessage\s*\(|form\s*\.\s*submit\s*\(/;
+  return bootIife.test(skeleton) || forbidden.test(skeleton);
 }
 
 const kulms = getKulmsScript();
@@ -104,9 +47,17 @@ record('bootstrap files are final in manifest order', () => {
 record('pre-bootstrap files stay definition-only', () => {
   for (const file of new Set([...kulmsPre, ...syllabusPre])) {
     const source = read(file);
-    assert(!source.includes('(() => {'), `${file} should not use a top-level boot IIFE.`);
     assert(!hasForbiddenTopLevelSideEffect(source), `${file} contains forbidden top-level side effects.`);
   }
+});
+
+record('top-level detector distinguishes boot calls from deferred callback bodies', () => {
+  assert(!hasForbiddenTopLevelSideEffect('function later() { setTimeout(() => { fetch("/local"); }, 10); }'), 'Nested callback bodies must not be mistaken for a top-level boot entry.');
+  assert(!hasForbiddenTopLevelSideEffect('const deferred = (() => { fetch("/local"); });'), 'A wrapped arrow definition is still deferred.');
+  assert(hasForbiddenTopLevelSideEffect('(() => { bootKulms(); })();'), 'Top-level arrow boot IIFE must be rejected.');
+  assert(hasForbiddenTopLevelSideEffect('(function boot() { start(); })();'), 'Top-level function boot IIFE must be rejected.');
+  assert(hasForbiddenTopLevelSideEffect('setTimeout(() => {}, 10);'), 'A top-level timer must remain rejected.');
+  assert(hasForbiddenTopLevelSideEffect('fetch("/local");'), 'A top-level request must remain rejected.');
 });
 
 console.log(JSON.stringify({ ok: true, checks }, null, 2));

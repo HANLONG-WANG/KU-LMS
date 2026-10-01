@@ -62,20 +62,19 @@ function renderTopbar(route, context) {
   }
 
 function renderSchedule(schedule, week, year = '') {
-    const cells = [];
-    cells.push('<div class="ku-schedule-head"></div>');
+    const cells = ['<div class="ku-schedule-head" role="columnheader"></div>'];
     DAY_LABELS.forEach((label, index) => {
-      const day = week[index];
-      cells.push(`<div class="ku-schedule-head">${escapeHtml(label)} ${day.monthDay}</div>`);
+      cells.push(`<div class="ku-schedule-head" role="columnheader">${escapeHtml(label)} ${escapeHtml(week[index]?.monthDay || '')}</div>`);
     });
-    Object.entries(PERIOD_TIMES).forEach(([period, time]) => {
-      cells.push(`<div class="ku-schedule-period"><div class="ku-period-title">${escapeHtml(period)}</div><div class="ku-period-time">${escapeHtml(time)}</div></div>`);
+    const periods = uniqueBy([...Object.keys(PERIOD_TIMES), ...schedule.entries.map((entry) => entry.period)], (period) => period).sort((a, b) => parseInt(a) - parseInt(b));
+    periods.forEach((period) => {
+      cells.push(`<div class="ku-schedule-period" role="rowheader"><div class="ku-period-title">${escapeHtml(period)}</div><div class="ku-period-time">${escapeHtml(PERIOD_TIMES[period] || '')}</div></div>`);
       DAY_NAMES.forEach((weekday, weekdayIndex) => {
-        const entry = schedule.entries.find((item) => item.period === period && item.weekdayIndex === weekdayIndex);
-        cells.push(`<div class="ku-schedule-cell">${entry ? renderScheduleCard(entry, year) : ''}</div>`);
+        const entries = schedule.entries.filter((item) => item.period === period && item.weekdayIndex === weekdayIndex);
+        cells.push(`<div class="ku-schedule-cell" role="cell">${entries.map((entry) => renderScheduleCard(entry, year)).join('')}</div>`);
       });
     });
-    return `<div class="ku-schedule-grid">${cells.join('')}</div>`;
+    return `<div class="ku-schedule-scroll" tabindex="0" aria-label="時間割。横にスクロールできます"><div class="ku-schedule-grid">${cells.join('')}</div></div>`;
   }
 
 function renderScheduleCard(entry, year = '') {
@@ -149,22 +148,23 @@ function renderSyllabusChip({ title = '', href = '', year = '' } = {}) {
     return `<a class="ku-chip blue ku-chip-link ku-syllabus-chip" href="${escapeAttr(buildSyllabusFallbackHref(year))}" data-syllabus-title="${escapeAttr(title || '')}" data-syllabus-href="${escapeAttr(href || '')}" data-syllabus-year="${escapeAttr(year || '')}" title="シラバスを開く" aria-label="${escapeAttr(`${query} のシラバスを開く`)}">シ</a>`;
   }
 
-function renderCourseHeader(course, currentTab) {
+  function renderCourseHeader(course, currentTab) {
     const displayTitle = shortenCourseTitle(course.title);
+    const returnHref = course.links.returnToCourses || state.currentContext.links.courses;
     const subnavItems = [
       { key: 'materials', label: '教材', href: course.links.materials },
       { key: 'myreports', label: 'マイレポート', href: course.links.myreports },
       { key: 'scores', label: '成績', href: course.links.scores },
       { key: 'test-results', label: 'テスト結果', href: course.links.testResults },
       { key: 'attendance', label: '出席', href: course.links.attendance },
-      { key: 'courses', label: 'コース', href: state.currentContext.links.courses }
+      { key: 'courses', label: 'コース', href: returnHref }
     ];
     return `
       <div class="ku-route-header">
         <section class="ku-card ku-route-header-card">
-          <div class="ku-page-subtitle"><a class="ku-title-link" href="${escapeAttr(state.currentContext.links.courses)}">← コース一覧に戻る</a></div>
+          <div class="ku-page-subtitle"><a class="ku-title-link" href="${escapeAttr(returnHref)}">← コース一覧に戻る</a></div>
           <div class="ku-title-inline ku-title-inline-large" style="margin-top:12px"><h1 class="ku-page-title">${escapeHtml(displayTitle)}</h1>${renderSyllabusChip({ title: course.title, href: course.links.info || course.links.materials, year: course.meta.year })}</div>
-          <div class="ku-hero-meta"><span>${icon('calendar')} ${escapeHtml(course.meta.year)}年 ${escapeHtml(course.meta.semester)}</span><span>${icon('clock')} ${escapeHtml(course.meta.weekdayPeriod)}</span><span>${icon('pin')} 教室: ${escapeHtml(course.meta.room || '—')}</span></div>
+          <div class="ku-hero-meta">${course.meta.year || course.meta.semester ? `<span>${icon('calendar')} ${escapeHtml(course.meta.year)}${course.meta.year ? '年 ' : ''}${escapeHtml(course.meta.semester)}</span>` : ''}${course.meta.weekdayPeriod ? `<span>${icon('clock')} ${escapeHtml(course.meta.weekdayPeriod)}</span>` : ''}${course.meta.courseCode ? `<span>科目コード: ${escapeHtml(course.meta.courseCode)}</span>` : ''}${course.meta.room ? `<span>${icon('pin')} 教室: ${escapeHtml(course.meta.room)}</span>` : ''}</div>
           <nav class="ku-subnav">${subnavItems.map((item) => renderCourseSubnavItem(item, currentTab)).join('')}</nav>
         </section>
       </div>`;

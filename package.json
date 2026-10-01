@@ -1,0 +1,12 @@
+{
+  "name": "ku-lms-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline verification for the KU-LMS browser extension",
+  "scripts": {
+    "test": "node scripts/verify-all.mjs"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.12"
+  }
+}

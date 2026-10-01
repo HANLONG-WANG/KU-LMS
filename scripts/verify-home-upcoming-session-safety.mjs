@@ -1,4 +1,4 @@
-import vm from 'node:vm';
+import { loadOfflineKulmsInto } from './lib/offline-content-vm.mjs';
 import { read, readKulmsSource, extractFunction, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
@@ -19,9 +19,9 @@ assert(!enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements('), 'Home
 const renderHomeSource = extractFunction(source, 'renderHome');
 assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Home due card should expose an explicit refresh action.');
 assert(renderHomeSource.includes('loadDisplayUpcomingFromOtherCourses('), 'Home render should use a display-only other-course cache path.');
-assert(renderHomeSource.includes('ホームの既存表示を反映します'), 'Home render should explain that other-course reminder chips mirror the native homepage indicator.');
-assert(renderHomeSource.includes('同一タブキャッシュ'), 'Home render should explain that right-column other-course details still depend on same-tab cache availability.');
-assert(extractFunction(source, 'parseSchedule').includes('const period = `${rowIndex + 1}限`;'), 'Schedule parsing should derive canonical period keys from row order.');
+assert(renderHomeSource.includes('unreadReminderCourses') && renderHomeSource.includes('コースを開いて詳細を確認してください。'), 'Home render should provide actionable native-reminder fallback links when course details are missing.');
+assert(!renderHomeSource.includes('同一タブキャッシュ'), 'Internal cache implementation details should not be placed in the homepage flow.');
+assert(extractFunction(source, 'parseSchedule').includes('periodText.match(/\\d+/)') && extractFunction(source, 'parseSchedule').includes('fallbackPeriod'), 'Schedule parsing should preserve native period labels with a row-order fallback.');
 assert(extractFunction(source, 'isDueFlagNote').includes('const canonical = dueSoonReminderText();'), 'Due-flag detection should key off the shared native red-flag reminder copy.');
 const parseOtherCoursesSource = extractFunction(source, 'parseOtherCourses');
 assert(parseOtherCoursesSource.includes('.course-data-box-normal'), 'Other-course parsing should inspect the full native course row wrapper.');
@@ -98,16 +98,8 @@ const sandbox = {
   readHomeRefreshState() { return null; },
   isHomeRefreshActive() { return false; }
 };
-vm.createContext(sandbox);
-for (const name of [
-  'extractCourseId', 'buildCourseCacheKey', 'dueSoonReminderText', 'isDueFlagNote', 'parseAvailabilityRange', 'isUpcomingDueSoonUnused',
-  'readCourseUpcomingCache', 'writeCourseUpcomingCache', 'serializeCourseUpcomingItem', 'pruneUpcomingItems',
-  'hydrateCourseUpcomingItem', 'areUpcomingCacheEntriesEqual', 'normalizeSyllabusCourseQuery', 'shortenCourseTitle', 'rememberCourseUpcoming',
-  'loadUpcomingFromCourseCache', 'loadDisplayUpcomingFromCourses', 'loadDisplayUpcomingFromOtherCourses',
-  'mergeUpcomingSources', 'buildUpcomingIdentityKey', 'upcomingPriorityRank', 'compareUpcomingItems', 'renderHome', 'getRefreshEntries'
-]) {
-  vm.runInContext(extractFunction(source, name), sandbox, { filename: 'kulms-source.js' });
-}
+loadOfflineKulmsInto(sandbox);
+sandbox.syncCourseUpcomingCacheIdentity('Offline Student');
 
 const now = Date.now();
 const pad = (n) => String(n).padStart(2, '0');
@@ -171,10 +163,9 @@ const renderedHome = sandbox.renderHome({
   otherCourses: [{ title: 'その他', items: [otherCourseDomEntry, otherCourseEntry] }]
 });
 assert(renderedHome.includes('他コース課題'), 'Rendered home should still include cache-backed other-course items in the right-column upcoming card.');
-assert(renderedHome.includes('<div class="ku-chip red" title="ホーム画面の既存表示を反映しています">締切が近い課題があります。</div>'), 'Rendered home should show the exact schedule-style red reminder chip for native homepage other-course reminders without requiring cache hydration.');
+assert(renderedHome.includes('<div class="ku-chip red">締切が近い課題があります。</div>'), 'Rendered home should show the native schedule-style red reminder chip without requiring cache hydration.');
 assert(!renderedHome.includes('期限ヒント ·'), 'Rendered home should no longer expose verbose other-course deadline hint metadata.');
-assert(renderedHome.includes('ホームの既存表示を反映します'), 'Rendered home should document that other-course reminder chips mirror the native homepage indicator.');
-assert(renderedHome.includes('同一タブキャッシュ'), 'Rendered home should document that right-column other-course details still depend on cache availability.');
+assert(!renderedHome.includes('同一タブキャッシュ'), 'Rendered home should not expose internal cache terminology.');
 const renderedHomeEmpty = sandbox.renderHome({
   upcoming: { loading: false, items: [] },
   announcements: { loading: false, items: [] },
@@ -191,7 +182,8 @@ const renderedHomeEmpty = sandbox.renderHome({
   schedule: { entries: [scheduleEntry] },
   otherCourses: [{ title: 'その他', items: [otherCourseDomEntry] }]
 });
-assert(renderedHomeEmpty.includes('その他のコースの行内リマインダーはホームの既存表示を反映します。右側カードの詳細は、このタブで最近開いたコースの同一タブキャッシュがある場合のみ表示されます。'), 'Rendered home empty state should distinguish native row-level reminders from cache-backed right-column details.');
+assert(renderedHomeEmpty.includes('締切が近い課題があります。コースを開いて詳細を確認してください。'), 'A native reminder without cached details must not be misreported as no deadline.');
+assert(renderedHomeEmpty.includes(otherCourseDomEntry.href), 'Missing-detail fallback should preserve an actionable link to the reminder course.');
 
 const report = { ok: true, checks: ['home-enrich-retired-worker-fetch-path', 'home-upcoming-cache-first', 'home-display-only-other-course-details-separated-from-refresh-targeting', 'refresh-button-exposed-on-home-card', 'due-flag-contract-explicit-redflag-only', 'cache-pruning-persists-valid-items-only', 'refresh-targets-schedule-and-native-other-course-reminders', 'other-course-native-reminders-render-on-first-home-render', 'docs-point-to-native-reminder-parity-phase'] };
 writeArtifact('.omx/artifacts/home-upcoming-session-safety', 'verification-report.json', report);

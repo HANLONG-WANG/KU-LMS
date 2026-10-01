@@ -1,29 +1,32 @@
 import vm from 'node:vm';
+import { DOMParser } from 'linkedom';
 import { read, readKulmsSource, readSyllabusSource, extractFunction, assert, writeArtifact } from './lib/content-source.mjs';
 
 const kulmsSource = readKulmsSource();
 const syllabusSource = readSyllabusSource();
 const architectureDoc = read('docs/ku-lms-extension-architecture.md');
 const entrypointDoc = read('docs/AI_DOCS_ENTRYPOINT.md');
-const prd = read('.omx/plans/prd-ku-lms-course-title-syllabus-normalization.md');
-const testSpec = read('.omx/plans/test-spec-ku-lms-course-title-syllabus-normalization.md');
+const designCode = read('docs/ku-lms-design-code.md');
 
-assert(prd.includes('Course Title & Syllabus Normalization'), 'Missing course-title normalization PRD.');
-assert(testSpec.includes('Acceptance checks'), 'Missing course-title normalization test spec.');
-assert(entrypointDoc.includes('prd-ku-lms-course-title-syllabus-normalization.md'), 'AI docs entrypoint should list the course-title normalization PRD.');
-assert(entrypointDoc.includes('test-spec-ku-lms-course-title-syllabus-normalization.md'), 'AI docs entrypoint should list the course-title normalization test spec.');
+assert(designCode.includes('Do **not** invent fake counts, fake deadlines, fake unread badges, fake course data, or fake user identity values.'), 'Versioned design contract should preserve source-backed identity.');
+assert(entrypointDoc.includes('docs/ku-lms-design-code.md'), 'AI docs entrypoint should list the versioned design contract.');
 assert(architectureDoc.includes('remember the safe detail URL'), 'Architecture doc should describe remembered syllabus detail fallback.');
 assert(architectureDoc.includes('raw public-search fallback anchors'), 'Architecture doc should document the history-restore syllabus-chip rebind contract.');
-assert(extractFunction(kulmsSource, 'collectContext').includes('shortenCourseTitle(rawUserName)'), 'Course-route topbar identity should use the normalized course title.');
+assert(!extractFunction(kulmsSource, 'collectContext').includes('shortenCourseTitle(rawUserName)'), 'Course title normalization must not be applied to account identity.');
 assert(extractFunction(kulmsSource, 'renderCourseHeader').includes('escapeHtml(displayTitle)'), 'Course header should render the normalized display title.');
-assert(extractFunction(kulmsSource, 'renderHome').includes('escapeHtml(shortenCourseTitle(item.title))'), 'Home other-course rows should render normalized display titles.');
+assert(extractFunction(kulmsSource, 'renderHomeOtherCourses').includes('escapeHtml(shortenCourseTitle(item.title))'), 'Home other-course rows should render normalized display titles.');
 assert(extractFunction(kulmsSource, 'renderCourseMaterials').includes('escapeHtml(shortenCourseTitle(course.title))'), 'Course sidebar title should render the normalized display title.');
 assert(kulmsSource.includes("window.addEventListener('pageshow', rebindHomeInterceptionOnHistoryRestore);"), 'Home history restores should install a dedicated pageshow rebind handler.');
 
 const sandbox = {
   console,
   URL,
+  AbortController,
+  state: { extensionSettings: { enabled: true } },
+  syllabusPendingAbortController: new AbortController(),
+  resumeSyllabusPendingWork() {},
   SYLLABUS_DETAIL_CACHE_KEY: 'ku-redesign-syllabus-detail-v1',
+  SYLLABUS_DETAIL_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
   SYLLABUS_WINDOW_STATE_PREFIX: '__KU_SYLLABUS_STATE__',
   SYLLABUS_PENDING_PREFIX: '__KU_SYLLABUS_AUTO__',
   cleanText: (value = '') => String(value || '').replace(/\s+/g, ' ').trim(),
@@ -47,6 +50,10 @@ vm.createContext(sandbox);
 for (const name of [
   'normalizeSyllabusCourseQuery',
   'shortenCourseTitle',
+  'isExtensionOwnedNode',
+  'nativeQuerySelectorAll',
+  'nativeQuerySelector',
+  'parseUserName',
   'extractCourseId',
   'deriveSyllabusCourseCode',
   'readSyllabusWindowState',
@@ -67,12 +74,16 @@ for (const name of ['normalizeSyllabusTopLevelSectionTitle', 'parseSyllabusSecti
 
 assert(sandbox.shortenCourseTitle('知的財産法（著作権）＜M＞＜S＞＜C＞ (2026-春学期-月曜日-3限-70427)') === '知的財産法（著作権）', 'Visible course-title normalizer should strip timetable suffixes and marker tags while preserving meaningful parentheses.');
 assert(sandbox.shortenCourseTitle('活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311)') === '活用法を見聞するAI・データサイエンス', 'Visible course-title normalizer should strip trailing section tags.');
+const identityDoc = new DOMParser().parseFromString('<html><body><div id="ku-redesign-root"><a title="アカウントメニュー">Extension Fake</a></div><a href="/webclass/course.php/26170478/">サウンド知覚情報処理 (2026-秋学期-水曜日-3限-70478)</a><a title="アカウントメニュー">Student Example</a></body></html>', 'text/html');
+assert(sandbox.parseUserName(identityDoc) === 'Student Example', 'Account identity must come from the native account menu even when a course brand and extension identity precede it.');
+assert(sandbox.parseUserName(new DOMParser().parseFromString('<html><body><a>サウンド知覚情報処理 (2026-秋学期-水曜日-3限-70478)</a></body></html>', 'text/html')) === '', 'Missing account identity must stay unknown rather than becoming the course title.');
 assert(sandbox.normalizeSyllabusTopLevelSectionTitle('授業概要Course Description') === '授業概要', 'Top-level syllabus headings should drop appended English labels.');
 assert(sandbox.normalizeSyllabusTopLevelSectionTitle('到達目標 / Course Objective') === '到達目標', 'Top-level syllabus headings should drop slash-separated English labels.');
 assert(sandbox.normalizeSyllabusTopLevelSectionTitle('AI活用の方法') === 'AI活用の方法', 'Top-level syllabus heading cleanup must preserve legitimate in-title ASCII such as AI.');
 
 const nestedLabels = [];
 sandbox.sanitizeSyllabusBodyText = (node) => String(node?.textContent || '').trim();
+sandbox.sanitizeSyllabusBodyHtml = (node) => node?.innerHTML || '';
 const rowResult = sandbox.parseSyllabusSectionRows({
   children: [
     { tagName: 'DT', textContent: '授業方法Teaching Method' },
@@ -147,6 +158,7 @@ sandbox.writeSyllabusWindowState({
   pending: null,
   remembered: {
     [rememberedKey]: {
+      version: 2,
       url: 'https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=70340&actionClass=syllabus.search.DetailKeySearchSt&nendo=2026&queryString=%E8%A8%80%E8%AA%9E%E5%AD%A6&st=key',
       storedAt: new Date().toISOString()
     }
@@ -157,6 +169,13 @@ assert((await sandbox.readRememberedSyllabusDetail({
   courseHref: anchor.dataset.syllabusHref,
   year: anchor.dataset.syllabusYear
 })).includes('UJikanwari_cd=70340'), 'Remembered syllabus detail should survive via the same-tab window state when sessionStorage is stale.');
+sandbox.window.sessionStorage.store.clear();
+sandbox.writeSyllabusWindowState({ pending: null, remembered: { [rememberedKey]: {
+  version: 2,
+  url: 'https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=70340&actionClass=syllabus.search.DetailKeySearchSt&nendo=2026',
+  storedAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+} } });
+assert((await sandbox.readRememberedSyllabusDetail({ title: anchor.dataset.syllabusTitle, courseHref: anchor.dataset.syllabusHref, year: anchor.dataset.syllabusYear })) === '', 'Expired remembered details must be rejected rather than returned as fresh metadata.');
 
 const restoreSandbox = {
   console,
@@ -185,9 +204,11 @@ const report = {
   ok: true,
   checks: [
     'visible-course-title-normalization',
+    'account-identity-kept-separate-from-course-brand',
     'syllabus-top-level-heading-normalization',
     'nested-syllabus-labels-preserved',
     'remembered-direct-detail-fallback',
+    'remembered-detail-expiry-respected',
     'home-history-restore-rebind'
   ]
 };

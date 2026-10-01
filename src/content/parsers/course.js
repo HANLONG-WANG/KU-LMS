@@ -2,84 +2,68 @@
 
 function parseOtherCourses(doc) {
     const groups = [];
-    const titles = Array.from(doc.querySelectorAll('.courseTree-levelTitle'));
-    titles.forEach((titleEl) => {
-      const group = { title: titleEl.textContent.trim(), items: [] };
-      const list = titleEl.nextElementSibling?.querySelector('.courseList') || titleEl.parentElement?.querySelector('.courseList');
-      if (list) {
-        const courseBoxes = Array.from(list.querySelectorAll('.course-data-box-normal'));
-        const parseTargets = courseBoxes.length ? courseBoxes : Array.from(list.querySelectorAll('.course-title'));
-        parseTargets.forEach((courseBox) => {
-          const titleBox = courseBox.querySelector('.course-title') || courseBox;
-          const anchor = titleBox.querySelector('a[href]');
-          if (!anchor) return;
-          const meta = titleBox.querySelector('.course-info')?.textContent.replace(/\s+/g, ' ').trim() || '';
-          const hasNativeDueReminder = !!courseBox.querySelector('.course-contents-info');
-          const note = courseBox.querySelector('.course-contents-info')?.textContent.replace(/\s+/g, ' ').trim() || '';
-          const rawHref = absoluteUrl(anchor.getAttribute('href'));
-          group.items.push({ title: anchor.textContent.replace(/^»\s*/, '').trim(), href: rawHref, supplementalHref: rawHref, meta, note, hasNativeDueReminder });
-        });
-      }
+    const seen = new Set();
+    nativeQuerySelectorAll(doc, '.courseList').forEach((list) => {
+      const previous = list.previousElementSibling;
+      const heading = previous?.matches?.('.courseTree-levelTitle') ? previous : list.parentElement?.querySelector?.('.courseTree-levelTitle');
+      const group = { title: cleanText(heading?.textContent || ''), items: [] };
+      nativeQuerySelectorAll(list, '.course-title').forEach((titleBox) => {
+        const anchor = titleBox.querySelector('a[href*="/course.php/"]');
+        if (!anchor) return;
+        const rawHref = absoluteUrl(anchor.getAttribute('href') || '');
+        const key = buildCourseCacheKey(rawHref) || rawHref;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const courseBox = titleBox.closest?.('.course-data-box-normal') || titleBox.parentElement || titleBox;
+        const noteNode = courseBox.querySelector?.('.course-contents-info');
+        group.items.push({ title: cleanText(anchor.textContent || '').replace(/^»\s*/, ''), href: rawHref, supplementalHref: rawHref,
+          meta: cleanText(titleBox.querySelector('.course-info')?.textContent || ''), note: cleanText(noteNode?.textContent || ''), hasNativeDueReminder: !!noteNode });
+      });
       if (group.items.length) groups.push(group);
     });
     return groups;
   }
 
 function parseCourseMeta(doc) {
-    const brand = Array.from(doc.querySelectorAll('.navbar a, a')).find((a) => /\(\d{4}-/.test(a.textContent));
-    const title = brand ? brand.textContent.trim() : (doc.title || '').replace(' - 関大LMS', '');
+    const anchors = nativeQuerySelectorAll(doc, 'a[href]');
+    const courseId = extractCourseId(window.location.pathname);
+    const brand = anchors.find((a) => /\(\d{4}-/.test(a.textContent || '') && (!courseId || extractCourseId(a.getAttribute('href') || '') === courseId));
+    const title = cleanText(brand?.textContent || (doc.title || '').replace(' - 関大LMS', ''));
     const meta = deriveCourseMetaFromTitle(title);
-    const courseId = extractCourseId(brand?.getAttribute('href') || window.location.pathname);
-    const anchors = Array.from(doc.querySelectorAll('a[href]'));
     const linkByText = (pattern, fallback = '') => absoluteUrl(anchors.find((a) => pattern.test(cleanText(a.textContent || '')))?.getAttribute('href') || fallback);
+    const materialAnchor = anchors.find((a) => extractCourseId(a.getAttribute('href') || '') === courseId && /#contents(?:$|&)|\/course\.php\/[^/?#]+\/?(?:\?[^#]*)?$/.test(a.getAttribute('href') || ''));
+    const returnAnchor = anchors.find((a) => /\/course\.php\/[^/?#]+\/logout(?:[/?#]|$)/.test(a.getAttribute('href') || ''));
     const links = {
-      materials: canonicalizeCourseMaterialsHref(doc.querySelector('a[href*="#contents"], a[href*="/course.php/"]')?.getAttribute('href') || window.location.pathname),
-      myreports: linkByText(/マイレポート/),
-      scores: linkByText(/^集計$/),
-      testResults: linkByText(/^テスト結果$/),
-      attendance: linkByText(/出席/),
-      manual: linkByText(/マニュアル/),
-      info: linkByText(/開講情報/, courseId ? `/webclass/course.php/${courseId}/info` : '')
+      materials: canonicalizeCourseMaterialsHref(materialAnchor?.getAttribute('href') || window.location.pathname),
+      myreports: linkByText(/マイレポート/), scores: linkByText(/^集計$/), testResults: linkByText(/^テスト結果$/),
+      attendance: linkByText(/出席/), manual: linkByText(/マニュアル/),
+      info: linkByText(/開講情報/, courseId ? `/webclass/course.php/${courseId}/info` : ''),
+      returnToCourses: absoluteUrl(returnAnchor?.getAttribute('href') || '')
     };
     return { title, meta, courseId, links };
   }
 
 function deriveCourseMetaFromTitle(title) {
-    const match = title.match(/\((\d{4})-([^\-]+)-([^\-]+)-(\d限)-?(\d+)?\)/);
-    if (!match) {
-      return { year: '', semester: '', weekdayPeriod: '', room: '' };
-    }
-    return {
-      year: match[1],
-      semester: match[2],
-      weekdayPeriod: `${match[3]} ${match[4]}`,
-      room: match[5] || ''
-    };
+    const match = String(title || '').match(/\((\d{4})-([^-]+)-([^-]*)-([^-]*)-([^)]*)\)/);
+    if (!match) return { year: '', semester: '', weekdayPeriod: '', courseCode: '', room: '' };
+    return { year: match[1], semester: match[2], weekdayPeriod: [match[3], match[4]].filter(Boolean).join(' '), courseCode: match[5] || '', room: '' };
   }
 
 function parseCourseDocument(doc) {
     const course = parseCourseMeta(doc);
-    const root = doc.querySelector('course-learning-index') || doc;
-    const sectionBlocks = [];
-    Array.from(root.querySelectorAll('.cl-contentsList_folder')).forEach((folder) => {
-      const title = folder.querySelector('.panel-title')?.textContent.trim() || '';
-      const normalizedTitle = title || 'General';
-      const items = Array.from(folder.querySelectorAll('.cl-contentsList_listGroupItem')).map((item) => extractCourseItem(item));
-      if (!items.length) return;
-      const existing = sectionBlocks.find((section) => section.title === normalizedTitle);
-      if (existing) {
-        existing.items.push(...items);
-      } else {
-        sectionBlocks.push({ title: normalizedTitle, items });
-      }
+    const root = nativeQuerySelector(doc, 'course-learning-index') || doc;
+    const sections = [];
+    const covered = new Set();
+    nativeQuerySelectorAll(root, '.cl-contentsList_folder').forEach((folder) => {
+      const nodes = nativeQuerySelectorAll(folder, '.cl-contentsList_listGroupItem').filter((item) => !covered.has(item));
+      nodes.forEach((item) => covered.add(item));
+      if (nodes.length) sections.push({ title: cleanText(folder.querySelector('.panel-title')?.textContent || '') || 'General', items: nodes.map(extractCourseItem) });
     });
-
-    const anchors = sectionBlocks.filter((section) => section.title).map((section) => ({
-      title: section.title,
-      target: slugify(section.title)
-    }));
-
-    return { course, sections: sectionBlocks, timeline: { items: [], error: false }, anchors };
+    const independent = nativeQuerySelectorAll(root, '.cl-contentsList_listGroupItem').filter((item) => !covered.has(item));
+    if (independent.length) sections.push({ title: 'General', items: independent.map(extractCourseItem) });
+    sections.forEach((section, index) => { section.id = `course-${course.courseId || 'contents'}-section-${index + 1}-${slugify(section.title)}`; });
+    const anchors = sections.map((section) => ({ title: section.title, target: section.id }));
+    return { course, sections, timeline: { items: [], error: false }, anchors };
   }
 
 function parseUpcomingFromCourse(doc, courseHref = '', { scheduleEntry = null } = {}) {
@@ -87,13 +71,17 @@ function parseUpcomingFromCourse(doc, courseHref = '', { scheduleEntry = null } 
     const normalizedCourseHref = canonicalizeCourseMaterialsHref(courseHref);
     const now = Date.now();
     const items = [];
-    const groups = Array.from(doc.querySelectorAll('.cl-contentsList_folder'));
+    const groups = nativeQuerySelectorAll(doc, '.cl-contentsList_folder');
     const sections = groups.length
       ? groups.map((folder) => ({
           sectionTitle: folder.querySelector('.panel-title')?.textContent.replace(/\s+/g, ' ').trim() || '',
-          items: Array.from(folder.querySelectorAll('.cl-contentsList_listGroupItem'))
+          items: nativeQuerySelectorAll(folder, '.cl-contentsList_listGroupItem')
         }))
-      : [{ sectionTitle: '', items: Array.from(doc.querySelectorAll('.cl-contentsList_listGroupItem')) }];
+      : [{ sectionTitle: '', items: nativeQuerySelectorAll(doc, '.cl-contentsList_listGroupItem') }];
+    if (groups.length) {
+      const independent = nativeQuerySelectorAll(doc, '.cl-contentsList_listGroupItem').filter((item) => !item.closest?.('.cl-contentsList_folder'));
+      if (independent.length) sections.push({ sectionTitle: '', items: independent });
+    }
     sections.forEach(({ sectionTitle, items: sectionItems }) => {
       if (/締め切り後提出/.test(sectionTitle)) return;
       sectionItems.forEach((item) => {
@@ -117,7 +105,7 @@ function parseUpcomingFromCourse(doc, courseHref = '', { scheduleEntry = null } 
           usageText: courseItem.usage,
           usageCount: courseItem.usageCount,
           hasUsage: courseItem.usageCount > 0,
-          usageKnown: true,
+          usageKnown: courseItem.usageKnown,
           scheduleIndex: scheduleEntry?.sortIndex ?? Number.MAX_SAFE_INTEGER,
           isCourseAlert: false
         });
@@ -147,7 +135,9 @@ function extractCourseItem(item) {
     const historyHref = absoluteUrl(allLinks.find((link) => /\/history(?:[/?]|$)/.test(link.getAttribute('href') || ''))?.getAttribute('href') || '');
     const historyLabel = allLinks.find((link) => /利用回数|履歴/.test(link.textContent || ''))?.textContent.replace(/\s+/g, ' ').trim() || '';
     const usage = /利用回数/.test(historyLabel) ? historyLabel : '';
-    const usageCount = Number(usage.match(/\d+/)?.[0] || 0);
+    const usageMatch = usage.match(/\d+/);
+    const usageKnown = !!usageMatch;
+    const usageCount = usageKnown ? Number(usageMatch[0]) : null;
     const categoryType = item.querySelector('.cl-contentsList_categoryLabel')?.textContent.replace(/\s+/g, ' ').trim() || '';
     const inferredType = inferMaterialType(rawTitle);
     const type = /試験/.test(inferredType) ? inferredType : (categoryType || inferredType);
@@ -164,30 +154,49 @@ function extractCourseItem(item) {
       historyHref,
       historyLabel,
       usage,
-      usageCount
+      usageCount,
+      usageKnown
     };
   }
 
 function parseMyReports(doc) {
-    const table = doc.querySelector('table.table.table-striped');
-    if (!table) return { rows: [] };
-    const rows = Array.from(table.querySelectorAll('tr')).slice(1).map((tr) => {
-      const cells = Array.from(tr.children);
-      return {
-        task: cells[0]?.textContent.trim() || '',
-        taskHref: absoluteUrl(cells[0]?.querySelector('a')?.getAttribute('href') || ''),
-        qno: cells[1]?.textContent.trim() || '',
-        preview: cells[2]?.textContent.trim() || '',
-        attachmentName: cells[3]?.textContent.trim() || '-',
-        attachmentHref: absoluteUrl(cells[3]?.querySelector('a')?.getAttribute('href') || ''),
-        comments: cells[4]?.textContent.trim() || '',
-        date: cells[5]?.textContent.trim() || '',
-        grade: cells[6]?.textContent.trim() || '-',
-        score: cells[7]?.textContent.trim() || '-',
-        scoreHref: absoluteUrl(cells[7]?.querySelector('a')?.getAttribute('href') || '')
-      };
-    }).filter((row) => row.task);
-    return { rows };
+    const tables = nativeQuerySelectorAll(doc, 'table.table.table-striped');
+    const table = tables.find((candidate) => /課題|レポート|提出/.test(candidate.querySelector('tr')?.textContent || '')) || tables[0];
+    if (!table) return { rows: [], columns: [] };
+    const allRows = Array.from(table.querySelectorAll('tr'));
+    const headerRow = allRows.find((row) => Array.from(row.children).some((cell) => cell.tagName === 'TH')) || allRows[0];
+    const keys = [
+      ['task', /課題|教材/], ['qno', /Q\.?\s*No/i], ['preview', /本文|プレビュー|レポート/],
+      ['attachments', /添付|ファイル/], ['comments', /コメント/], ['date', /提出日|日時/],
+      ['grade', /成績|評価/], ['score', /得点|配点/]
+    ];
+    const columns = Array.from(headerRow?.children || []).map((cell, index) => {
+      const label = cleanText(cell.textContent || '');
+      const key = keys.find(([, pattern]) => pattern.test(label))?.[0] || `column-${index}`;
+      return { key, label, optional: ['preview', 'attachments', 'comments', 'score'].includes(key) };
+    });
+    const rows = allRows.filter((row) => row !== headerRow && !row.closest?.('thead')).map((tr) => {
+      const cells = Array.from(tr.children).map((cell) => ({
+        text: String(cell.textContent || '').trim(),
+        links: Array.from(cell.querySelectorAll('a[href]')).map((anchor) => ({ label: cleanText(anchor.textContent || ''), href: absoluteUrl(anchor.getAttribute('href') || '') }))
+      }));
+      if (!cells.length || cells.length === 1 && Number(tr.children[0]?.getAttribute?.('colspan') || 1) > 1) return null;
+      const row = { cells };
+      columns.forEach((column, index) => {
+        const cell = cells[index] || { text: '', links: [] };
+        const key = column.key;
+        row[key] = cell.text;
+        if (key === 'task') { row.taskHref = cell.links[0]?.href || ''; }
+        if (key === 'attachments') {
+          row.attachments = cell.links;
+          row.attachmentName = cell.text || '-';
+          row.attachmentHref = cell.links[0]?.href || '';
+        }
+        if (key === 'score') row.scoreHref = cell.links[0]?.href || '';
+      });
+      return cells.some((cell) => cell.text || cell.links.length) ? row : null;
+    }).filter(Boolean);
+    return { rows, columns };
   }
 
 function parseCourseScores(doc) {
@@ -219,7 +228,7 @@ function parseCourseScores(doc) {
       .map((node) => cleanText(node.textContent || ''))
       .find((text) => text !== '集計' && /期間|得点|回数|時間/.test(text)) || '';
     const periodLabel = cleanText(summaryHeading.match(/期間\s*([^)]+)/)?.[1] || '');
-    const table = doc.querySelector('#PersonalScoreSheet') || doc.querySelector('table.table.table-striped.table-bordered');
+    const table = nativeQuerySelector(doc, '#PersonalScoreSheet') || nativeQuerySelector(doc, 'table.table.table-striped.table-bordered');
     const headers = Array.from(table?.querySelectorAll('thead th') || []).map((node) => cleanText(node.textContent || '')).filter(Boolean);
     const groups = [];
     let currentGroup = null;
@@ -232,6 +241,7 @@ function parseCourseScores(doc) {
         return;
       }
       const entry = {
+        cells: cells.map((cell) => ({ text: cleanText(cell.textContent || ''), href: absoluteUrl(cell.querySelector('a[href]')?.getAttribute('href') || '') })),
         title: cleanText(cells[0]?.textContent || ''),
         href: absoluteUrl(cells[0]?.querySelector('a[href]')?.getAttribute('href') || ''),
         valueText: cleanText(cells[1]?.textContent || ''),

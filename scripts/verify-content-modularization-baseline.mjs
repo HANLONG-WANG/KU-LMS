@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { read, readJson, getKulmsScript, getSyllabusScript, assert } from './lib/content-source.mjs';
 
 const manifest = readJson('manifest.json');
@@ -26,12 +27,20 @@ record('content subsystem directories exist', () => {
 });
 record('main bootstrap is thin', () => {
   const main = read('src/content/main.js');
-  assert(main.includes('bootKulms();'), 'main.js should delegate to bootKulms().');
+  let calls = 0;
+  const context = { document: { documentElement: { dataset: {} } }, console, bootKulms() { calls += 1; return Promise.resolve(); } };
+  vm.runInNewContext(main, context);
+  vm.runInNewContext(main, context);
+  assert(calls === 1, 'main.js should invoke bootKulms() once and preserve its duplicate-boot guard.');
   assert(main.split('\n').length <= 10, 'main.js should remain a thin bootstrap shim.');
 });
 record('syllabus bootstrap is thin', () => {
   const main = read('src/content/syllabus-main.js');
-  assert(main.includes('bootSyllabus();'), 'syllabus-main.js should delegate to bootSyllabus().');
+  let calls = 0;
+  const context = { document: { documentElement: { dataset: {} } }, console, bootSyllabus() { calls += 1; return Promise.resolve(); } };
+  vm.runInNewContext(main, context);
+  vm.runInNewContext(main, context);
+  assert(calls === 1, 'syllabus-main.js should invoke bootSyllabus() once and preserve its duplicate-boot guard.');
   assert(main.split('\n').length <= 10, 'syllabus-main.js should remain a thin bootstrap shim.');
 });
 record('docs expose modularization artifacts', () => {

@@ -1,0 +1,29 @@
+{
+  "scope": "Existing regression checks preserved; local Linkedom fixture parsing; no Python/browser/network; historical evidence is not current live proof",
+  "results": [
+    {
+      "script": "verify-message-context-navigation-contract.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"fixture manifest includes required message-context pages\",\n    \"owned source exposes explicit message-context contract fields\",\n    \"course fixture keeps the topbar global while persisting contextual ownership\",\n    \"fixture-backed course -> inbox -> detail flow preserves contextual precedence\",\n    \"fixture-backed direct-open detail and observed mbl routes downgrade to global context\",\n    \"fixture-backed course replacement, home reset, and sidebar precedence prevent bleed\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-message-detail-outbox-layout.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"route support includes message detail\",\n    \"absoluteUrl normalizes message-relative php links under /webclass\",\n    \"message detail parser detects inbox mode and actions\",\n    \"message detail parser detects outbox mode and actions\",\n    \"message detail renderer preserves metadata and native actions\",\n    \"subject-first regression fixtures prefer native subject over body-first copy\",\n    \"outbox renderer uses ledger layout markers and preserves scan fields\",\n    \"inbox renderer improves scanability without changing native columns\",\n    \"recyclebox renderer keeps native warning/actions with clearer layout marker\",\n    \"existing inbox and recyclebox contracts still parse\",\n    \"css contract keeps rows on the same grid tracks as headers\",\n    \"durable docs and fixtures cover message detail subtitle guardrail phase\",\n    \"historical Chrome evidence preserves the original inline-meta regression case\"\n  ],\n  \"evidence\": {\n    \"scope\": \"Historical local evidence only; this verifier performs no live browser or LMS checks.\",\n    \"requiredEvidencePaths\": [\n      \"artifacts/analysis/live-messages-inbox-inline-meta-before.png\",\n      \"artifacts/analysis/live-messages-inbox-inline-meta-after.png\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-before.png\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-after.png\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-before.png\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-after.png\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-before.png\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-after.png\",\n      \"artifacts/analysis/live-messages-inbox-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-messages-inbox-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/message-inline-meta-inbox-before.json\",\n      \"artifacts/analysis/message-inline-meta-inbox-after.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-before.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-after.json\",\n      \"artifacts/analysis/message-inline-meta-inbox-before-dom.json\",\n      \"artifacts/analysis/message-inline-meta-inbox-after-dom.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-before-dom.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-after-dom.json\",\n      \"artifacts/analysis/message-inline-meta-detail-before-dom.json\",\n      \"artifacts/analysis/message-inline-meta-detail-after-dom.json\"\n    ],\n    \"hasCompleteLiveEvidence\": true,\n    \"alignment\": {\n      \"inboxBeforeAligned\": true,\n      \"inboxAfterAligned\": true,\n      \"outboxBeforeAligned\": true,\n      \"outboxAfterAligned\": true\n    }\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-message-detail-subtitle-guardrail.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"durable docs encode the no-non-receipt-subtitle contract\",\n    \"receipt detail keeps the meta block under the hero title\",\n    \"non-receipt details keep parsed excerpt but render no hero subtitle node\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-notice-messages-outbox-recyclebox-redesign.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"route support includes notice detail, outbox, recyclebox\",\n    \"notice detail parser and renderer behave on valid fixture\",\n    \"notice detail parser and renderer behave on missing/error fixture\",\n    \"outbox parser and renderer preserve mode-specific columns and actions\",\n    \"recyclebox parser and renderer preserve warning, actions, and columns\",\n    \"message grid layout is derived per parsed column order\",\n    \"durable docs and fixtures cover the expanded communication routes\"\n  ]\n}\n",
+      "stderr": ""
+    }
+  ]
+}

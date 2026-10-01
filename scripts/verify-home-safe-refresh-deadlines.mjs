@@ -1,4 +1,4 @@
-import vm from 'node:vm';
+import { loadOfflineKulmsInto } from './lib/offline-content-vm.mjs';
 import { read, readKulmsSource, extractFunction, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
@@ -90,10 +90,7 @@ const sandbox = {
   document: { body: { appendChild(node) { if (node?.id) domNodes.set(node.id, node); } }, documentElement: { appendChild(node) { if (node?.id) domNodes.set(node.id, node); } }, createElement() { return createNode(); }, getElementById(id) { return domNodes.get(id) || null; } },
   absoluteUrl: (value = '') => value
 };
-vm.createContext(sandbox);
-for (const name of ['syncBootRefreshOverlay', 'readHomeRefreshState', 'writeHomeRefreshState', 'clearHomeRefreshState', 'getCurrentHomeRefreshTarget', 'isHomeRefreshActive', 'doesHomeRefreshMatchCurrentView', 'syncHomeRefreshOverlay']) {
-  vm.runInContext(extractFunction(source, name), sandbox, { filename: 'kulms-source.js' });
-}
+loadOfflineKulmsInto(sandbox);
 const payload = { version: 1, phase: 'navigating-to-course', startedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 60_000).toISOString(), lastProgressAt: new Date().toISOString(), currentIndex: 0, homeUrl: 'https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=abc', homeYear: '2026', homeSemester: '春学期', targets: [{ href: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/', courseHref: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/', title: '言語学' }, { href: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170399/', courseHref: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170399/', title: 'ヒューマンエージェントインタラクション' }], lastProcessedCourse: '', abortReason: '' };
 sandbox.writeHomeRefreshState(payload);
 assert(sandbox.isHomeRefreshActive(sandbox.readHomeRefreshState()) === true, 'Written refresh state should be active.');

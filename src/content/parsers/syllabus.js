@@ -88,7 +88,7 @@ function parseSyllabusNestedMeta(block) {
 function parseSyllabusSections(root) {
     return getDirectChildrenByTag(root, 'DL')
       .map((section, index) => parseSyllabusSection(section, index))
-      .filter((section) => section && (section.rows.length || section.text));
+      .filter((section) => section && (section.rows.length || section.text || section.html));
   }
 
 function parseSyllabusSection(section, index) {
@@ -98,12 +98,12 @@ function parseSyllabusSection(section, index) {
     if (!title || !bodyNode) return null;
     const innerDl = getDirectChildrenByTag(bodyNode, 'DL')[0] || null;
     const rows = innerDl ? parseSyllabusSectionRows(innerDl) : [];
-    const text = rows.length ? '' : sanitizeSyllabusBodyText(bodyNode);
     return {
       title,
       target: slugify(`${index + 1}-${title}`),
       rows,
-      text
+      text: rows.length ? '' : sanitizeSyllabusBodyText(bodyNode),
+      html: rows.length ? '' : sanitizeSyllabusBodyHtml(bodyNode)
     };
   }
 
@@ -143,14 +143,58 @@ function parseSyllabusSectionRows(innerDl) {
       }
       if (node.tagName === 'DD') {
         const text = sanitizeSyllabusBodyText(node);
-        if (!currentLabel || !text) return;
-        rows.push({
-          label: currentLabel,
-          text
-        });
+        const html = sanitizeSyllabusBodyHtml(node);
+        if (!currentLabel || (!text && !html)) return;
+        rows.push({ label: currentLabel, text, html });
       }
     });
     return rows;
+  }
+
+function sanitizeSyllabusBodyHtml(node) {
+    if (!node) return '';
+    const clone = node.cloneNode(true);
+    clone.querySelectorAll('script, style, form, input, button, select, textarea, iframe, object, embed, meta, link, base, foreignObject, annotation-xml').forEach((element) => element.remove());
+    const allowedTags = new Set('A ABBR B BLOCKQUOTE BR CAPTION CODE COL COLGROUP DD DEL DETAILS DIV DL DT EM FIGCAPTION FIGURE H1 H2 H3 H4 H5 H6 HR I IMG KBD LI MARK OL P PRE Q RP RT RUBY S SMALL SPAN STRONG SUB SUMMARY SUP TABLE TBODY TD TFOOT TH THEAD TR U UL MATH MI MN MO MROW MFRAC MSQRT MROOT MSUB MSUP MSUBSUP MTABLE MTR MTD MTEXT SEMANTICS ANNOTATION SVG G PATH CIRCLE RECT LINE POLYLINE POLYGON TEXT TSPAN ELLIPSE DEFS CLIPPATH'.split(' '));
+    const safeUrl = (value, image = false) => {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      if (!image && raw.startsWith('#')) return '#ku-syllabus-content-' + encodeURIComponent(raw.slice(1));
+      try {
+        const url = new URL(raw, node.ownerDocument?.baseURI || window.location.href);
+        return (image ? ['http:', 'https:'] : ['http:', 'https:', 'mailto:', 'tel:']).includes(url.protocol) ? url.href : '';
+      } catch { return ''; }
+    };
+    Array.from(clone.querySelectorAll('*')).forEach((element) => {
+      const tag = String(element.tagName).toUpperCase();
+      if (!allowedTags.has(tag)) {
+        element.replaceWith(...Array.from(element.childNodes));
+        return;
+      }
+      const attributes = Array.from(element.attributes);
+      attributes.forEach((attribute) => element.removeAttribute(attribute.name));
+      attributes.forEach(({ name, value }) => {
+        const key = name.toLowerCase();
+        if (['title', 'lang', 'dir', 'alt'].includes(key)) element.setAttribute(name, value);
+        else if (key === 'id') element.setAttribute('id', 'ku-syllabus-content-' + encodeURIComponent(value));
+        else if ((tag === 'A' && key === 'href') || (tag === 'IMG' && key === 'src')) {
+          const url = safeUrl(value, tag === 'IMG');
+          if (url) element.setAttribute(name, url);
+        } else if (tag === 'A' && key === 'target' && value === '_blank') {
+          element.setAttribute('target', '_blank');
+          element.setAttribute('rel', 'noopener noreferrer');
+        } else if (['colspan', 'rowspan', 'span', 'width', 'height'].includes(key) && /^\d+(?:%|px)?$/.test(value)) {
+          element.setAttribute(name, value);
+        } else if (key === 'scope' && ['row', 'col', 'rowgroup', 'colgroup'].includes(value)) element.setAttribute(name, value);
+        else if (['display', 'mathvariant', 'encoding'].includes(key) && /^[\w /.+-]+$/.test(value)) element.setAttribute(name, value);
+        else if (['viewbox', 'd', 'points', 'x', 'y', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'stroke-width', 'transform'].includes(key) && /^[\w\d\s.,()+-]+$/.test(value)) element.setAttribute(name, value);
+        else if (['fill', 'stroke'].includes(key) && /^(?:none|currentColor|[a-z]+|#[0-9a-f]{3,8})$/i.test(value)) element.setAttribute(name, value);
+      });
+      if (tag === 'IMG' && !element.getAttribute('src')) {
+        element.replaceWith((clone.ownerDocument || document).createTextNode(element.getAttribute('alt') || ''));
+      }
+    });
+    return clone.innerHTML.trim();
   }
 
 function sanitizeSyllabusBodyText(node) {

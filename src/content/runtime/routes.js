@@ -9,6 +9,7 @@ function detectRoute(locationObj) {
     }
     if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };
     if (normalized === '/webclass/logout.php') return { supported: true, name: 'logout' };
+    if (/\/webclass\/course\.php\/[^/]+\/logout$/.test(normalized)) return { supported: true, name: 'course-return' };
     if (/\/webclass\/course\.php\/[^/]+\/scores$/.test(normalized)) return { supported: true, name: 'course-scores' };
     if (/\/webclass\/course\.php\/[^/]+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
     if (/\/webclass\/course\.php\/[^/]+(?:\/login)?$/.test(normalized)) return { supported: true, name: 'course-materials' };

@@ -4,6 +4,7 @@
 This file is the documentation entrypoint for AI agents working on the KU-LMS extension redesign. It was created in this task because the repository previously lacked the required entrypoint file.
 
 ## Read first
+0. `docs/testing.md` — reproducible offline verification with versioned dependencies; historical `.omx/plans` links below are references, not prerequisites for running tests.
 1. `docs/ku-lms-design-code.md` — binding UI design code for all future AI/frontend work.
 2. `docs/ku-lms-extension-architecture.md` — current extension architecture, supported routes, takeover strategy, and design-system notes.
 3. `docs/ku-lms-content-subsystem-map.md` — current content-script file map, manifest load order, and safety-sensitive ownership boundaries after modularization.

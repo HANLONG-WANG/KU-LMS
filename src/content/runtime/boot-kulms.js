@@ -3,15 +3,24 @@
 async function bootKulms(options = {}) {
   bindKulmsLifecycleListeners();
   bindKulmsExtensionSettingsListener();
+  const version = state.pageTaskVersion = (state.pageTaskVersion || 0) + 1;
 
   if (!options.skipSettingsCheck) {
-    state.extensionSettings = await kuReadExtensionSettings();
-    if (!state.extensionSettings.enabled) {
-      releaseNative();
-      return;
-    }
+    const settings = await kuReadExtensionSettings();
+    if (version !== state.pageTaskVersion) return;
+    state.extensionSettings = settings;
   }
-
+  if (state.extensionSettings?.enabled === false) {
+    releaseNative();
+    return;
+  }
+  resetPageLifecycleGuards();
+  const route = detectRoute(window.location);
+  if (route.name === 'course-return') {
+    resetActiveMessageContext();
+    releaseNative();
+    return;
+  }
   document.documentElement.dataset.kuRedesignState = 'booting';
   syncBootRefreshOverlay();
   syncBootAllUpcomingOverlay();
@@ -20,7 +29,7 @@ async function bootKulms(options = {}) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init, { once: true });
   } else {
-    init();
+    await init();
   }
 }
 
@@ -38,6 +47,8 @@ function bindKulmsExtensionSettingsListener() {
   state.kulmsSettingsListenerBound = kuOnExtensionSettingsChanged((settings) => {
     const previous = state.extensionSettings || kuNormalizeExtensionSettings(KU_LMS_DEFAULT_SETTINGS);
     const credentialsChanged = previous.username !== settings.username || previous.password !== settings.password;
+    const autoLoginChanged = previous.autoLogin !== settings.autoLogin;
+    if (credentialsChanged || autoLoginChanged || !settings.enabled) cancelAutoLoginSubmission();
     state.extensionSettings = settings;
     if (!settings.enabled) {
       releaseNative();
@@ -47,7 +58,7 @@ function bindKulmsExtensionSettingsListener() {
       bootKulms({ skipSettingsCheck: true }).catch((error) => console.warn('[KU Redesign] settings re-enable failed', error));
       return;
     }
-    if (credentialsChanged && state.currentRoute?.name === 'login') {
+    if ((credentialsChanged || autoLoginChanged) && state.currentRoute?.name === 'login') {
       clearAutoLoginAttempt();
       fillAndMaybeSubmitLoginForm(state.loginNativeForm);
     }
@@ -55,98 +66,153 @@ function bindKulmsExtensionSettingsListener() {
 }
 
 async function init() {
-    const route = detectRoute(window.location);
-    const refreshState = readHomeRefreshState();
-    const allUpcomingState = readAllUpcomingState();
-    const authInvalidPage = isAuthInvalidPage(document);
-    const courseConflictPage = isCourseConflictPage(document);
-    const intentionalLoginRoute = route.name === 'login';
-    const intentionalLogoutRoute = route.name === 'logout';
-    if ((courseConflictPage && !intentionalLogoutRoute) || (authInvalidPage && !intentionalLoginRoute)) {
-      if (isHomeRefreshActive(refreshState)) {
-        abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');
-      }
-      if (isAllUpcomingActive(allUpcomingState)) {
-        abortAllUpcoming(allUpcomingState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');
-      }
-      return releaseNative();
-    }
-    if (!route.supported) {
-      if (isHomeRefreshActive(refreshState)) {
-        abortHomeRefresh(refreshState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);
-      }
-      if (isAllUpcomingActive(allUpcomingState)) {
-        abortAllUpcoming(allUpcomingState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);
-      }
-      return releaseNative();
-    }
-    if ((route.name === 'notifications' || route.name === 'notifications-detail') && window.location.pathname.includes('/webclass/information.php/mbl')) {
-      window.location.replace(normalizeNotificationsUrl(window.location.href));
-      return;
-    }
-    syncHomeRefreshOverlay(refreshState);
-    syncAllUpcomingOverlay(allUpcomingState);
-
-    try {
-      const context = await collectContext(route);
-      const root = ensureRoot();
-      state.currentRoute = route;
-      state.currentContext = context;
-      root.innerHTML = renderShell(route, context, renderLoadingPage(route));
-      document.documentElement.dataset.kuRedesignState = 'ready';
-
-      const view = await buildView(route, context);
-      state.currentView = view;
-      rerender();
-
-      if (route.name === 'home') {
-        enrichHomeAsync(context, view).catch((error) => console.warn('[KU Redesign] home enrichment failed', error));
-      }
-      await continueHomeRefreshIfNeeded(route, view);
-      await continueAllUpcomingIfNeeded(route, view);
-    } catch (error) {
-      console.error('[KU Redesign] init failed', error);
-      releaseNative();
-    }
+  if (state.extensionSettings?.enabled === false || isPageLeaving()) return;
+  const version = state.pageTaskVersion = (state.pageTaskVersion || 0) + 1;
+  const route = detectRoute(window.location);
+  if (route.name === 'course-return') {
+    resetActiveMessageContext();
+    return releaseNative();
   }
+  const refreshState = readHomeRefreshState();
+  const allUpcomingState = readAllUpcomingState();
+  const authInvalidPage = isAuthInvalidPage(document);
+  const courseConflictPage = isCourseConflictPage(document);
+  const intentionalLoginRoute = route.name === 'login';
+  const intentionalLogoutRoute = route.name === 'logout';
+  if (intentionalLoginRoute || intentionalLogoutRoute) {
+    syncCourseUpcomingCacheIdentity('', { clear: true });
+  }
+  if ((courseConflictPage && !intentionalLogoutRoute) || (authInvalidPage && !intentionalLoginRoute)) {
+    if (isHomeRefreshActive(refreshState)) abortHomeRefresh(refreshState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');
+    if (isAllUpcomingActive(allUpcomingState)) abortAllUpcoming(allUpcomingState, courseConflictPage ? 'course-conflict-page' : 'auth-invalid-page');
+    syncCourseUpcomingCacheIdentity('', { clear: true });
+    return releaseNative();
+  }
+  if (!route.supported) {
+    if (isHomeRefreshActive(refreshState)) abortHomeRefresh(refreshState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);
+    if (isAllUpcomingActive(allUpcomingState)) abortAllUpcoming(allUpcomingState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);
+    return releaseNative();
+  }
+  if ((route.name === 'notifications' || route.name === 'notifications-detail') && window.location.pathname.includes('/webclass/information.php/mbl')) {
+    window.location.replace(normalizeNotificationsUrl(window.location.href));
+    return;
+  }
+  syncHomeRefreshOverlay(refreshState);
+  syncAllUpcomingOverlay(allUpcomingState);
+
+  try {
+    const context = await collectContext(route);
+    if (!isCurrentPageTask(version)) return;
+    syncCourseUpcomingCacheIdentity(context.userName);
+    const root = ensureRoot();
+    if (!root) return;
+    state.currentRoute = route;
+    state.currentContext = context;
+    root.innerHTML = renderShell(route, context, renderLoadingPage(route));
+    hideNativePageForExtension(ROOT_ID);
+    document.documentElement.dataset.kuRedesignState = 'ready';
+
+    const view = await buildView(route, context);
+    if (!isCurrentPageTask(version)) return;
+    state.currentView = view;
+    rerender();
+
+    const collecting = isHomeRefreshActive(readHomeRefreshState()) || isAllUpcomingActive(readAllUpcomingState());
+    await continueHomeRefreshIfNeeded(route, view);
+    if (!isCurrentPageTask(version)) return;
+    await continueAllUpcomingIfNeeded(route, view);
+    if (!isCurrentPageTask(version)) return;
+    if (route.name === 'home' && !collecting && state.currentRoute?.name === 'home' && state.currentView === view) {
+      enrichHomeAsync(context, view, version).catch((error) => console.warn('[KU Redesign] home enrichment failed', error));
+    }
+  } catch (error) {
+    if (!isCurrentPageTask(version)) return;
+    console.error('[KU Redesign] init failed', error);
+    releaseNative();
+  }
+}
 
 function rerender() {
-    const route = state.currentRoute;
-    const context = state.currentContext;
-    const view = state.currentView;
-    if (!route || !context || !view) return;
-    const root = ensureRoot();
-    root.innerHTML = renderShell(route, context, renderPage(route, view));
-    hydrateRouteDom(root, route, view);
-    bindInteractiveHandlers(root, route, view);
+  const route = state.currentRoute;
+  const context = state.currentContext;
+  const view = state.currentView;
+  if (!route || !context || !view || state.extensionSettings?.enabled === false || isPageLeaving()) return;
+  if (state.isComposing) {
+    state.renderDeferred = true;
+    return;
   }
+  const root = ensureRoot();
+  if (!root) return;
+  const active = document.activeElement;
+  const action = active?.getAttribute?.('data-action');
+  const name = active?.getAttribute?.('name');
+  const focus = root.contains?.(active) ? { action, name, id: active.id, start: active.selectionStart, end: active.selectionEnd, direction: active.selectionDirection } : null;
+  root.innerHTML = renderShell(route, context, renderPage(route, view));
+  hydrateRouteDom(root, route, view);
+  bindInteractiveHandlers(root, route, view);
+  hideNativePageForExtension(ROOT_ID);
+  if (focus && root.querySelectorAll) {
+    const replacement = Array.from(root.querySelectorAll('input, textarea, select, button, a')).find((node) =>
+      focus.action ? node.getAttribute('data-action') === focus.action : focus.id ? node.id === focus.id : focus.name ? node.getAttribute('name') === focus.name : false);
+    replacement?.focus?.({ preventScroll: true });
+    if (replacement?.setSelectionRange && focus.start != null) {
+      try { replacement.setSelectionRange(focus.start, focus.end, focus.direction); } catch (error) { /* Non-text controls have no selection range. */ }
+    }
+  }
+}
 
 function ensureRoot() {
-    let root = document.getElementById(ROOT_ID);
-    if (!root) {
-      root = document.createElement('div');
-      root.id = ROOT_ID;
-      (document.body || document.documentElement).appendChild(root);
-    }
-    return root;
+  if (state.extensionSettings?.enabled === false || isPageLeaving()) return null;
+  let root = document.getElementById(ROOT_ID);
+  if (!root) {
+    root = document.createElement('div');
+    root.id = ROOT_ID;
+    (document.body || document.documentElement).appendChild(root);
+  } else if (document.body && root.parentNode !== document.body) {
+    document.body.appendChild(root);
   }
+  if (root.addEventListener && !root.__kuCompositionBound) {
+    root.__kuCompositionBound = true;
+    root.addEventListener('compositionstart', () => { state.isComposing = true; });
+    root.addEventListener('compositionend', () => {
+      state.isComposing = false;
+      if (state.renderDeferred) {
+        state.renderDeferred = false;
+        window.setTimeout(() => rerender(), 0);
+      }
+    });
+  }
+  return root;
+}
 
 function releaseNative() {
-    stopLoginNoticeSync();
-    restoreNativeLoginForm();
-    delete document.documentElement.dataset.kuRedesignState;
-    const root = document.getElementById(ROOT_ID);
-    if (root) root.remove();
-  }
+  state.pageTaskVersion = (state.pageTaskVersion || 0) + 1;
+  cancelAutoLoginSubmission();
+  stopLoginNoticeSync();
+  if (typeof cleanupRouteHydration === 'function') cleanupRouteHydration();
+  if (typeof cancelSyllabusPendingWork === 'function') cancelSyllabusPendingWork();
+  try { pageRequestAbortController?.abort('extension-released'); } catch (error) { /* Already aborted. */ }
+  restoreNativeLoginForm();
+  restoreNativePageForExtension(ROOT_ID);
+  delete document.documentElement.dataset.kuRedesignState;
+  const root = document.getElementById(ROOT_ID);
+  if (root) root.remove();
+  state.currentRoute = null;
+  state.currentContext = null;
+  state.currentView = null;
+  state.isComposing = false;
+  state.renderDeferred = false;
+}
 
 function abortInFlightPageRequests() {
-    pageIsLeaving = true;
-    try {
-      pageRequestAbortController?.abort('navigation');
-    } catch (error) {
-      // Ignore repeated aborts.
-    }
-  }
+  pageIsLeaving = true;
+  state.pageTaskVersion = (state.pageTaskVersion || 0) + 1;
+  cancelAutoLoginSubmission();
+  stopLoginNoticeSync();
+  if (typeof cleanupRouteHydration === 'function') cleanupRouteHydration();
+  if (typeof cancelSyllabusPendingWork === 'function') cancelSyllabusPendingWork();
+  try { pageRequestAbortController?.abort('navigation'); } catch (error) { /* Ignore repeated aborts. */ }
+}
 
 function getPageRequestSignal() {
     return pageRequestAbortController?.signal;
@@ -156,30 +222,43 @@ function isAbortError(error) {
     return error?.name === 'AbortError' || String(error?.message || '').includes('aborted');
   }
 
+function isCurrentPageTask(version) {
+  return version === state.pageTaskVersion && state.extensionSettings?.enabled !== false && !isPageLeaving();
+}
+
+function invalidatePageTasks() {
+  state.pageTaskVersion = (state.pageTaskVersion || 0) + 1;
+  return state.pageTaskVersion;
+}
+
 function isPageLeaving() {
     return pageIsLeaving;
   }
 
-function resetPageLifecycleGuards() {
-    pageIsLeaving = false;
-    if (!pageRequestAbortController || pageRequestAbortController.signal?.aborted) {
-      pageRequestAbortController = typeof AbortController === 'function' ? new AbortController() : null;
-    }
+function resetPageLifecycleGuards(event) {
+  pageIsLeaving = false;
+  if (!pageRequestAbortController || pageRequestAbortController.signal?.aborted) {
+    pageRequestAbortController = typeof AbortController === 'function' ? new AbortController() : null;
   }
+  if (typeof resumeLmsPageRequests === 'function') resumeLmsPageRequests({ afterNavigation: event?.type === 'pageshow' });
+}
 
 function rebindHomeInterceptionOnHistoryRestore(event) {
-    if (!event?.persisted && getHomeRefreshNavigationType() !== 'back_forward') return;
-    const route = detectRoute(window.location);
-    if (!route?.supported || route.name !== 'home') return;
-    if (document.documentElement.dataset.kuRedesignState !== 'ready') return;
-    if (!state.currentRoute || !state.currentContext || !state.currentView) {
-      init().catch((error) => {
-        console.warn('[KU Redesign] home history restore re-init failed', error);
-      });
-      return;
-    }
-    rerender();
+  if (!event?.persisted && getHomeRefreshNavigationType() !== 'back_forward') return;
+  const route = detectRoute(window.location);
+  if (!route?.supported || state.extensionSettings?.enabled === false) return;
+  if (route.name === 'course-return') return releaseNative();
+  if (document.documentElement.dataset.kuRedesignState !== 'ready') return;
+  if (!state.currentRoute || !state.currentContext || !state.currentView || state.currentRoute.name !== route.name) {
+    init().catch((error) => console.warn('[KU Redesign] history restore re-init failed', error));
+    return;
   }
+  rerender();
+  const view = state.currentView;
+  if (route.name === 'home' && (view.messages?.loading || view.upcoming?.loading) && !isHomeRefreshActive(readHomeRefreshState()) && !isAllUpcomingActive(readAllUpcomingState())) {
+    enrichHomeAsync(state.currentContext, view, state.pageTaskVersion).catch((error) => console.warn('[KU Redesign] home history enrichment failed', error));
+  }
+}
 
 function mountBootShell() {
     const root = ensureRoot();
@@ -195,27 +274,24 @@ function syncBootAllUpcomingOverlay() {
   }
 
 async function collectContext(route) {
-    const current = document;
-    const links = parseTopLinks(current, route);
-    const messageContext = resolveMessageContext(route, links, current);
-    links.globalInboxHref = messageContext.globalInboxHref;
-    links.contextualInboxHref = messageContext.contextualInboxHref;
-    links.contextSourceRoute = messageContext.contextSourceRoute;
-    links.canonicalMessageHref = messageContext.canonicalMessageHref;
-    links.observedMobileMessageHref = messageContext.observedMobileMessageHref;
-    links.messages = messageContext.globalInboxHref;
-    const rawUserName = route.name === 'login' || route.name === 'logout' ? '' : (parseUserName(current) || 'ユーザー');
-    const userName = route.name === 'course-materials' || route.name === 'course-myreports' || route.name === 'course-scores'
-      ? shortenCourseTitle(rawUserName)
-      : rawUserName;
-    return {
-      userName,
-      language: route.name === 'login' ? parseLoginLanguageLabel(current) : (parseLanguage(current) || '日本語'),
-      links,
-      messageContext,
-      homeDoc: current
-    };
-  }
+  const current = document;
+  const links = parseTopLinks(current, route);
+  const messageContext = resolveMessageContext(route, links, current);
+  links.globalInboxHref = messageContext.globalInboxHref;
+  links.contextualInboxHref = messageContext.contextualInboxHref;
+  links.contextSourceRoute = messageContext.contextSourceRoute;
+  links.canonicalMessageHref = messageContext.canonicalMessageHref;
+  links.observedMobileMessageHref = messageContext.observedMobileMessageHref;
+  links.messages = messageContext.globalInboxHref;
+  const userName = route.name === 'login' || route.name === 'logout' ? '' : (parseUserName(current) || '');
+  return {
+    userName,
+    language: route.name === 'login' ? parseLoginLanguageLabel(current) : (parseLanguage(current) || '日本語'),
+    links,
+    messageContext,
+    homeDoc: current
+  };
+}
 
 function resolveMessageContext(route, links, doc) {
     const globalInboxHref = normalizeInboxHref(links.globalInboxHref || links.messages, getDefaultGlobalInboxHref()) || getDefaultGlobalInboxHref();
@@ -371,33 +447,39 @@ async function buildLogoutView(doc, context) {
     return view;
   }
 
-async function enrichHomeAsync(context, view) {
-    const nextView = { ...view, upcoming: { loading: false, items: [] }, announcements: view.announcements, messages: { loading: false, items: [], total: 0 } };
-
-    try {
-      const messagesDoc = await loadSupplementalDocument(context.links.messages || '/webclass/msg_editor.php?msgappmode=inbox');
-      nextView.messages = { loading: false, ...parseMessagePreview(messagesDoc) };
-    } catch (error) {
-      console.warn('[KU Redesign] message enrichment failed', error);
-    }
-
-    try {
-      const now = new Date();
-      const courseUpcoming = await loadUpcomingFromDueCourses(view.schedule.entries, view.filters.year);
-      const combinedUpcoming = courseUpcoming.sort(compareUpcomingItems);
-      nextView.upcoming = {
-        loading: false,
-        items: combinedUpcoming
-          .slice(0, 5)
-          .map((item) => ({ ...item, daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate - now) / 86400000)) : null }))
-      };
-    } catch (error) {
-      console.warn('[KU Redesign] upcoming enrichment failed', error);
-    }
-
-    state.currentView = nextView;
-    rerender();
+async function enrichHomeAsync(context, view, version = state.pageTaskVersion) {
+  const active = () => isCurrentPageTask(version) && state.currentRoute?.name === 'home' && state.currentContext === context && state.currentView === view;
+  if (!active()) return;
+  const nextView = { ...view, upcoming: { loading: false, items: [] }, announcements: view.announcements, messages: { loading: false, items: [], total: 0 } };
+  try {
+    const messagesDoc = await loadSupplementalDocument(context.links.messages || '/webclass/msg_editor.php?msgappmode=inbox');
+    if (!active()) return;
+    nextView.messages = { loading: false, ...parseMessagePreview(messagesDoc) };
+  } catch (error) {
+    if (!active()) return;
+    nextView.messages.error = true;
+    console.warn('[KU Redesign] message enrichment failed', error);
   }
+  try {
+    const now = new Date();
+    const entries = view.schedule?.entries || [];
+    const otherEntries = (view.otherCourses || []).flatMap((group) => group.items || []).map((item, index) => ({ ...item, sortIndex: entries.length + index }));
+    const courseUpcoming = await loadUpcomingFromDueCourses([...entries, ...otherEntries], view.filters.year);
+    if (!active()) return;
+    nextView.upcoming = {
+      loading: false,
+      items: courseUpcoming.sort(compareUpcomingItems).slice(0, 5)
+        .map((item) => ({ ...item, daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate - now) / 86400000)) : null }))
+    };
+  } catch (error) {
+    if (!active()) return;
+    nextView.upcoming.error = true;
+    console.warn('[KU Redesign] upcoming enrichment failed', error);
+  }
+  if (!active()) return;
+  state.currentView = nextView;
+  rerender();
+}
 
 async function buildCourseMaterialsView(doc, context) {
     const course = parseCourseDocument(doc);
@@ -435,12 +517,12 @@ function buildMessagesView(doc, context, route) {
   }
 
 function buildManualView(doc, context) {
-    const sections = parseManualSections(doc);
-    const fallbackSections = parseHomeHelpSections(context.homeDoc);
-    return {
-      title: 'マニュアル',
-      subtitle: '利用ガイド、動作環境、サポート情報をまとめています。',
-      closeHref: Array.from(doc.querySelectorAll('a[href]')).find((a) => a.textContent.includes('このウィンドウを閉じる'))?.getAttribute('href') || '',
-      sections: sections.length ? sections : fallbackSections
-    };
-  }
+  const sections = parseManualSections(doc);
+  if (!sections.length) throw new Error('Native manual sections could not be parsed');
+  return {
+    title: 'マニュアル',
+    subtitle: '利用ガイド、動作環境、サポート情報をまとめています。',
+    closeHref: Array.from(doc.querySelectorAll('a[href]')).find((a) => !isExtensionOwnedNode(a) && a.textContent.includes('このウィンドウを閉じる'))?.getAttribute('href') || '',
+    sections
+  };
+}

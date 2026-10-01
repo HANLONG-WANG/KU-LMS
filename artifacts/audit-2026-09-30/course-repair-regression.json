@@ -1,0 +1,13 @@
+{
+  "beforeFix": {
+    "exitCode": 1,
+    "stderr": "node:internal/modules/run_main:123\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n0 !== 4\n\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-audit-course-regressions.mjs:90:10\n    at check (file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-audit-course-regressions.mjs:84:29)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-audit-course-regressions.mjs:86:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 0,\n  expected: 4,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v22.23.1\n",
+    "firstFailure": "current ungrouped courseList retains all nonnumeric course IDs and reminders"
+  },
+  "afterFix": {
+    "exitCode": 0,
+    "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"current ungrouped courseList retains all nonnumeric course IDs and reminders\",\n    \"account identity ignores course brand and extension identity, unknown stays empty\",\n    \"course code is not a classroom and native course logout return is preserved\",\n    \"same-cell multiple classes and explicit period labels survive parse and render\",\n    \"availability formats reject invalid dates and do not invent open-ended deadlines\",\n    \"independent materials and same-title folders stay distinct with unique anchors\",\n    \"missing usage stays unknown in upcoming items and never claims unused\",\n    \"report native column order, extra column, long preview and multiple attachments remain visible\",\n    \"manual reads native main, retains all paragraphs, lists, direct links and warning\",\n    \"home empty/error copy preserves uncertainty and icon buttons have names\"\n  ],\n  \"scope\": \"offline synthetic/current-structure fixtures; zero network and browser actions\"\n}\n",
+    "stderr": ""
+  },
+  "scope": "isolated local source files at HEAD versus current source; synthetic/current-shape fixtures; no browser/network"
+}

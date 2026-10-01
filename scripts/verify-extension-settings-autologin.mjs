@@ -1,3 +1,4 @@
+import vm from 'node:vm';
 import { read, readJson, getKulmsScript, getSyllabusScript, assert, extractFunction } from './lib/content-source.mjs';
 
 const manifest = readJson('manifest.json');
@@ -30,12 +31,27 @@ record('settings use chrome.storage.local only', () => {
   assert(!settingsSource.includes('chrome.storage.sync'), 'credentials must not be synced through chrome.storage.sync.');
 });
 
-record('KU-LMS boot honors enabled setting', () => {
+record('KU-LMS boot declares enabled and pending-task guards', () => {
   const fn = extractFunction(bootKulms, 'bootKulms');
   assert(fn.includes('await kuReadExtensionSettings()'), 'bootKulms must read extension settings before booting.');
-  assert(fn.includes('!state.extensionSettings.enabled'), 'bootKulms must check enabled=false.');
+  assert(fn.includes('state.extensionSettings?.enabled === false'), 'bootKulms must check enabled=false.');
   assert(fn.includes('releaseNative();'), 'bootKulms must release native page when disabled.');
 });
+
+const bootSandbox = {
+  state: { extensionSettings: { enabled: true }, pageTaskVersion: 0 },
+  document: { documentElement: { dataset: {} } },
+  bindKulmsLifecycleListeners() {}, bindKulmsExtensionSettingsListener() {},
+  kuReadExtensionSettings: async () => ({ enabled: false }),
+  released: 0,
+  releaseNative() { bootSandbox.released += 1; }
+};
+vm.createContext(bootSandbox);
+vm.runInContext(extractFunction(bootKulms, 'bootKulms'), bootSandbox);
+await bootSandbox.bootKulms();
+assert(bootSandbox.released === 1, 'Disabled settings must restore the original page without mounting a shell.');
+assert(!bootSandbox.document.documentElement.dataset.kuRedesignState, 'Disabled boot must not hide the native page.');
+checks.push('disabled boot behavior preserves original DOM');
 
 record('Syllabus boot honors enabled setting', () => {
   const fn = extractFunction(bootSyllabus, 'bootSyllabus');

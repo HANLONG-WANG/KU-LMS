@@ -1,18 +1,7 @@
 /* src/content/render/messages.js */
 
 function renderMessages(view) {
-    if (view.kind === 'detail') {
-      return renderMessageDetail(view);
-    }
-    const selection = getMessageSelection(view);
-    const filteredRows = view.rows.filter((row) => {
-      if (!state.messageSearch) return true;
-      const q = state.messageSearch.toLowerCase();
-      return row.cells.map((cell) => cell.text).join(' ').toLowerCase().includes(q);
-    });
-    const gridTemplate = messageGridTemplate(view.columns || [], view);
-    const isOutbox = view.folder === 'outbox';
-    const layout = isOutbox ? 'outbox-ledger' : view.folder === 'recyclebox' ? 'recyclebox-grid' : 'inbox-grid';
+    if (view.kind === 'detail') return renderMessageDetail(view);
     return `
       <div class="ku-sidebar-shell">
         ${renderSidebar(`messages-${view.folder}`)}
@@ -28,13 +17,28 @@ function renderMessages(view) {
               <div class="ku-pagination">${renderMessagePagination(view.pagination)}</div>
             </div>
           </div>
+          <div data-message-results>${renderMessageResults(view)}</div>
+        </section>
+      </div>`;
+  }
+
+function getVisibleMessageRows(view) {
+    const query = cleanText(state.messageSearch || '').toLowerCase();
+    return view.rows.filter((row) => !query || row.cells.map((cell) => cell.text).join(' ').toLowerCase().includes(query));
+  }
+
+function renderMessageResults(view) {
+    const selection = getMessageSelection(view);
+    const filteredRows = getVisibleMessageRows(view);
+    const gridTemplate = messageGridTemplate(view.columns || [], view);
+    const isOutbox = view.folder === 'outbox';
+    const layout = isOutbox ? 'outbox-ledger' : view.folder === 'recyclebox' ? 'recyclebox-grid' : 'inbox-grid';
+    return `
           <div class="ku-message-table ${isOutbox ? 'ku-message-table-outbox' : ''}" data-message-layout="${layout}">
             <div class="ku-message-head ${isOutbox ? 'ku-message-head-outbox' : ''}" style="grid-template-columns:${escapeAttr(gridTemplate)}">${view.columns.map((column) => renderMessageHeaderCell(column, filteredRows, view)).join('')}</div>
             ${filteredRows.length ? filteredRows.map((row) => `<div class="ku-message-row ${isOutbox ? 'ku-message-row-outbox' : ''}" style="grid-template-columns:${escapeAttr(gridTemplate)}">${row.cells.map((cell) => renderMessageBodyCell(cell, row, selection, view)).join('')}</div>`).join('') : `<div class="ku-empty">表示できるメッセージがありません。</div>`}
           </div>
-          <div class="ku-message-footer"><div class="ku-mini-meta">${escapeHtml(view.pagination.pageText || `${filteredRows.length} 件`)}</div>${selection.size ? `<div class="ku-mini-meta">選択中 ${selection.size} 件</div>` : ''}</div>
-        </section>
-      </div>`;
+          <div class="ku-message-footer"><div class="ku-mini-meta">${escapeHtml(view.pagination.pageText || `${filteredRows.length} 件`)}</div>${selection.size ? `<div class="ku-mini-meta">選択中 ${selection.size} 件</div>` : ''}</div>`;
   }
 
 function renderMessageHeaderCell(column, rows, view) {
@@ -214,7 +218,7 @@ function renderMessageDetail(view) {
               </div>
               ${subjectHeadingHtml}
               ${view.forward ? `<div class="ku-message-forward">
-                <input class="ku-search ku-message-forward-input" data-action="message-detail-forward-input" type="email" value="" placeholder="${escapeAttr(view.forward.placeholder || 'メールアドレス')}">
+                <input class="ku-search ku-message-forward-input" data-action="message-detail-forward-input" type="email" required value="" placeholder="${escapeAttr(view.forward.placeholder || 'メールアドレス')}">
                 <button class="ku-button" data-action="message-detail-forward">${escapeHtml(view.forward.buttonLabel || 'メールへ転送')}</button>
               </div>` : ''}
             </section>

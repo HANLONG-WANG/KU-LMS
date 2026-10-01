@@ -1,0 +1,239 @@
+{
+  "generatedAt": "2026-09-30T23:24:07.004Z",
+  "passed": 29,
+  "total": 29,
+  "results": [
+    {
+      "script": "verify-audit-course-regressions.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"current ungrouped courseList retains all nonnumeric course IDs and reminders\",\n    \"account identity ignores course brand and extension identity, unknown stays empty\",\n    \"course code is not a classroom and native course logout return is preserved\",\n    \"same-cell multiple classes and explicit period labels survive parse and render\",\n    \"availability formats reject invalid dates and do not invent open-ended deadlines\",\n    \"independent materials and same-title folders stay distinct with unique anchors\",\n    \"missing usage stays unknown in upcoming items and never claims unused\",\n    \"report native column order, extra column, long preview and multiple attachments remain visible\",\n    \"manual reads native main, retains all paragraphs, lists, direct links and warning\",\n    \"home empty/error copy preserves uncertainty and icon buttons have names\"\n  ],\n  \"scope\": \"offline synthetic/current-structure fixtures; zero network and browser actions\"\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-audit-integration.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"early-root boot renders all native manual sections and PDF links while isolating native focus\",\n    \"native paging proxy synchronously releases and restores inert without requiring page-world globals\",\n    \"real native message master stays separate from filtered header, and selection/cancel uses the passed view\",\n    \"BFCache restores non-home hydration, and release returns the original native accessibility state\",\n    \"login uses/restores the original form and reacts to same-count native notice mutations\",\n    \"notification rows retain issuer plus dates while displaying publication and deadline once each\",\n    \"real DOM roundtrip retains safe rich syllabus elements and rejects control-character executable URLs\",\n    \"shared request queue waits through bodies, rejects late work during navigation, and fails closed on HTTP errors\",\n    \"native course-exit endpoint waits for requests although its page intentionally bypasses redesign\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-audit-lifecycle-regressions.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"late home response cannot overwrite an all-upcoming results view\",\n    \"disabling during enrichment cancels writeback and does not recreate root\",\n    \"collector restoring results never starts a parallel home message fetch\",\n    \"disabling during initial view build prevents mounting its late result\",\n    \"home cache enrichment also includes other-course entries\",\n    \"queued auto-login is canceled on disable including timer id zero\",\n    \"explicitly disabled automatic login only fills saved credentials\",\n    \"inspection mode blocks automatic login even when it is explicitly enabled\",\n    \"auto-login rechecks changed credentials and form connection\",\n    \"takeover hides original controls and restores original accessibility attributes\",\n    \"login notice observer catches late content and same-count title changes\",\n    \"course return is a supported native transition and does not clear collector state\",\n    \"manual parse failure releases control instead of faking a quick-access guide\",\n    \"composition defers full-page rendering until committed input\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-audit-popup-regressions.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"scope\": \"linkedom DOM with synthetic storage, timers and submit stubs; no browser/profile/network\",\n  \"checks\": [\n    \"legacy settings preserve automatic login and reject non-boolean flag coercion\",\n    \"explicit automatic-login off fills credentials without submission\",\n    \"opt-in settings changes cancel, invalidate and safely reschedule one attempt\",\n    \"audit no-submit guard blocks both queueing and delayed submission\",\n    \"extension disable cancels automatic login\",\n    \"real popup DOM initializes legacy settings and persists explicit opt-in payloads\",\n    \"popup visibility and failure feedback never leak credential values\",\n    \"Japanese and English native labels are shown during hydration and restored exactly\",\n    \"body-level native forms survive disabling a nested extension root with original classes\",\n    \"removed native-form next siblings use safe append restoration\",\n    \"takeover-hydration restores body-form editability and preserves original inert/ARIA policy\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-audit-render-regressions.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"date-only publication never takes expiry; native mark1 determines importance\",\n    \"notice details retain updated date and remove duplicate labels\",\n    \"search updates result DOM only during IME; select-all excludes hidden messages\",\n    \"invalid forward addresses cannot invoke native submission; valid addresses preserve native action\",\n    \"sorting/paging delegates to original native anchor without evaluating a JavaScript URL\",\n    \"course fold toggles content, aria-expanded and persistent section state\",\n    \"right navigation follows scrolling and disposes observers plus listeners\",\n    \"LMS navigation serializes clicks, blocks failures and survives enrichment replacing its link\",\n    \"syllabus keeps safe links/images/tables/math, removes executable markup, and original link bypasses redesign\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-audit-services-regressions.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"scope\": \"offline stubs only; zero real network/forms/navigation\",\n  \"checks\": [\n    \"same-URL in-flight merge with independent document clones\",\n    \"HTTP/auth/conflict failures never enter cache or permit course navigation\",\n    \"document/timeline requests serialize through body completion before navigation\",\n    \"pending LMS requests time out and fail navigation closed\",\n    \"timeline rejects HTTP and malformed JSON envelopes\",\n    \"course caches isolate accounts, preserve unknown identity, expire and clear traversal state\",\n    \"course traversal uses native exits between courses and fails closed without an exit\",\n    \"unique syllabus candidates require matching codes and closed tabs drop cached details\",\n    \"syllabus message/frame deadlines, cancellation, fresh cache, pending TTL and native bypass\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-content-load-order-smoke.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"bootstrap files are final in manifest order\",\n    \"pre-bootstrap files stay definition-only\",\n    \"top-level detector distinguishes boot calls from deferred callback bodies\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-content-modularization-baseline.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"manifest keeps kulms document_start takeover\",\n    \"manifest keeps syllabus document_start assist entry\",\n    \"content subsystem directories exist\",\n    \"main bootstrap is thin\",\n    \"syllabus bootstrap is thin\",\n    \"docs expose modularization artifacts\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-content-parsers-contract.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"route-parser-cluster-present\",\n    \"schedule-contract-preserved\",\n    \"course-late-section-filter-preserved\",\n    \"messages-form-contract-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-content-render-hydrate-contract.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"render-cluster-present\",\n    \"hydrate-cluster-present\",\n    \"login-host-selector-preserved\",\n    \"interactive-selectors-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-content-services-safety-contract.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"service-cluster-present\",\n    \"abortable-fetch-contract-preserved\",\n    \"syllabus-background-bridge-preserved\",\n    \"syllabus-assist-chain-preserved\",\n    \"syllabus-ambiguity-no-guess-preserved\",\n    \"syllabus-domain-never-boots-kulms\",\n    \"retired-worker-fetch-path-still-removed\",\n    \"refresh-fsm-auth-terminal-guard-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-content-syllabus-contract.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"syllabus-manifest-chain-preserved\",\n    \"syllabus-domain-never-boots-kulms\",\n    \"syllabus-assist-service-cluster-present\",\n    \"syllabus-assist-fallback-contract-preserved\",\n    \"syllabus-ambiguity-no-guess-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-course-grades-tabs.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"course-scores-route-supported\",\n    \"course-grades-parser-present\",\n    \"course-grades-render-present\",\n    \"course-header-tabs-extended\",\n    \"native-score-form-fields-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-course-title-syllabus-normalization.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"visible-course-title-normalization\",\"account-identity-kept-separate-from-course-brand\",\"syllabus-top-level-heading-normalization\",\"nested-syllabus-labels-preserved\",\"remembered-direct-detail-fallback\",\"remembered-detail-expiry-respected\",\"home-history-restore-rebind\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-deadlines-syllabus-session-safety.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"no-nonhome-home-fetch\",\"explicit-course-visits-still-refresh-cache\",\"retired-worker-upcoming-fetch-path\",\"refresh-mode-side-effects-suppressed\",\"course-upcoming-parser-still-valid\",\"syllabus-direct-resolver-contract-preserved\",\"active-docs-point-to-safe-refresh-phase\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-extension-settings-autologin.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"manifest exposes popup and storage permission\",\n    \"shared settings load before content runtime\",\n    \"settings use chrome.storage.local only\",\n    \"KU-LMS boot declares enabled and pending-task guards\",\n    \"disabled boot behavior preserves original DOM\",\n    \"Syllabus boot honors enabled setting\",\n    \"login hydrate fills and submits with loop guard\",\n    \"popup persists settings without inline script\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-home-all-upcoming-assignments-page.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"route-and-home-nav-support-all-upcoming-page\",\"home-cta-interception-present-without-removing-refresh-button\",\"dedicated-state-key-and-overlay-path-present\",\"all-course-target-collection-dedupes-visible-courses\",\"five-day-filter-keeps-used-items\",\"overlay-runtime-contract-executed\",\"native-course-exits-and-async-home-resumption\",\"completion-synchronizes-results-route\",\"mismatched-course-exit-fails-closed\",\"docs-reference-new-route-and-service\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-home-notice-card-parity.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"home-notice-card-stays-native-dom-backed\",\n    \"home-build-renders-notices-without-announcements-spinner\",\n    \"home-enrich-does-not-fetch-or-overwrite-notice-card\",\n    \"docs-index-home-notice-card-parity-contract\",\n    \"fixtures-prove-home-preview-and-notifications-list-can-diverge\"\n  ],\n  \"evidence\": {\n    \"homePreviewTitles\": [\n      \"中間テスト（5/30 1300-1400）\",\n      \"関大LMSから授業動画が見られない時は\",\n      \"【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点\",\n      \"【学生の皆さんへ】メールで質問する前に、必ず確認してください。\",\n      \"授業で使用するスライド\"\n    ],\n    \"notificationsTitles\": [\n      \"関大LMSから授業動画が見られない時は\",\n      \"【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点\",\n      \"【学生の皆さんへ】メールで質問する前に、必ず確認してください。\",\n      \"【重要】Panoptoで動画を視聴するための設定について\",\n      \"【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！\"\n    ]\n  }\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-home-refresh-login-loop-safety.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"auth-invalid-route-classification-present\",\"boot-overlay-sync-occurs-before-shell-mount\",\"boot-overlay-helper-remains-visual-only\",\"init-preserves-top-level-abort-taxonomy\",\"course-conflict-page-detection-present\",\"unsupported-routes-abort-not-restore\",\"continue-phase-unexpected-route-taxonomy-preserved\",\"manual-home-return-aborts-refresh\",\"target-mismatch-aborts-refresh\",\"native-exit-before-next-course-navigation\",\"restore-attempt-loop-breaker-aborts\",\"abort-contract-resyncs-and-clears-overlay\",\"navigation-aborts-inflight-page-requests\",\"pageshow-resets-page-leaving-guards\",\"visible-refresh-affordance-describes-sequential-update\",\"expired-refresh-state-self-clears\",\"durable-docs-point-to-login-loop-safety\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-home-safe-refresh-deadlines.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"refresh-state-key-and-functions-present\",\"boot-overlay-sync-happens-before-shell-mount\",\"boot-overlay-helper-preserves-visual-only-boundary\",\"init-rereads-fresh-state-and-preserves-top-level-abort-taxonomy\",\"explicit-refresh-targeting-hooked\",\"home-url-snapshotted-before-navigation\",\"home-and-course-boot-resume-contracts-present\",\"restoration-scope-defined\",\"overlay-exempt-from-takeover-hide-selector\",\"overlay-above-redesign-root\",\"overlay-and-header-action-styles-present\",\"overlay-progress-ui-present\",\"overlay-singleton-contract-preserved\",\"overlay-prebody-boot-sync-safe\",\"overlay-render-behavior-executed\",\"docs-frame-refresh-as-validation-gated\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-home-upcoming-session-safety.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"home-enrich-retired-worker-fetch-path\",\"home-upcoming-cache-first\",\"home-display-only-other-course-details-separated-from-refresh-targeting\",\"refresh-button-exposed-on-home-card\",\"due-flag-contract-explicit-redflag-only\",\"cache-pruning-persists-valid-items-only\",\"refresh-targets-schedule-and-native-other-course-reminders\",\"other-course-native-reminders-render-on-first-home-render\",\"docs-point-to-native-reminder-parity-phase\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-login-page-redesign.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"manifest loads native login parser, renderer and hydration\",\n    \"detectRoute supports login route\",\n    \"intentional login route bypasses global auth-invalid release\",\n    \"login view parser and renderer exist\",\n    \"login form parity fields are preserved in code\",\n    \"refresh logic still treats login route as auth-invalid during active refresh\",\n    \"login shell keeps scope limited\",\n    \"login follow-up invariants are locked in code\",\n    \"login route has dedicated CSS classes\",\n    \"architecture doc documents login route\",\n    \"design code documents login-route constraints\",\n    \"AI docs entrypoint includes login PRD and test spec\",\n    \"durable login contract replaces private planning prerequisites\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-logout-page-redesign.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"manifest loads native logout parser and renderer\",\n    \"detectRoute supports logout route\",\n    \"logout view parser and renderer exist\",\n    \"logout action parity is preserved in code\",\n    \"logout shell stays unauthenticated\",\n    \"refresh logic still fails closed on logout during active refresh\",\n    \"logout route has dedicated CSS classes\",\n    \"logout dedupe regression is locked by parser and renderer\",\n    \"durable docs document the logout route\",\n    \"durable logout contract replaces private planning prerequisites\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-message-context-navigation-contract.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"fixture manifest includes required message-context pages\",\n    \"owned source exposes explicit message-context contract fields\",\n    \"course fixture keeps the topbar global while persisting contextual ownership\",\n    \"fixture-backed course -> inbox -> detail flow preserves contextual precedence\",\n    \"fixture-backed direct-open detail and observed mbl routes downgrade to global context\",\n    \"fixture-backed course replacement, home reset, and sidebar precedence prevent bleed\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-message-detail-outbox-layout.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"route support includes message detail\",\n    \"absoluteUrl normalizes message-relative php links under /webclass\",\n    \"message detail parser detects inbox mode and actions\",\n    \"message detail parser detects outbox mode and actions\",\n    \"message detail renderer preserves metadata and native actions\",\n    \"subject-first regression fixtures prefer native subject over body-first copy\",\n    \"outbox renderer uses ledger layout markers and preserves scan fields\",\n    \"inbox renderer improves scanability without changing native columns\",\n    \"recyclebox renderer keeps native warning/actions with clearer layout marker\",\n    \"existing inbox and recyclebox contracts still parse\",\n    \"css contract keeps rows on the same grid tracks as headers\",\n    \"durable docs and fixtures cover message detail subtitle guardrail phase\",\n    \"historical Chrome evidence preserves the original inline-meta regression case\"\n  ],\n  \"evidence\": {\n    \"scope\": \"Historical local evidence only; this verifier performs no live browser or LMS checks.\",\n    \"requiredEvidencePaths\": [\n      \"artifacts/analysis/live-messages-inbox-inline-meta-before.png\",\n      \"artifacts/analysis/live-messages-inbox-inline-meta-after.png\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-before.png\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-after.png\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-before.png\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-after.png\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-before.png\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-after.png\",\n      \"artifacts/analysis/live-messages-inbox-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-messages-inbox-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-messages-outbox-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-messages-recyclebox-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-before.snapshot.txt\",\n      \"artifacts/analysis/live-message-viewer-inline-meta-after.snapshot.txt\",\n      \"artifacts/analysis/message-inline-meta-inbox-before.json\",\n      \"artifacts/analysis/message-inline-meta-inbox-after.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-before.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-after.json\",\n      \"artifacts/analysis/message-inline-meta-inbox-before-dom.json\",\n      \"artifacts/analysis/message-inline-meta-inbox-after-dom.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-before-dom.json\",\n      \"artifacts/analysis/message-inline-meta-outbox-after-dom.json\",\n      \"artifacts/analysis/message-inline-meta-detail-before-dom.json\",\n      \"artifacts/analysis/message-inline-meta-detail-after-dom.json\"\n    ],\n    \"hasCompleteLiveEvidence\": true,\n    \"alignment\": {\n      \"inboxBeforeAligned\": true,\n      \"inboxAfterAligned\": true,\n      \"outboxBeforeAligned\": true,\n      \"outboxAfterAligned\": true\n    }\n  }\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-message-detail-subtitle-guardrail.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"durable docs encode the no-non-receipt-subtitle contract\",\n    \"receipt detail keeps the meta block under the hero title\",\n    \"non-receipt details keep parsed excerpt but render no hero subtitle node\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-notice-messages-outbox-recyclebox-redesign.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"route support includes notice detail, outbox, recyclebox\",\n    \"notice detail parser and renderer behave on valid fixture\",\n    \"notice detail parser and renderer behave on missing/error fixture\",\n    \"outbox parser and renderer preserve mode-specific columns and actions\",\n    \"recyclebox parser and renderer preserve warning, actions, and columns\",\n    \"message grid layout is derived per parsed column order\",\n    \"durable docs and fixtures cover the expanded communication routes\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-review-followups.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"background-direct-resolver-bridge-preserved\",\"single-exact-title-redirect-without-known-code\",\"unique-known-code-candidates-verified\",\"course-code-disambiguation-still-works\",\"ambiguous-results-still-fall-back\",\"durable-repository-contracts-without-personal-PRD-dependency\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-syllabus-detail-redesign.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"public syllabus fixtures describe search and direct-open detail pages\",\n    \"syllabus manifest remains standalone and never loads the KU-LMS shell\",\n    \"direct-open detail rendering is booted without pending resolver state\",\n    \"detail-only takeover is guarded to public detail pages\",\n    \"resolver-first ambiguity checks are preserved\",\n    \"detail parser contract targets stable native fixture labels\",\n    \"native fallback contract is explicit and fail-open\",\n    \"syllabus detail table-of-contents hydration is explicit\",\n    \"shared syllabus css stays ku-scoped or dataset-gated\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    }
+  ]
+}

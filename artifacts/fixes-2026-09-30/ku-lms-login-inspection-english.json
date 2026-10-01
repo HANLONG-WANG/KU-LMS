@@ -1,0 +1,1 @@
+{"path":"/webclass/login.php","language":"ENGLISH","heading":"Welcome to KU-LMS","fieldNames":[{"name":"username","type":"text","placeholder":"User ID","labels":["User ID"]},{"name":"val","type":"password","placeholder":"Password","labels":["Password"]},{"name":"login","type":"submit","placeholder":"","labels":[]}],"auditNoSubmit":"true","formCount":1}

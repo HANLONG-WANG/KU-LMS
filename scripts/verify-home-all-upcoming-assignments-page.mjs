@@ -1,4 +1,4 @@
-import vm from 'node:vm';
+import { loadOfflineKulmsInto } from './lib/offline-content-vm.mjs';
 import { read, readKulmsSource, extractFunction, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
@@ -17,7 +17,7 @@ const renderHomeSource = extractFunction(source, 'renderHome');
 assert(renderHomeSource.includes('data-action="open-all-upcoming"'), 'Home due card should expose a dedicated open-all-upcoming action.');
 assert(renderHomeSource.includes('buildAllUpcomingUrl('), 'Home due card should target the dedicated all-upcoming page URL.');
 assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Existing home refresh action should remain present on the card.');
-assert(renderHomeSource.includes('displayUpcoming[0]?.courseHref || state.currentContext.links.courses'), 'Existing homepage deadline-target fallback logic should remain in source for the frozen card behavior.');
+assert(renderHomeSource.includes('unreadReminderCourses') && renderHomeSource.includes('コースを開いて詳細を確認してください。'), 'Native reminders without collected detail must retain actionable course fallbacks.');
 assert(extractFunction(source, 'bindInteractiveHandlers').includes('startAllUpcomingCollection(view)'), 'Hydration should intercept the all-upcoming CTA.');
 assert(extractFunction(source, 'bindInteractiveHandlers').includes('startHomeRefresh(view)'), 'Existing homepage refresh button binding should remain intact.');
 
@@ -32,7 +32,7 @@ assert(extractFunction(source, 'presentAllUpcomingResults').includes('state.curr
 assert(extractFunction(source, 'collectAllUpcomingCourseItems').includes('parseUpcomingFromCourse'), 'All-upcoming workflow should source course items from current course-detail parsing.');
 assert(extractFunction(source, 'collectAllUpcomingCourseItems').includes('isUpcomingDueWithinDays(item, ALL_UPCOMING_WINDOW_DAYS)'), 'All-upcoming workflow should apply the five-day window filter.');
 assert(extractFunction(source, 'isUpcomingDueWithinDays').includes('remaining >= 0'), 'Five-day helper should only include future-due items.');
-assert(extractFunction(source, 'isUpcomingDueSoonUnused').includes('if (item?.hasUsage) return false;'), 'Existing homepage unused-only helper must remain unchanged.');
+assert(extractFunction(source, 'isUpcomingDueSoonUnused').includes('item?.hasUsage'), 'Homepage reminders must still exclude used items.');
 assert(extractFunction(source, 'syncAllUpcomingOverlay').includes("overlay.id = 'ku-all-upcoming-overlay';"), 'Dedicated overlay should use its own DOM id.');
 assert(extractFunction(source, 'syncAllUpcomingOverlay').includes('課題を集約しています。しばらくお待ちください。'), 'Dedicated overlay should show explicit wait copy.');
 assert(extractFunction(source, 'shouldSuppressCourseTraversalSideEffects').includes('shouldSuppressAllUpcomingSideEffects(courseHref)'), 'Course traversal side-effect suppression should cover the all-upcoming workflow.');
@@ -98,16 +98,14 @@ const sandbox = {
   HOME_REFRESH_STATE_KEY: 'ku-redesign-home-refresh-v1',
   pad(number) { return String(number).padStart(2, '0'); }
 };
-vm.createContext(sandbox);
-for (const name of ['buildAllUpcomingUrl', 'normalizeAllUpcomingHomeUrl', 'readAllUpcomingState', 'writeAllUpcomingState', 'clearAllUpcomingState', 'isAllUpcomingActive', 'getCurrentAllUpcomingTarget', 'syncAllUpcomingOverlay', 'getAllUpcomingCollectionTargets', 'isUpcomingDueWithinDays', 'serializeAllUpcomingItem', 'hydrateAllUpcomingItems', 'buildAllUpcomingIdentityKey', 'mergeAllUpcomingItems', 'compareAllUpcomingResults', 'formatAllUpcomingCollectedAt']) {
-  vm.runInContext(extractFunction(source, name), sandbox, { filename: 'kulms-source.js' });
-}
+loadOfflineKulmsInto(sandbox);
 
 const now = Date.now();
 const dueSoon = new Date(now + 2 * 86400000);
 const dueLater = new Date(now + 7 * 86400000);
 assert(sandbox.isUpcomingDueWithinDays({ dueDate: dueSoon }, 5) === true, 'Five-day filter should include due-soon items.');
 assert(sandbox.isUpcomingDueWithinDays({ dueDate: dueLater }, 5) === false, 'Five-day filter should exclude items beyond five days.');
+assert(sandbox.isUpcomingDueSoonUnused({ dueDate: dueSoon, hasUsage: true, usageKnown: true }) === false, 'The homepage unused filter must continue to reject used assignments even though the all-course page retains them.');
 
 const targets = sandbox.getAllUpcomingCollectionTargets(
   [
@@ -151,6 +149,44 @@ const merged = sandbox.mergeAllUpcomingItems(
 assert(merged.length === 2, 'Merged all-upcoming results should keep both used and unused items.');
 assert(merged[0].title === '新規課題', 'Merged all-upcoming results should sort by nearest due date.');
 
-const report = { ok: true, checks: ['route-and-home-nav-support-all-upcoming-page', 'home-cta-interception-present-without-removing-refresh-button', 'dedicated-state-key-and-overlay-path-present', 'all-course-target-collection-dedupes-visible-courses', 'five-day-filter-keeps-used-items', 'overlay-runtime-contract-executed', 'docs-reference-new-route-and-service'] };
+const courseView = (target) => ({ course: { course: { links: { materials: target.courseHref, returnToCourses: `${target.courseHref}logout?acs_=native-exit` } } } });
+sandbox.state.currentRoute = { name: 'course-materials' };
+sandbox.state.currentView = courseView(targets[0]);
+sandbox.window.location.href = targets[0].courseHref;
+sandbox.writeAllUpcomingState(payload);
+await sandbox.continueAllUpcomingOnCourse(sandbox.state.currentView, sandbox.readAllUpcomingState());
+assert(sandbox.window.location.href === sandbox.state.currentView.course.course.links.returnToCourses, 'All-course collection must use the native course exit before visiting the next target.');
+assert(sandbox.readAllUpcomingState().phase === 'returning-home-between-courses', 'All-course collection should persist its inter-course return phase.');
+assert(sandbox.readAllUpcomingState().visitedCourseCount === 1, 'Exiting the first course should preserve collection progress.');
+sandbox.window.location.href = payload.homeUrl;
+sandbox.state.currentRoute = { name: 'home' };
+sandbox.resetPageLifecycleGuards({ type: 'pageshow' });
+await sandbox.continueAllUpcomingOnHome({ filters: { year: '2026', semester: '1' } }, sandbox.readAllUpcomingState(), sandbox.state.currentRoute);
+assert(sandbox.window.location.href === targets[1].href, 'The next course should be entered only after native return reaches home.');
+sandbox.state.currentRoute = { name: 'course-materials' };
+sandbox.state.currentView = courseView(targets[1]);
+sandbox.resetPageLifecycleGuards({ type: 'pageshow' });
+await sandbox.continueAllUpcomingOnCourse(sandbox.state.currentView, sandbox.readAllUpcomingState());
+assert(sandbox.window.location.href === sandbox.state.currentView.course.course.links.returnToCourses, 'The final course should also use its native exit before restoring results.');
+assert(sandbox.readAllUpcomingState().phase === 'restoring-home', 'The final course should switch to results restoration.');
+sandbox.window.location.href = payload.homeUrl;
+sandbox.state.currentRoute = { name: 'home' };
+sandbox.resetPageLifecycleGuards({ type: 'pageshow' });
+await sandbox.continueAllUpcomingOnHome({ filters: { year: '2026', semester: '1' } }, sandbox.readAllUpcomingState(), sandbox.state.currentRoute);
+assert(sandbox.readAllUpcomingState().phase === 'completed', 'Final home restoration should complete the persisted collection.');
+assert(sandbox.state.currentRoute.name === 'home-all-upcoming', 'Completion should synchronize the in-memory route with the dedicated results hash.');
+
+const failures = [];
+sandbox.showCourseTraversalFailure = (reason) => failures.push(reason);
+sandbox.state.currentRoute = { name: 'course-materials' };
+sandbox.state.currentView = { course: { course: { links: { materials: targets[0].courseHref, returnToCourses: `${targets[1].courseHref}logout` } } } };
+sandbox.window.location.href = targets[0].courseHref;
+sandbox.resetPageLifecycleGuards({ type: 'pageshow' });
+sandbox.writeAllUpcomingState(payload);
+await sandbox.restoreAllUpcomingState(sandbox.readAllUpcomingState());
+assert(sandbox.window.location.href === targets[0].courseHref, 'A logout link for another course must not be treated as a trustworthy exit.');
+assert(sandbox.readAllUpcomingState().abortReason === 'missing-native-course-exit' && failures[0] === 'missing-native-course-exit', 'Missing or mismatched native exits should fail closed with an explicit reason.');
+
+const report = { ok: true, checks: ['route-and-home-nav-support-all-upcoming-page', 'home-cta-interception-present-without-removing-refresh-button', 'dedicated-state-key-and-overlay-path-present', 'all-course-target-collection-dedupes-visible-courses', 'five-day-filter-keeps-used-items', 'overlay-runtime-contract-executed', 'native-course-exits-and-async-home-resumption', 'completion-synchronizes-results-route', 'mismatched-course-exit-fails-closed', 'docs-reference-new-route-and-service'] };
 writeArtifact('.omx/artifacts/home-all-upcoming-assignments-page', 'verification-report.json', report);
 console.log(JSON.stringify(report));

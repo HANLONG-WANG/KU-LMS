@@ -1,4 +1,5 @@
-import { readSyllabusSource, getSyllabusScript, extractFunction, assert } from './lib/content-source.mjs';
+import { read, readSyllabusSource, getSyllabusScript, extractFunction, assert } from './lib/content-source.mjs';
+import vm from 'node:vm';
 
 const source = readSyllabusSource();
 const script = getSyllabusScript();
@@ -8,8 +9,12 @@ assert(script.js.includes('src/content/runtime/boot-syllabus.js'), 'Syllabus man
 assert(script.js.at(-1) === 'src/content/syllabus-main.js', 'Syllabus manifest chain must end with syllabus-main.js.');
 assert(!script.js.includes('src/content/runtime/boot-kulms.js'), 'Syllabus manifest chain must not include runtime/boot-kulms.js.');
 assert(!script.js.includes('src/content/main.js'), 'Syllabus manifest chain must not include the KU-LMS app entrypoint.');
-assert(source.includes('bootSyllabus();'), 'Syllabus ordered source should still end in bootSyllabus() execution.');
-assert(!source.includes('bootKulms();'), 'Syllabus ordered source must not boot the KU-LMS shell.');
+let syllabusBoots = 0;
+let kulmsBoots = 0;
+const entryContext = { document: { documentElement: { dataset: {} } }, console,
+  bootSyllabus() { syllabusBoots += 1; return Promise.resolve(); }, bootKulms() { kulmsBoots += 1; return Promise.resolve(); } };
+vm.runInNewContext(read(script.js.at(-1)), entryContext);
+assert(syllabusBoots === 1 && kulmsBoots === 0, 'The actual syllabus entrypoint must invoke only its standalone boot.');
 for (const name of ['mountSyllabusAssistOverlay', 'clearSyllabusAssistOverlay', 'submitSyllabusSearchForm', 'initSyllabusAssist', 'autoResolveSyllabusResult', 'parseSyllabusResultCandidates', 'resolveSyllabusCandidateByCourseCode']) {
   assert(extractFunction(source, name).length > 0, `Syllabus contract function missing: ${name}`);
 }

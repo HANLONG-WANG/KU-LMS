@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "scope": "offline stubs only; zero real network/forms/navigation",
+  "checks": [
+    "same-URL in-flight merge with independent document clones",
+    "HTTP/auth/conflict failures never enter cache or permit course navigation",
+    "document/timeline requests serialize through body completion before navigation",
+    "pending LMS requests time out and fail navigation closed",
+    "timeline rejects HTTP and malformed JSON envelopes",
+    "course caches isolate accounts, preserve unknown identity, expire and clear traversal state",
+    "course traversal uses native exits between courses and fails closed without an exit",
+    "unique syllabus candidates require matching codes and closed tabs drop cached details",
+    "syllabus message/frame deadlines, cancellation, fresh cache, pending TTL and native bypass"
+  ]
+}

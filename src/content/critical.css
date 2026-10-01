@@ -138,6 +138,8 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 }
 
 .ku-toplink {
+  white-space: nowrap;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -530,6 +532,7 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 .ku-side-stack,
 .ku-course-layout,
 .ku-sidebar-layout {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -612,6 +615,24 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   gap: 10px;
 }
 
+/* Keep week controls readable; let the date range move to another row when needed. */
+.ku-weekbar-left {
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.ku-weekbar-left > .ku-button,
+.ku-weekbar-left > .ku-icon-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.ku-weekbar-left > .ku-date-range {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
 .ku-date-range {
   font-size: 17px;
   font-weight: 800;
@@ -630,6 +651,19 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   grid-template-columns: 108px repeat(6, minmax(0, 1fr));
   background: #fff;
 }
+
+.ku-schedule-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.ku-schedule-scroll:focus-visible {
+  outline: 2px solid var(--ku-blue);
+  outline-offset: -2px;
+}
+
+.ku-schedule-cell .ku-class-card + .ku-class-card { margin-top: 8px; }
 
 .ku-schedule-cell,
 .ku-schedule-head,
@@ -1074,6 +1108,19 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   cursor: pointer;
 }
 
+button.ku-collapse-head {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+}
+
+.ku-collapse-head[aria-expanded="false"] > span:last-child { transform: rotate(180deg); }
+.ku-section-items[hidden] { display: none; }
+
 .ku-section-items {
   display: flex;
   flex-direction: column;
@@ -1353,6 +1400,7 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 }
 
 .ku-report-head,
+.ku-report-row,
 .ku-message-head,
 .ku-message-row,
 .ku-table-row {
@@ -1363,8 +1411,13 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 
 .ku-report-head,
 .ku-report-row {
-  grid-template-columns: 1.3fr 0.7fr 2.4fr 1.35fr 0.8fr 1.2fr 0.8fr 0.95fr;
+  grid-template-columns: var(--ku-report-columns, 1.3fr 0.7fr 2.4fr 1.35fr 0.8fr 1.2fr 0.8fr 0.95fr);
 }
+
+.ku-report-row { padding: 0; }
+.ku-report-preview { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ku-report-attachments { display: flex; flex-direction: column; gap: 8px; }
+.ku-report-row > div { overflow-wrap: anywhere; }
 
 .ku-message-head,
 .ku-message-row {
@@ -1548,7 +1601,7 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 .ku-score-table-head,
 .ku-score-table-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(140px, 0.75fr) minmax(120px, 0.65fr);
+  grid-template-columns: var(--ku-score-columns, minmax(0, 1.8fr) minmax(140px, 0.75fr) minmax(120px, 0.65fr));
 }
 
 .ku-score-table-head {
@@ -2296,6 +2349,8 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   }
 
   .ku-toplink { height: auto; padding-bottom: 10px; }
+  .ku-topnav { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; gap: 8px 18px; }
+  .ku-topnav-right { flex-wrap: wrap; gap: 8px 12px; }
   .ku-login-page,
   .ku-logout-page {
     justify-content: flex-start;
@@ -2324,6 +2379,12 @@ html[data-ku-syllabus-redesign-state="ready"] body {
     grid-template-columns: 1fr;
   }
 
+  .ku-report-table { overflow-x: auto; max-width: 100%; }
+  .ku-report-head, .ku-report-row {
+    grid-template-columns: var(--ku-report-columns);
+    min-width: var(--ku-report-min-width, 640px);
+  }
+
   .ku-notice-meta-grid {
     grid-template-columns: 1fr;
   }
@@ -2334,6 +2395,15 @@ html[data-ku-syllabus-redesign-state="ready"] body {
 
   .ku-schedule-grid {
     grid-template-columns: 84px repeat(6, minmax(120px, 1fr));
-    overflow-x: auto;
+    min-width: 804px;
   }
 }
+
+.ku-manual-card-body { overflow-wrap: anywhere; }
+.ku-manual-card-body img { max-width: 100%; height: auto; }
+.ku-manual-card-body ul, .ku-manual-card-body ol { padding-left: 24px; }
+.ku-manual-card-body p { white-space: pre-line; }
+.ku-syllabus-prose, .ku-syllabus-field-value { overflow-x: auto; }
+.ku-syllabus-prose img, .ku-syllabus-field-value img { max-width: 100%; height: auto; }
+.ku-syllabus-prose table, .ku-syllabus-field-value table { max-width: 100%; border-collapse: collapse; }
+.ku-syllabus-prose th, .ku-syllabus-prose td, .ku-syllabus-field-value th, .ku-syllabus-field-value td { border: 1px solid var(--ku-border); padding: 8px 10px; }

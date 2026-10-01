@@ -24,29 +24,29 @@ function parseHomeFilters(doc) {
   }
 
 function parseSchedule(doc) {
-    const table = doc.querySelector('#schedule-table');
+    const table = nativeQuerySelector(doc, '#schedule-table');
     const entries = [];
     if (!table) return { entries, weekdays: DAY_NAMES };
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
-    rows.forEach((row, rowIndex) => {
-      const period = `${rowIndex + 1}限`;
-      const cells = Array.from(row.children).slice(1);
-      cells.forEach((cell, cellIndex) => {
-        const anchor = cell.querySelector('a');
-        if (!anchor) return;
-        const fullText = anchor.textContent.replace(/\s+/g, ' ').trim();
-        const dueFlag = cell.querySelector('.course-contents-info')?.textContent.trim() || '';
-        const rawHref = absoluteUrl(anchor.getAttribute('href'));
-        entries.push({
-          period,
-          weekdayIndex: cellIndex,
-          sortIndex: entries.length,
-          weekday: DAY_NAMES[cellIndex],
-          title: fullText.replace(dueFlag, '').replace(/^»\s*/, '').trim(),
-          href: rawHref,
-          supplementalHref: rawHref,
-          note: dueFlag
+    let fallbackPeriod = 0;
+    nativeQuerySelectorAll(table, 'tbody tr').forEach((row) => {
+      const cells = Array.from(row.children || []);
+      const periodText = cleanText(cells[0]?.textContent || '');
+      if (!cells.length || cells.every((cell) => cell.tagName === 'TH') || !/\d|限/.test(periodText)) return;
+      fallbackPeriod += 1;
+      const period = `${periodText.match(/\d+/)?.[0] || fallbackPeriod}限`;
+      let weekdayIndex = 0;
+      cells.slice(1).forEach((cell) => {
+        const anchors = nativeQuerySelectorAll(cell, 'a[href*="/course.php/"]');
+        anchors.forEach((anchor) => {
+          const box = anchor.closest?.('.course-data-box-normal') || anchor.parentElement || cell;
+          const reminder = box.querySelector?.('.course-contents-info') || (anchors.length === 1 ? cell.querySelector?.('.course-contents-info') : null);
+          const dueFlag = cleanText(reminder?.textContent || '');
+          const href = absoluteUrl(anchor.getAttribute('href') || '');
+          entries.push({ period, weekdayIndex, sortIndex: entries.length, weekday: DAY_NAMES[weekdayIndex],
+            title: cleanText(anchor.textContent || '').replace(dueFlag, '').replace(/^»\s*/, '').trim(),
+            href, supplementalHref: href, note: dueFlag });
         });
+        weekdayIndex += Math.max(1, Number(cell.getAttribute?.('colspan')) || 1);
       });
     });
     return { entries, weekdays: DAY_NAMES };

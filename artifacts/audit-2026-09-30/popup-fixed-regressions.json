@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "scope": "linkedom DOM with synthetic storage, timers and submit stubs; no browser/profile/network",
+  "checks": [
+    "legacy settings preserve automatic login and reject non-boolean flag coercion",
+    "explicit automatic-login off fills credentials without submission",
+    "opt-in settings changes cancel, invalidate and safely reschedule one attempt",
+    "audit no-submit guard blocks both queueing and delayed submission",
+    "extension disable cancels automatic login",
+    "real popup DOM initializes legacy settings and persists explicit opt-in payloads",
+    "popup visibility and failure feedback never leak credential values",
+    "Japanese and English native labels are shown during hydration and restored exactly",
+    "body-level native forms survive disabling a nested extension root with original classes",
+    "removed native-form next siblings use safe append restoration",
+    "takeover-hydration restores body-form editability and preserves original inert/ARIA policy"
+  ]
+}

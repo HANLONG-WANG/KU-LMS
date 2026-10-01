@@ -1,0 +1,68 @@
+{
+  "scope": "isolated vm, all fetch/submit/navigation stubbed; zero network",
+  "checks": [
+    {
+      "case": "automatic-login disable-after-schedule",
+      "queuedTimers": 1,
+      "submitsAfterDisable": 1,
+      "bugReproduced": true
+    },
+    {
+      "case": "supplemental HTTP 500 treated as success cache",
+      "fetches": 1,
+      "cachedEntries": 1,
+      "bugReproduced": true
+    },
+    {
+      "case": "home collection navigation does not wait for supplemental request",
+      "events": [
+        "navigate:/course-A",
+        "fetch-start"
+      ],
+      "unresolvedFetchWhenInitFinished": true,
+      "navigationOccurred": true,
+      "bugReproduced": true
+    },
+    {
+      "case": "late-home-enrichment overwrites all-upcoming results",
+      "snapshots": [
+        {
+          "route": "home-all-upcoming",
+          "viewKind": "results",
+          "items": 1
+        },
+        {
+          "route": "home-all-upcoming",
+          "viewKind": "home",
+          "items": null
+        }
+      ],
+      "bugReproduced": true,
+      "renderContract": "renderAllUpcoming reads view.items.length at src/content/render/home.js:92"
+    }
+  ],
+  "existingScripts": [
+    {
+      "name": "verify-content-services-safety-contract.mjs",
+      "exitCode": 0
+    },
+    {
+      "name": "verify-extension-settings-autologin.mjs",
+      "exitCode": 0
+    },
+    {
+      "name": "verify-home-upcoming-session-safety.mjs",
+      "exitCode": 0
+    },
+    {
+      "name": "verify-home-refresh-login-loop-safety.mjs",
+      "exitCode": 1,
+      "error": "ReferenceError: buildAllUpcomingUrl is not defined; script line 125; VM renderHome line 4"
+    },
+    {
+      "name": "verify-deadlines-syllabus-session-safety.mjs",
+      "exitCode": 1,
+      "error": "Course-page refresh mode should suppress nonessential side effects; script line 13; stale expected helper name"
+    }
+  ]
+}

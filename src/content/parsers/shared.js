@@ -2,7 +2,7 @@
 
 function parseTopLinks(doc, route = null) {
     const links = {};
-    const all = Array.from(doc.querySelectorAll('a[href]'));
+    const all = nativeQuerySelectorAll(doc, 'a[href]');
     const get = (matcher) => {
       const anchor = all.find((a) => matcher(a));
       return anchor ? absoluteUrl(anchor.getAttribute('href')) : '';
@@ -11,7 +11,7 @@ function parseTopLinks(doc, route = null) {
       .map((anchor) => absoluteUrl(anchor.getAttribute('href') || ''))
       .filter((href) => isCanonicalInboxHref(href));
     const contextualInboxCandidate = inboxLinks[0] || '';
-    const currentPageInboxHref = absoluteUrl(Array.from(doc.querySelectorAll('.navi a[href]'))
+    const currentPageInboxHref = absoluteUrl(nativeQuerySelectorAll(doc, '.navi a[href]')
       .find((a) => cleanText(a.textContent).includes('受信箱'))?.getAttribute('href') || '');
     const observedMobileMessageHref = get((a) => isObservedMobileMessageHref(a.getAttribute('href') || ''));
     const globalInboxHref = getDefaultGlobalInboxHref();
@@ -20,6 +20,11 @@ function parseTopLinks(doc, route = null) {
       : '';
     links.home = absoluteUrl('/webclass/');
     links.courses = absoluteUrl('/webclass/');
+    links.returnToCourses = get((a) => /\/webclass\/course\.php\/[^/?#]+\/logout(?:[/?#]|$)/.test(a.getAttribute('href') || ''));
+    if (route?.name?.startsWith('course-') && links.returnToCourses) {
+      links.home = links.returnToCourses;
+      links.courses = links.returnToCourses;
+    }
     links.messages = globalInboxHref;
     links.globalInboxHref = globalInboxHref;
     links.contextualInboxHref = contextualInboxHref;
@@ -40,9 +45,14 @@ function parseTopLinks(doc, route = null) {
   }
 
 function parseUserName(doc) {
-    const candidates = Array.from(doc.querySelectorAll('a, span')).map((el) => el.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
-    const preferred = candidates.find((text) => /[\u3000\s]/.test(text) && /[\p{Script=Han}]/u.test(text) && !/関大LMS|ログアウト|日本語|コース/.test(text));
-    return preferred || '';
+    const explicit = nativeQuerySelector(doc, 'a[title="アカウントメニュー"], [data-account-name], .account-menu__name, #account-name');
+    if (explicit) return cleanText(explicit.getAttribute?.('data-account-name') || explicit.textContent || '');
+    const toggles = nativeQuerySelectorAll(doc, 'a.dropdown-toggle, button.dropdown-toggle');
+    const account = toggles.find((node) => {
+      const menu = node.nextElementSibling || node.parentElement;
+      return !!menu?.querySelector?.('a[href*="/user.php/config"], .account-menu__menu__link[href*="/course.php/"][href*="/logout"]');
+    });
+    return account ? cleanText(account.textContent || '') : '';
   }
 
 function parseLanguage(doc) {

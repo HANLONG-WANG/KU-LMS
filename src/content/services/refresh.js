@@ -2,6 +2,7 @@
 
 async function startHomeRefresh(view) {
     if (isPageLeaving()) return;
+    if (typeof invalidatePageTasks === 'function') invalidatePageTasks();
     const existing = readHomeRefreshState();
     if (isHomeRefreshActive(existing)) {
       syncHomeRefreshOverlay(existing);
@@ -82,13 +83,13 @@ async function continueHomeRefreshIfNeeded(route, view) {
   }
 
 async function continueHomeRefreshOnHome(view, payload) {
-    if (payload.phase === 'arming') {
+    if (payload.phase === 'arming' || payload.phase === 'returning-home-between-courses') {
       const nextPayload = writeHomeRefreshState({
         ...payload,
         phase: 'navigating-to-course',
         lastProgressAt: new Date().toISOString()
       });
-      navigateToHomeRefreshTarget(nextPayload);
+      await navigateToHomeRefreshTarget(nextPayload);
       return;
     }
     if (payload.phase === 'navigating-to-course' || payload.phase === 'advancing') {
@@ -111,6 +112,12 @@ async function continueHomeRefreshOnHome(view, payload) {
         restoreAttempts: restoreAttempts + 1,
         lastProgressAt: new Date().toISOString()
       });
+      if (!await waitForLmsRequestsBeforeNavigation()) {
+        abortHomeRefresh(payload, 'request-not-settled');
+        showCourseTraversalFailure('request-not-settled');
+        return;
+      }
+      if (state.extensionSettings?.enabled === false || !isHomeRefreshActive(readHomeRefreshState())) return;
       submitHomeFilters(payload.homeYear || view.filters.year, payload.homeSemester || view.filters.semester);
       return;
     }
@@ -135,15 +142,15 @@ async function continueHomeRefreshOnCourse(view, payload) {
     if (nextIndex < payload.targets.length) {
       const nextPayload = writeHomeRefreshState({
         ...payload,
-        phase: 'navigating-to-course',
+        phase: 'returning-home-between-courses',
         currentIndex: nextIndex,
         lastProcessedCourse: currentCourseHref,
         lastProgressAt: new Date().toISOString()
       });
-      navigateToHomeRefreshTarget(nextPayload);
+      await restoreHomeRefreshState(nextPayload, 'between-courses');
       return;
     }
-    restoreHomeRefreshState({
+    await restoreHomeRefreshState({
       ...payload,
       phase: 'restoring-home',
       currentIndex: nextIndex,
@@ -152,7 +159,7 @@ async function continueHomeRefreshOnCourse(view, payload) {
     });
   }
 
-function navigateToHomeRefreshTarget(payload) {
+async function navigateToHomeRefreshTarget(payload) {
     if (isPageLeaving()) {
       abortHomeRefresh(payload, 'page-leaving');
       return;
@@ -163,36 +170,71 @@ function navigateToHomeRefreshTarget(payload) {
       return;
     }
     syncHomeRefreshOverlay(payload);
+    if (!await waitForLmsRequestsBeforeNavigation()) {
+      abortHomeRefresh(payload, 'request-not-settled');
+      showCourseTraversalFailure('request-not-settled');
+      return;
+    }
+    const current = readHomeRefreshState();
+    if (!isHomeRefreshActive(current) || current.currentIndex !== payload.currentIndex
+      || state.extensionSettings?.enabled === false || isPageLeaving()) return;
     window.location.href = target.href;
   }
 
-function restoreHomeRefreshState(payload, reason = '') {
+async function restoreHomeRefreshState(payload, reason = '') {
     if (isPageLeaving()) {
       abortHomeRefresh(payload, 'page-leaving');
       return;
     }
     const currentPayload = payload || readHomeRefreshState() || {};
-    const restoreAttempts = Number(currentPayload.restoreAttempts || 0) + 1;
+    const betweenCourses = reason === 'between-courses';
+    const restoreAttempts = Number(currentPayload.restoreAttempts || 0) + (betweenCourses ? 0 : 1);
     if (restoreAttempts > HOME_REFRESH_MAX_RESTORE_ATTEMPTS) {
       abortHomeRefresh(currentPayload, reason ? `restore-limit:${reason}` : 'restore-limit');
       return;
     }
     const nextPayload = writeHomeRefreshState({
       ...currentPayload,
-      phase: 'restoring-home',
+      phase: betweenCourses ? 'returning-home-between-courses' : 'restoring-home',
       restoreAttempts,
-      abortReason: reason || payload?.abortReason || '',
+      abortReason: betweenCourses ? '' : (reason || payload?.abortReason || ''),
       lastProgressAt: new Date().toISOString()
     });
     syncHomeRefreshOverlay(nextPayload);
-    const homeUrl = nextPayload.homeUrl || absoluteUrl('/webclass/');
+    const homeUrl = getCourseTraversalReturnHref(nextPayload);
+    if (!homeUrl) {
+      abortHomeRefresh(nextPayload, 'missing-native-course-exit');
+      showCourseTraversalFailure('missing-native-course-exit');
+      return;
+    }
     if (window.location.href !== homeUrl) {
+      if (!await waitForLmsRequestsBeforeNavigation()) {
+        abortHomeRefresh(nextPayload, 'request-not-settled');
+        showCourseTraversalFailure('request-not-settled');
+        return;
+      }
+      if (state.extensionSettings?.enabled === false || !isHomeRefreshActive(readHomeRefreshState())) return;
       window.location.href = homeUrl;
       return;
     }
     if (state.currentRoute?.name === 'home' && state.currentView && doesHomeRefreshMatchCurrentView(state.currentView, nextPayload)) {
       clearHomeRefreshState();
       syncHomeRefreshOverlay(null);
+    }
+  }
+
+function getCourseTraversalReturnHref(payload = {}) {
+    if (state.currentRoute?.name !== 'course-materials') return payload.homeUrl || absoluteUrl('/webclass/');
+    const href = state.currentView?.course?.course?.links?.returnToCourses || '';
+    if (!href) return '';
+    try {
+      const url = new URL(href, window.location.href);
+      const currentCourse = new URL(window.location.href).pathname.match(/\/course\.php\/([^/]+)/)?.[1] || '';
+      return url.origin === window.location.origin
+        && url.pathname.replace(/\/$/, '') === `/webclass/course.php/${currentCourse}/logout`
+        ? url.href : '';
+    } catch (error) {
+      return '';
     }
   }
 

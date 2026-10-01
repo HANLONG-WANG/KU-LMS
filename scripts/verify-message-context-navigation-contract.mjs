@@ -1,5 +1,5 @@
 import vm from 'node:vm';
-import { execFileSync } from 'node:child_process';
+import { inspectFixture as inspectLocalFixture } from './lib/fixture-dom.mjs';
 import { read, readKulmsSource, extractFunction, assert } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
@@ -15,26 +15,7 @@ function createStorage() {
   };
 }
 
-function inspectFixture(relativePath) {
-  const script = String.raw`
-import json, sys
-from pathlib import Path
-from bs4 import BeautifulSoup
-root = Path(sys.argv[1])
-rel = sys.argv[2]
-raw = (root / rel).read_text()
-try:
-    html = json.loads(raw)
-except Exception:
-    html = raw
-soup = BeautifulSoup(html, 'html.parser')
-anchors = [{'text': a.get_text(' ', strip=True), 'href': a.get('href', '')} for a in soup.select('a[href]')]
-navi = [{'text': a.get_text(' ', strip=True), 'href': a.get('href', '')} for a in soup.select('.navi a[href]')]
-title = soup.title.get_text(' ', strip=True) if soup.title else ''
-print(json.dumps({'title': title, 'anchors': anchors, 'naviAnchors': navi}, ensure_ascii=False))
-`;
-  return JSON.parse(execFileSync('python', ['-c', script, process.cwd(), relativePath], { encoding: 'utf8' }));
-}
+function inspectFixture(relativePath) { return inspectLocalFixture(relativePath, 'context'); }
 
 function createAnchor(text, href) {
   return {

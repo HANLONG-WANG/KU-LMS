@@ -3,24 +3,17 @@
 async function fetchCourseTimeline(courseId = '') {
     if (!courseId) return { items: [], error: false };
     try {
-      const response = await fetch(absoluteUrl(`/webclass/course.php/${courseId}/api/timeline/messages?head=1&filter=false`), {
-        credentials: 'include',
-        signal: getPageRequestSignal()
-      });
-      const text = await response.text();
-      if (/window\.top\.location\.href="\/webclass\/login\.php"/.test(text)) {
-        return { items: [], error: true };
-      }
+      const { text } = await fetchLmsResource(absoluteUrl(`/webclass/course.php/${encodeURIComponent(courseId)}/api/timeline/messages?head=1&filter=false`));
       const data = JSON.parse(text);
-      const records = Array.isArray(data?.records) ? data.records : [];
+      if (!data || !Array.isArray(data.records) || data.error || data.success === false) {
+        throw new Error('Unexpected timeline response');
+      }
       return {
-        items: records.slice(0, 8).map((record) => mapTimelineRecord(record, courseId)).filter((item) => item.title),
+        items: data.records.slice(0, 8).map((record) => mapTimelineRecord(record, courseId)).filter((item) => item.title),
         error: false
       };
     } catch (error) {
-      if (isAbortError(error)) {
-        return { items: [], error: false };
-      }
+      if (isAbortError(error)) return { items: [], error: false };
       console.warn('[KU Redesign] timeline fetch failed', courseId, error);
       return { items: [], error: true };
     }

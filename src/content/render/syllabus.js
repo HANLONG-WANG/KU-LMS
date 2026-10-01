@@ -3,6 +3,14 @@
 function renderSyllabusDetailPage(view) {
     const heroMeta = view.heroMeta || {};
     const summaryItems = view.summaryItems || [];
+    let originalHref = '';
+    if (view.sourceHref) {
+      try {
+        const url = new URL(view.sourceHref, window.location.href);
+        url.searchParams.set('ku-native', '1');
+        originalHref = url.href;
+      } catch { /* A malformed source URL is not a usable original-view link. */ }
+    }
     return `
       <div class="ku-app ku-route-syllabus-detail ku-syllabus-app">
         <main class="ku-page ku-syllabus-page">
@@ -10,7 +18,7 @@ function renderSyllabusDetailPage(view) {
             <div class="ku-inline ku-syllabus-hero-topline">
               <span class="ku-chip blue">公開シラバス</span>
               ${heroMeta.courseCode ? `<span class="ku-chip neutral">Course Code ${escapeHtml(heroMeta.courseCode)}</span>` : ''}
-              ${view.sourceHref ? `<a class="ku-button ghost" href="${escapeAttr(view.sourceHref)}" target="_blank" rel="noopener noreferrer">${icon('link')} 公開シラバス原本</a>` : ''}
+              ${originalHref ? `<a class="ku-button ghost" href="${escapeAttr(originalHref)}" target="_blank" rel="noopener noreferrer">${icon('link')} 公開シラバス原本</a>` : ''}
             </div>
             <h1 class="ku-page-title ku-syllabus-page-title">${escapeHtml(heroMeta.title || 'シラバス')}</h1>
             ${heroMeta.subtitle ? `<div class="ku-page-subtitle ku-syllabus-hero-subtitle">${escapeHtml(heroMeta.subtitle)}</div>` : ''}
@@ -42,7 +50,7 @@ function renderSyllabusSection(section) {
       <article class="ku-card ku-syllabus-section-card" id="${escapeAttr(section.target)}">
         <div class="ku-card-header"><h2 class="ku-card-title">${escapeHtml(section.title)}</h2></div>
         <div class="ku-syllabus-section-body">
-          ${section.rows.length ? `<div class="ku-syllabus-field-grid">${section.rows.map((row) => `<section class="ku-syllabus-field"><div class="ku-syllabus-field-label">${escapeHtml(row.label)}</div><div class="ku-syllabus-field-value">${renderSyllabusTextBody(row.text)}</div></section>`).join('')}</div>` : `<div class="ku-syllabus-prose">${section.text ? renderSyllabusTextBody(section.text) : '<div class="ku-empty">内容を表示できません。</div>'}</div>`}
+          ${section.rows.length ? `<div class="ku-syllabus-field-grid">${section.rows.map((row) => `<section class="ku-syllabus-field"><div class="ku-syllabus-field-label">${escapeHtml(row.label)}</div><div class="ku-syllabus-field-value">${row.html || renderSyllabusTextBody(row.text)}</div></section>`).join('')}</div>` : `<div class="ku-syllabus-prose">${section.html || (section.text ? renderSyllabusTextBody(section.text) : '<div class="ku-empty">内容を表示できません。</div>')}</div>`}
         </div>
       </article>`;
   }

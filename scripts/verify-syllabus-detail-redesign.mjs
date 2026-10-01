@@ -1,4 +1,6 @@
 import { read, readSyllabusSource, getSyllabusScript, extractFunction, assert } from './lib/content-source.mjs';
+import vm from 'node:vm';
+import { DOMParser } from 'linkedom';
 
 const source = readSyllabusSource();
 const script = getSyllabusScript();
@@ -79,9 +81,33 @@ record('native fallback contract is explicit and fail-open', () => {
 
 record('syllabus detail table-of-contents hydration is explicit', () => {
   const hydrate = extractFunction(source, 'hydrateSyllabusDetail');
-  assert(hydrate.includes('ku-rightnav-link'), 'Syllabus detail hydration must bind the TOC links.');
-  assert(/classList\.toggle\(\s*['"]active['"]/.test(hydrate), 'Syllabus detail hydration must update active TOC state.');
-  assert(/IntersectionObserver/.test(hydrate), 'Syllabus detail hydration should observe section visibility for active TOC updates.');
+  assert(hydrate.includes('bindSectionNavigation(root)'), 'Syllabus detail hydration must delegate TOC links to the shared navigation helper.');
+  const document = new DOMParser().parseFromString('<html><body><div id="root"><a class="ku-rightnav-link" href="#one">One</a><a class="ku-rightnav-link" href="#two">Two</a><section id="one"></section><section id="two"></section></div></body></html>', 'text/html');
+  const root = document.querySelector('#root');
+  root.getBoundingClientRect = () => ({ top: 0 });
+  let scrolled = '';
+  for (const [index, section] of Array.from(root.querySelectorAll('section')).entries()) {
+    section.getBoundingClientRect = () => ({ top: index * 600 });
+    section.scrollIntoView = () => { scrolled = section.id; };
+  }
+  let disconnected = false;
+  const observed = [];
+  const events = new Map();
+  const context = { CSS: { escape: (value) => value }, window: { addEventListener(name, fn) { events.set(name, fn); }, removeEventListener(name) { events.delete(name); } },
+    IntersectionObserver: class { constructor(callback) { this.callback = callback; } observe(section) { observed.push(section.id); } disconnect() { disconnected = true; } } };
+  vm.createContext(context);
+  vm.runInContext(extractFunction(source, 'bindSectionNavigation'), context);
+  const cleanup = context.bindSectionNavigation(root);
+  const links = Array.from(root.querySelectorAll('a'));
+  assert(links[0].classList.contains('active') && links[0].getAttribute('aria-current') === 'location', 'Initial TOC state should identify the first visible section.');
+  links[1].dispatchEvent(new document.defaultView.Event('click', { cancelable: true }));
+  assert(scrolled === 'two' && links[1].classList.contains('active') && !links[0].classList.contains('active'), 'TOC click must scroll and update exclusive active state.');
+  document.querySelector('#two').getBoundingClientRect = () => ({ top: 20 });
+  root.dispatchEvent(new document.defaultView.Event('scroll'));
+  assert(links[1].getAttribute('aria-current') === 'location', 'Scroll updates must retain accessible current-section state.');
+  assert(observed.length === 2, 'The shared helper must observe all TOC sections.');
+  cleanup();
+  assert(disconnected && !events.has('resize'), 'Navigation cleanup must disconnect the observer and remove global listeners.');
 });
 
 record('shared syllabus css stays ku-scoped or dataset-gated', () => {

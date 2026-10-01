@@ -8,15 +8,14 @@ const architecture = read('docs/ku-lms-extension-architecture.md');
 const designCode = read('docs/ku-lms-design-code.md');
 const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
 const sessionSafety = read('docs/ku-lms-session-safety-analysis.md');
-const prd = read('.omx/plans/prd-ku-lms-logout-page-redesign.md');
-const testSpec = read('.omx/plans/test-spec-ku-lms-logout-page-redesign.md');
 const refreshVerifier = read('scripts/verify-home-refresh-login-loop-safety.mjs');
 
 const checks = [];
 const record = (name, fn) => { fn(); checks.push(name); };
 
-record('manifest description mentions logout support', () => {
-  assert(/login, logout, home, course, notices, messages, and manual routes/.test(manifest), 'Manifest description missing logout support wording.');
+record('manifest loads native logout parser and renderer', () => {
+  const scripts = JSON.parse(manifest).content_scripts[0].js;
+  assert(scripts.includes('src/content/parsers/auth.js') && scripts.includes('src/content/render/auth.js'), 'Manifest must load the native auth terminal modules.');
 });
 record('detectRoute supports logout route', () => {
   assert(source.includes("if (normalized === '/webclass/logout.php') return { supported: true, name: 'logout' };"), 'detectRoute() no longer supports /webclass/logout.php.');
@@ -92,8 +91,8 @@ record('durable docs document the logout route', () => {
   assert(entrypoint.includes('.omx/plans/prd-ku-lms-logout-page-redesign.md'), 'AI docs entrypoint is missing logout PRD.');
   assert(entrypoint.includes('.omx/plans/test-spec-ku-lms-logout-page-redesign.md'), 'AI docs entrypoint is missing logout test spec.');
 });
-record('logout phase artifacts exist', () => {
-  assert(prd.includes('KU-LMS Logout Page Redesign'), 'Logout PRD content missing.');
-  assert(testSpec.includes('KU-LMS Logout Page Redesign'), 'Logout test spec content missing.');
+record('durable logout contract replaces private planning prerequisites', () => {
+  assert(architecture.includes('post-session warning/farewell/actions surface'), 'Versioned architecture must preserve native logout warning and actions.');
+  assert(designCode.includes('Logout = post-session confirmation + warning/next-step surface'), 'Versioned design must preserve the logout terminal role.');
 });
 console.log(JSON.stringify({ ok: true, checks }, null, 2));

@@ -1,0 +1,356 @@
+{
+  "date": "2026-09-30",
+  "generatedAtUtc": "2026-09-30T14:08:15.908247+00:00",
+  "scope": "Existing offline verification baseline; read-only source/fixture checks and isolated VM stubs. No browser or real LMS requests. Scripts were not changed.",
+  "safetyReview": {
+    "imports": "node:fs, node:path, node:vm, node:child_process (only local Python fixture parsing), scripts/lib/content-source.mjs",
+    "pythonImports": "json, sys, pathlib.Path, bs4.BeautifulSoup",
+    "vmEntrypoints": "full content source excludes main.js boot entrypoint; explicit extracted functions use stub navigation/storage/chrome, no fetch capability supplied",
+    "localArtifactWrites": "original verifier helper may write .omx/artifacts JSON"
+  },
+  "excludedAlreadyExecuted": [
+    "verify-content-render-hydrate-contract.mjs",
+    "verify-content-services-safety-contract.mjs",
+    "verify-deadlines-syllabus-session-safety.mjs",
+    "verify-extension-settings-autologin.mjs",
+    "verify-home-refresh-login-loop-safety.mjs",
+    "verify-home-upcoming-session-safety.mjs",
+    "verify-login-page-redesign.mjs",
+    "verify-logout-page-redesign.mjs",
+    "verify-syllabus-detail-redesign.mjs"
+  ],
+  "newResults": [
+    {
+      "name": "verify-content-load-order-smoke.mjs",
+      "command": [
+        "node",
+        "scripts/verify-content-load-order-smoke.mjs"
+      ],
+      "status": "pass",
+      "exitCode": 0,
+      "elapsedSeconds": 0.074,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"bootstrap files are final in manifest order\",\n    \"pre-bootstrap files stay definition-only\"\n  ]\n}\n",
+      "stderr": "",
+      "executedBy": "audit_course",
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-content-modularization-baseline.mjs",
+      "command": [
+        "node",
+        "scripts/verify-content-modularization-baseline.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.06,
+      "stdout": "",
+      "stderr": "file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:17\n  if (!condition) throw new Error(message);\n                        ^\n\nError: main.js should delegate to bootKulms().\n    at assert (file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:17:25)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-content-modularization-baseline.mjs:29:3\n    at record (file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-content-modularization-baseline.mjs:12:32)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-content-modularization-baseline.mjs:27:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "stale-source-string-assertion",
+      "rootCause": "scripts/verify-content-modularization-baseline.mjs:29 expects literal bootKulms(); but src/content/main.js:6 invokes bootKulms().catch(...) with rejection handling. The bootstrap call exists; this failure does not prove boot failure. The syllabus equivalent assertion at line 34 is also stale.",
+      "sourceLocation": "scripts/verify-content-modularization-baseline.mjs:29"
+    },
+    {
+      "name": "verify-content-parsers-contract.mjs",
+      "command": [
+        "node",
+        "scripts/verify-content-parsers-contract.mjs"
+      ],
+      "status": "pass",
+      "exitCode": 0,
+      "elapsedSeconds": 0.06,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"route-parser-cluster-present\",\n    \"schedule-contract-preserved\",\n    \"course-late-section-filter-preserved\",\n    \"messages-form-contract-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "executedBy": "audit_course",
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-content-syllabus-contract.mjs",
+      "command": [
+        "node",
+        "scripts/verify-content-syllabus-contract.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.059,
+      "stdout": "",
+      "stderr": "file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:17\n  if (!condition) throw new Error(message);\n                        ^\n\nError: Syllabus ordered source should still end in bootSyllabus() execution.\n    at assert (file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:17:25)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-content-syllabus-contract.mjs:11:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "stale-source-string-assertion",
+      "rootCause": "scripts/verify-content-syllabus-contract.mjs:11 expects literal bootSyllabus(); but src/content/syllabus-main.js:6 invokes bootSyllabus().catch(...). Existing invocation plus catch changes the exact source text.",
+      "sourceLocation": "scripts/verify-content-syllabus-contract.mjs:11"
+    },
+    {
+      "name": "verify-course-grades-tabs.mjs",
+      "command": [
+        "node",
+        "scripts/verify-course-grades-tabs.mjs"
+      ],
+      "status": "pass",
+      "exitCode": 0,
+      "elapsedSeconds": 0.064,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"course-scores-route-supported\",\n    \"course-grades-parser-present\",\n    \"course-grades-render-present\",\n    \"course-header-tabs-extended\",\n    \"native-score-form-fields-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "executedBy": "audit_course",
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-course-title-syllabus-normalization.mjs",
+      "command": [
+        "node",
+        "scripts/verify-course-title-syllabus-normalization.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.065,
+      "stdout": "",
+      "stderr": "node:fs:440\n    return binding.readFileUtf8(path, stringToFlags(options.flag));\n                   ^\n\nError: ENOENT: no such file or directory, open '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-course-title-syllabus-normalization.md'\n    at Object.readFileSync (node:fs:440:20)\n    at read (file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:9:13)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-course-title-syllabus-normalization.mjs:8:13\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'open',\n  path: '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-course-title-syllabus-normalization.md'\n}\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "missing-local-plan-file",
+      "rootCause": "Startup fails before behavioral assertions: .omx/plans/prd-ku-lms-course-title-syllabus-normalization.md is absent.",
+      "sourceLocation": "scripts/verify-course-title-syllabus-normalization.mjs:8"
+    },
+    {
+      "name": "verify-home-all-upcoming-assignments-page.mjs",
+      "command": [
+        "node",
+        "scripts/verify-home-all-upcoming-assignments-page.mjs"
+      ],
+      "status": "pass",
+      "exitCode": 0,
+      "elapsedSeconds": 0.065,
+      "stdout": "{\"ok\":true,\"checks\":[\"route-and-home-nav-support-all-upcoming-page\",\"home-cta-interception-present-without-removing-refresh-button\",\"dedicated-state-key-and-overlay-path-present\",\"all-course-target-collection-dedupes-visible-courses\",\"five-day-filter-keeps-used-items\",\"overlay-runtime-contract-executed\",\"docs-reference-new-route-and-service\"]}\n",
+      "stderr": "",
+      "executedBy": "audit_course",
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-home-notice-card-parity.mjs",
+      "command": [
+        "node",
+        "scripts/verify-home-notice-card-parity.mjs"
+      ],
+      "status": "pass",
+      "exitCode": 0,
+      "elapsedSeconds": 0.068,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"home-notice-card-stays-native-dom-backed\",\n    \"home-build-renders-notices-without-announcements-spinner\",\n    \"home-enrich-does-not-fetch-or-overwrite-notice-card\",\n    \"docs-index-home-notice-card-parity-contract\",\n    \"fixtures-prove-home-preview-and-notifications-list-can-diverge\"\n  ],\n  \"evidence\": {\n    \"homePreviewTitles\": [\n      \"中間テスト（5/30 1300-1400）\",\n      \"関大LMSから授業動画が見られない時は\",\n      \"【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点\",\n      \"【学生の皆さんへ】メールで質問する前に、必ず確認してください。\",\n      \"授業で使用するスライド\"\n    ],\n    \"notificationsTitles\": [\n      \"関大LMSから授業動画が見られない時は\",\n      \"【最新版】【学生の皆さんへ】テスト教材を受ける際の注意点\",\n      \"【学生の皆さんへ】メールで質問する前に、必ず確認してください。\",\n      \"【重要】Panoptoで動画を視聴するための設定について\",\n      \"【時間割表について】関大LMS内の履修登録情報にはタイムラグがあります！\"\n    ]\n  }\n}\n",
+      "stderr": "",
+      "executedBy": "audit_course",
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-home-safe-refresh-deadlines.mjs",
+      "command": [
+        "node",
+        "scripts/verify-home-safe-refresh-deadlines.mjs"
+      ],
+      "status": "pass",
+      "exitCode": 0,
+      "elapsedSeconds": 0.063,
+      "stdout": "{\"ok\":true,\"checks\":[\"refresh-state-key-and-functions-present\",\"boot-overlay-sync-happens-before-shell-mount\",\"boot-overlay-helper-preserves-visual-only-boundary\",\"init-rereads-fresh-state-and-preserves-top-level-abort-taxonomy\",\"explicit-refresh-targeting-hooked\",\"home-url-snapshotted-before-navigation\",\"home-and-course-boot-resume-contracts-present\",\"restoration-scope-defined\",\"overlay-exempt-from-takeover-hide-selector\",\"overlay-above-redesign-root\",\"overlay-and-header-action-styles-present\",\"overlay-progress-ui-present\",\"overlay-singleton-contract-preserved\",\"overlay-prebody-boot-sync-safe\",\"overlay-render-behavior-executed\",\"docs-frame-refresh-as-validation-gated\"]}\n",
+      "stderr": "",
+      "executedBy": "audit_course",
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-message-context-navigation-contract.mjs",
+      "command": [
+        "node",
+        "scripts/verify-message-context-navigation-contract.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.093,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\n    from bs4 import BeautifulSoup\nModuleNotFoundError: No module named 'bs4'\nnode:internal/errors:983\n  const err = new Error(message);\n              ^\n\nError: Command failed: python -c \nimport json, sys\nfrom pathlib import Path\nfrom bs4 import BeautifulSoup\nroot = Path(sys.argv[1])\nrel = sys.argv[2]\nraw = (root / rel).read_text()\ntry:\n    html = json.loads(raw)\nexcept Exception:\n    html = raw\nsoup = BeautifulSoup(html, 'html.parser')\nanchors = [{'text': a.get_text(' ', strip=True), 'href': a.get('href', '')} for a in soup.select('a[href]')]\nnavi = [{'text': a.get_text(' ', strip=True), 'href': a.get('href', '')} for a in soup.select('.navi a[href]')]\ntitle = soup.title.get_text(' ', strip=True) if soup.title else ''\nprint(json.dumps({'title': title, 'anchors': anchors, 'naviAnchors': navi}, ensure_ascii=False))\n /home/hubery-fedora/Projects/KU-LMS artifacts/fixtures/course-materials-26170340.network-response\nTraceback (most recent call last):\n  File \"<string>\", line 4, in <module>\n    from bs4 import BeautifulSoup\nModuleNotFoundError: No module named 'bs4'\n\n    at genericNodeError (node:internal/errors:983:15)\n    at wrappedFn (node:internal/errors:537:14)\n    at checkExecSyncError (node:child_process:916:11)\n    at execFileSync (node:child_process:952:15)\n    at inspectFixture (file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-message-context-navigation-contract.mjs:36:21)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-message-context-navigation-contract.mjs:104:32\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n  status: 1,\n  signal: null,\n  output: [\n    null,\n    '',\n    'Traceback (most recent call last):\\n' +\n      '  File \"<string>\", line 4, in <module>\\n' +\n      '    from bs4 import BeautifulSoup\\n' +\n      \"ModuleNotFoundError: No module named 'bs4'\\n\"\n  ],\n  pid: 106,\n  stdout: '',\n  stderr: 'Traceback (most recent call last):\\n' +\n    '  File \"<string>\", line 4, in <module>\\n' +\n    '    from bs4 import BeautifulSoup\\n' +\n    \"ModuleNotFoundError: No module named 'bs4'\\n\"\n}\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "missing-python-dependency",
+      "rootCause": "Local Python fixture parser fails at import bs4.BeautifulSoup. Current python executable lacks bs4; no browser or LMS request is involved.",
+      "sourceLocation": "scripts/verify-message-context-navigation-contract.mjs:22",
+      "pythonExecutable": "/usr/bin/python",
+      "pythonVersion": "3.14.7"
+    },
+    {
+      "name": "verify-message-detail-outbox-layout.mjs",
+      "command": [
+        "node",
+        "scripts/verify-message-detail-outbox-layout.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.062,
+      "stdout": "",
+      "stderr": "node:fs:440\n    return binding.readFileUtf8(path, stringToFlags(options.flag));\n                   ^\n\nError: ENOENT: no such file or directory, open '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md'\n    at Object.readFileSync (node:fs:440:20)\n    at read (file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:9:13)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-message-detail-outbox-layout.mjs:11:13\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'open',\n  path: '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md'\n}\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "missing-local-plan-file",
+      "rootCause": "Startup fails before behavioral assertions: .omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md is absent.",
+      "sourceLocation": "scripts/verify-message-detail-outbox-layout.mjs:11"
+    },
+    {
+      "name": "verify-message-detail-subtitle-guardrail.mjs",
+      "command": [
+        "node",
+        "scripts/verify-message-detail-subtitle-guardrail.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.066,
+      "stdout": "",
+      "stderr": "node:fs:440\n    return binding.readFileUtf8(path, stringToFlags(options.flag));\n                   ^\n\nError: ENOENT: no such file or directory, open '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md'\n    at Object.readFileSync (node:fs:440:20)\n    at read (file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:9:13)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-message-detail-subtitle-guardrail.mjs:9:13\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'open',\n  path: '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md'\n}\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "missing-local-plan-file",
+      "rootCause": "Startup fails before behavioral assertions: .omx/plans/prd-ku-lms-message-detail-subtitle-guardrail.md is absent.",
+      "sourceLocation": "scripts/verify-message-detail-subtitle-guardrail.mjs:9"
+    },
+    {
+      "name": "verify-notice-messages-outbox-recyclebox-redesign.mjs",
+      "command": [
+        "node",
+        "scripts/verify-notice-messages-outbox-recyclebox-redesign.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.067,
+      "stdout": "",
+      "stderr": "node:fs:440\n    return binding.readFileUtf8(path, stringToFlags(options.flag));\n                   ^\n\nError: ENOENT: no such file or directory, open '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-notice-detail-outbox-recyclebox-redesign.md'\n    at Object.readFileSync (node:fs:440:20)\n    at read (file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:9:13)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-notice-messages-outbox-recyclebox-redesign.mjs:10:13\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'open',\n  path: '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-notice-detail-outbox-recyclebox-redesign.md'\n}\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "missing-local-plan-file",
+      "rootCause": "Startup fails before behavioral assertions: .omx/plans/prd-ku-lms-notice-detail-outbox-recyclebox-redesign.md is absent.",
+      "sourceLocation": "scripts/verify-notice-messages-outbox-recyclebox-redesign.mjs:10"
+    },
+    {
+      "name": "verify-review-followups.mjs",
+      "command": [
+        "node",
+        "scripts/verify-review-followups.mjs"
+      ],
+      "status": "fail",
+      "exitCode": 1,
+      "elapsedSeconds": 0.06,
+      "stdout": "",
+      "stderr": "node:fs:440\n    return binding.readFileUtf8(path, stringToFlags(options.flag));\n                   ^\n\nError: ENOENT: no such file or directory, open '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-review-followups.md'\n    at Object.readFileSync (node:fs:440:20)\n    at read (file:///home/hubery-fedora/Projects/KU-LMS/scripts/lib/content-source.mjs:9:13)\n    at file:///home/hubery-fedora/Projects/KU-LMS/scripts/verify-review-followups.mjs:7:13\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'open',\n  path: '/home/hubery-fedora/Projects/KU-LMS/.omx/plans/prd-ku-lms-review-followups.md'\n}\n\nNode.js v22.23.1\n",
+      "executedBy": "audit_course",
+      "failureCategory": "missing-local-plan-file",
+      "rootCause": "Startup fails before behavioral assertions: .omx/plans/prd-ku-lms-review-followups.md is absent.",
+      "sourceLocation": "scripts/verify-review-followups.mjs:7"
+    }
+  ],
+  "newSummary": {
+    "total": 14,
+    "passed": 6,
+    "failed": 8,
+    "timeouts": 0
+  },
+  "priorResults": [
+    {
+      "name": "verify-content-services-safety-contract.mjs",
+      "exitCode": 0,
+      "status": "pass",
+      "executedBy": "audit_services",
+      "sourceRecord": "artifacts/audit-2026-09-30/services-offline-summary.json",
+      "rerun": false
+    },
+    {
+      "name": "verify-extension-settings-autologin.mjs",
+      "exitCode": 0,
+      "status": "pass",
+      "executedBy": "audit_services",
+      "sourceRecord": "artifacts/audit-2026-09-30/services-offline-summary.json",
+      "rerun": false
+    },
+    {
+      "name": "verify-home-upcoming-session-safety.mjs",
+      "exitCode": 0,
+      "status": "pass",
+      "executedBy": "audit_services",
+      "sourceRecord": "artifacts/audit-2026-09-30/services-offline-summary.json",
+      "rerun": false
+    },
+    {
+      "name": "verify-home-refresh-login-loop-safety.mjs",
+      "exitCode": 1,
+      "error": "ReferenceError: buildAllUpcomingUrl is not defined; script line 125; VM renderHome line 4",
+      "status": "fail",
+      "executedBy": "audit_services",
+      "sourceRecord": "artifacts/audit-2026-09-30/services-offline-summary.json",
+      "rerun": false,
+      "failureCategory": "incomplete-vm-test-sandbox",
+      "rootCause": "VM harness omits buildAllUpcomingUrl dependency now called by renderHome; script line 125 throws ReferenceError. The browser manifest provides the real function."
+    },
+    {
+      "name": "verify-deadlines-syllabus-session-safety.mjs",
+      "exitCode": 1,
+      "error": "Course-page refresh mode should suppress nonessential side effects; script line 13; stale expected helper name",
+      "status": "fail",
+      "executedBy": "audit_services",
+      "sourceRecord": "artifacts/audit-2026-09-30/services-offline-summary.json",
+      "rerun": false,
+      "failureCategory": "stale-source-string-assertion",
+      "rootCause": "Script line 13 expects direct shouldSuppressRefreshSideEffects, but boot-kulms.js:405 now calls shouldSuppressCourseTraversalSideEffects, which refresh.js:263-265 combines refresh and all-upcoming suppression."
+    },
+    {
+      "name": "verify-content-render-hydrate-contract.mjs",
+      "status": "pass",
+      "exitCode": 0,
+      "executedBy": "audit_render",
+      "sourceRecord": "docs/audit-2026-09-30-render.md:123-126",
+      "rerun": false,
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-syllabus-detail-redesign.mjs",
+      "status": "pass",
+      "exitCode": 0,
+      "executedBy": "audit_render",
+      "sourceRecord": "docs/audit-2026-09-30-render.md:123-126",
+      "rerun": false,
+      "failureCategory": null,
+      "rootCause": null
+    },
+    {
+      "name": "verify-login-page-redesign.mjs",
+      "status": "fail",
+      "exitCode": 1,
+      "executedBy": "audit_render",
+      "sourceRecord": "docs/audit-2026-09-30-render.md:123-126",
+      "rerun": false,
+      "failureCategory": "missing-local-plan-file",
+      "rootCause": "Startup ENOENT: .omx/plans/prd-ku-lms-login-page-redesign.md is absent."
+    },
+    {
+      "name": "verify-logout-page-redesign.mjs",
+      "status": "fail",
+      "exitCode": 1,
+      "executedBy": "audit_render",
+      "sourceRecord": "docs/audit-2026-09-30-render.md:123-126",
+      "rerun": false,
+      "failureCategory": "missing-local-plan-file",
+      "rootCause": "Startup ENOENT: .omx/plans/prd-ku-lms-logout-page-redesign.md is absent."
+    }
+  ],
+  "overallSummary": {
+    "total": 23,
+    "passed": 11,
+    "failed": 12,
+    "timeouts": 0
+  },
+  "failureCategoryCounts": {
+    "incomplete-vm-test-sandbox": 1,
+    "missing-local-plan-file": 7,
+    "missing-python-dependency": 1,
+    "stale-source-string-assertion": 3
+  },
+  "interpretation": "Failure count is a test baseline, not a count of extension bugs. Existing source-string contracts, missing local plan files, missing Python dependency, and incomplete VM harness prevent current checks. Passing offline scripts do not establish compatibility with the current LMS DOM.",
+  "coverageCheck": {
+    "uniqueScriptCount": 23,
+    "allExistingVerifyMjsCovered": true,
+    "previousNineNotRerun": true
+  }
+}

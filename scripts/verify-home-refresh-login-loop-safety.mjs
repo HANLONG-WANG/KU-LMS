@@ -1,4 +1,4 @@
-import vm from 'node:vm';
+import { loadOfflineKulmsInto } from './lib/offline-content-vm.mjs';
 import { read, readKulmsSource, extractFunction, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
@@ -45,9 +45,9 @@ assert(abortFn.includes('const nextPayload = writeHomeRefreshState('), 'Abort sh
 assert(abortFn.includes('syncHomeRefreshOverlay(nextPayload);'), 'Abort flow should still resync the overlay immediately after recording terminal state.');
 assert(extractFunction(source, 'syncHomeRefreshOverlay').includes("document.getElementById('ku-home-refresh-overlay')?.remove();"), 'Overlay sync should remove the blocking overlay when refresh becomes inactive.');
 assert(source.includes('function isCourseConflictPage(doc = document)'), 'Top-level course conflict pages should be detected explicitly.');
-assert(extractFunction(source, 'renderHome').includes('検証中'), 'Visible refresh affordance should honestly signal the validation-gated state.');
-assert(extractFunction(source, 'loadSupplementalDocument').includes('signal: getPageRequestSignal()'), 'Supplemental home fetches should be abortable on navigation.');
-assert(extractFunction(source, 'fetchCourseTimeline').includes('signal: getPageRequestSignal()'), 'Timeline fetches should be abortable on navigation.');
+assert(extractFunction(source, 'renderHome').includes('対象コースを順に開いて締切情報を更新'), 'Visible refresh affordance should explain sequential course traversal.');
+assert(extractFunction(source, 'loadSupplementalDocument').includes('fetchLmsResource(') && extractFunction(source, 'fetchLmsResource').includes('getPageRequestSignal()'), 'Supplemental home fetches should use the abortable serialized boundary.');
+assert(extractFunction(source, 'fetchCourseTimeline').includes('fetchLmsResource('), 'Timeline fetches should use that same abortable serialized boundary.');
 assert(entrypointDoc.includes('prd-ku-lms-home-refresh-login-loop-safety.md'), 'AI docs entrypoint should point to the login-loop safety PRD.');
 assert(entrypointDoc.includes('test-spec-ku-lms-home-refresh-login-loop-safety.md'), 'AI docs entrypoint should point to the login-loop safety test spec.');
 assert(architectureDoc.includes('fail closed'), 'Architecture doc should document fail-closed refresh behavior.');
@@ -72,10 +72,7 @@ const sandbox = {
   syncHomeRefreshOverlay(payload) { overlayStates.push(payload ? payload.phase || 'unknown' : 'cleared'); },
   filterOtherCourses() { return []; }, normalizeHomeAnnouncementItems() { return []; }, renderPanelList() { return '<div>panel</div>'; }, materialTypeTone() { return 'neutral'; }, escapeHtml(value = '') { return String(value); }, escapeAttr(value = '') { return String(value); }, buildUpcomingSubtitle() { return 'subtitle'; }, formatDate() { return '05/20'; }, truncate(value = '') { return String(value); }, icon() { return ''; }, renderWeekLabel() { return '2026/05/11 〜 05/16'; }, renderSchedule() { return '<div>schedule</div>'; }, renderSyllabusChip() { return ''; }, mergeUpcomingSources(primary = [], secondary = []) { return [...(secondary || []), ...(primary || [])]; }, compareUpcomingItems() { return 0; }, submitHomeFilters(year, semester) { sandbox.lastSubmittedFilters = { year, semester }; }, absoluteUrl(value = '') { return value.startsWith('http') ? value : `https://kulms.tl.kansai-u.ac.jp${value}`; }, buildCourseCacheKey(value = '') { return String(value || '').replace(/[?#].*$/, '').replace(/\/$/, '/'); }, lastSubmittedFilters: null
 };
-vm.createContext(sandbox);
-for (const name of ['readHomeRefreshState', 'writeHomeRefreshState', 'clearHomeRefreshState', 'getCurrentHomeRefreshTarget', 'isHomeRefreshActive', 'isAuthInvalidRoute', 'isAuthInvalidPage', 'isCourseConflictPage', 'isPageLeaving', 'resetPageLifecycleGuards', 'getHomeRefreshNavigationType', 'abortHomeRefresh', 'doesHomeRefreshMatchCurrentView', 'renderHome', 'restoreHomeRefreshState', 'continueHomeRefreshOnHome', 'continueHomeRefreshOnCourse', 'continueHomeRefreshIfNeeded']) {
-  vm.runInContext(extractFunction(source, name), sandbox, { filename: 'kulms-source.js' });
-}
+loadOfflineKulmsInto(sandbox);
 const activePayload = { version: 1, phase: 'navigating-to-course', startedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 60_000).toISOString(), lastProgressAt: '', currentIndex: 0, restoreAttempts: 0, homeUrl: 'https://kulms.tl.kansai-u.ac.jp/webclass/?acs_=abc', homeYear: '2026', homeSemester: '1', targets: [{ href: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/?acs_=x', courseHref: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170340/', title: '言語学' }], lastProcessedCourse: '', abortReason: '' };
 
 sandbox.writeHomeRefreshState(activePayload);
@@ -86,6 +83,27 @@ assert(sandbox.readHomeRefreshState().abortReason === 'manual-home-navigation', 
 sandbox.writeHomeRefreshState(activePayload);
 await sandbox.continueHomeRefreshOnCourse({ course: { course: { links: { materials: 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170399/?acs_=x' } } } }, sandbox.readHomeRefreshState());
 assert(sandbox.readHomeRefreshState().abortReason === 'target-mismatch', 'Entering a non-target course should abort refresh traversal.');
+
+const firstCourseHref = activePayload.targets[0].courseHref;
+const secondCourseHref = 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170399/';
+const nativeExitHref = `${firstCourseHref}logout?acs_=native-return`;
+const traversalView = { course: { course: { links: { materials: firstCourseHref, returnToCourses: nativeExitHref } } } };
+sandbox.state.currentRoute = { name: 'course-materials' };
+sandbox.state.currentView = traversalView;
+sandbox.window.location.href = firstCourseHref;
+sandbox.writeHomeRefreshState({ ...activePayload, targets: [...activePayload.targets, { href: secondCourseHref, courseHref: secondCourseHref, title: '次コース' }] });
+await sandbox.continueHomeRefreshOnCourse(traversalView, sandbox.readHomeRefreshState());
+assert(sandbox.window.location.href === nativeExitHref, 'The active course must be exited through its native return link before the next course is opened.');
+assert(sandbox.readHomeRefreshState().phase === 'returning-home-between-courses', 'Inter-course return should persist a resumable phase.');
+assert(sandbox.readHomeRefreshState().currentIndex === 1 && sandbox.readHomeRefreshState().restoreAttempts === 0, 'Inter-course return must advance the target without consuming final restoration attempts.');
+sandbox.window.location.href = activePayload.homeUrl;
+sandbox.state.currentRoute = { name: 'home' };
+sandbox.resetPageLifecycleGuards({ type: 'pageshow' });
+await sandbox.continueHomeRefreshOnHome({ filters: { year: '2026', semester: '1' } }, sandbox.readHomeRefreshState());
+assert(sandbox.window.location.href === secondCourseHref, 'Only a return to home should resume navigation to the next target.');
+sandbox.window.location.href = activePayload.homeUrl;
+sandbox.state.currentView = { filters: { year: '2026', semester: '1' } };
+sandbox.resetPageLifecycleGuards({ type: 'pageshow' });
 
 sandbox.writeHomeRefreshState(activePayload);
 await sandbox.continueHomeRefreshIfNeeded({ name: 'login' }, null);
@@ -102,7 +120,7 @@ assert(sandbox.readHomeRefreshState().abortReason === 'course-conflict-page', 'C
 sandbox.document.body.innerText = '';
 
 sandbox.pageRequestAbortController.abort();
-sandbox.resetPageLifecycleGuards();
+sandbox.resetPageLifecycleGuards({ type: 'pageshow' });
 assert(sandbox.pageRequestAbortController.signal.aborted === false, 'pageshow reset should re-arm the abort controller for future fetches.');
 sandbox.pageIsLeaving = true;
 sandbox.writeHomeRefreshState(activePayload);
@@ -111,7 +129,7 @@ assert(sandbox.readHomeRefreshState().abortReason === 'page-leaving', 'Leaving-p
 sandbox.pageIsLeaving = false;
 
 sandbox.writeHomeRefreshState({ ...activePayload, phase: 'restoring-home', restoreAttempts: 2 });
-sandbox.restoreHomeRefreshState(sandbox.readHomeRefreshState(), 'unsupported-route:auth-invalid');
+await sandbox.restoreHomeRefreshState(sandbox.readHomeRefreshState(), 'unsupported-route:auth-invalid');
 assert(sandbox.readHomeRefreshState().phase === 'aborted', 'Exhausted restore attempts should abort instead of looping.');
 assert(sandbox.readHomeRefreshState().abortReason === 'restore-limit:unsupported-route:auth-invalid', 'Restore-limit abort reason should preserve the triggering cause.');
 
@@ -123,9 +141,9 @@ storage.set('ku-redesign-home-refresh-v1', JSON.stringify({ ...activePayload, st
 assert(sandbox.readHomeRefreshState() === null, 'Stalled refresh state should self-clear when no progress has been made recently.');
 
 const renderedHome = sandbox.renderHome({ upcoming: { loading: false, items: [] }, announcements: { loading: false, items: [] }, homeNotices: [], messages: { loading: false, items: [], total: 0 }, filters: { yearOptions: [{ value: '2026', label: '2026', selected: true }], semesterOptions: [{ value: '1', label: '春学期', selected: true }], label: '2026 春学期', year: '2026', semester: '1' }, week: [], schedule: { entries: [] }, otherCourses: [] });
-assert(renderedHome.includes('検証中の fail-closed 方式です'), 'Rendered refresh affordance should describe the fail-closed contract.');
-assert(renderedHome.includes('検証中の安全更新を実行'), 'Rendered refresh affordance should describe the validation-gated action.');
+assert(renderedHome.includes('対象コースを順に開いて締切情報を更新'), 'Rendered refresh affordance should describe the actual sequential update action.');
+assert(/data-action="refresh-upcoming"[^>]*>/.test(renderedHome), 'The refresh action should remain present after terminal state cleanup.');
 
-const report = { ok: true, checks: ['auth-invalid-route-classification-present', 'boot-overlay-sync-occurs-before-shell-mount', 'boot-overlay-helper-remains-visual-only', 'init-preserves-top-level-abort-taxonomy', 'course-conflict-page-detection-present', 'unsupported-routes-abort-not-restore', 'continue-phase-unexpected-route-taxonomy-preserved', 'manual-home-return-aborts-refresh', 'target-mismatch-aborts-refresh', 'restore-attempt-loop-breaker-aborts', 'abort-contract-resyncs-and-clears-overlay', 'navigation-aborts-inflight-page-requests', 'pageshow-resets-page-leaving-guards', 'visible-refresh-affordance-signals-validation-gated-state', 'expired-refresh-state-self-clears', 'durable-docs-point-to-login-loop-safety'] };
+const report = { ok: true, checks: ['auth-invalid-route-classification-present', 'boot-overlay-sync-occurs-before-shell-mount', 'boot-overlay-helper-remains-visual-only', 'init-preserves-top-level-abort-taxonomy', 'course-conflict-page-detection-present', 'unsupported-routes-abort-not-restore', 'continue-phase-unexpected-route-taxonomy-preserved', 'manual-home-return-aborts-refresh', 'target-mismatch-aborts-refresh', 'native-exit-before-next-course-navigation', 'restore-attempt-loop-breaker-aborts', 'abort-contract-resyncs-and-clears-overlay', 'navigation-aborts-inflight-page-requests', 'pageshow-resets-page-leaving-guards', 'visible-refresh-affordance-describes-sequential-update', 'expired-refresh-state-self-clears', 'durable-docs-point-to-login-loop-safety'] };
 writeArtifact('.omx/artifacts/home-refresh-login-loop-safety', 'verification-report.json', report);
 console.log(JSON.stringify(report));

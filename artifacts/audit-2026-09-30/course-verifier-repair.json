@@ -1,0 +1,47 @@
+{
+  "scope": "Existing offline verification contracts updated; no browser or real requests; actual entrypoint, parser, identity, cache-expiry and TOC behavior checks retained or strengthened",
+  "results": [
+    {
+      "script": "verify-content-load-order-smoke.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"bootstrap files are final in manifest order\",\n    \"pre-bootstrap files stay definition-only\",\n    \"top-level detector distinguishes boot calls from deferred callback bodies\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-content-modularization-baseline.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"manifest keeps kulms document_start takeover\",\n    \"manifest keeps syllabus document_start assist entry\",\n    \"content subsystem directories exist\",\n    \"main bootstrap is thin\",\n    \"syllabus bootstrap is thin\",\n    \"docs expose modularization artifacts\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-content-parsers-contract.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"route-parser-cluster-present\",\n    \"schedule-contract-preserved\",\n    \"course-late-section-filter-preserved\",\n    \"messages-form-contract-preserved\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-content-syllabus-contract.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"syllabus-manifest-chain-preserved\",\n    \"syllabus-domain-never-boots-kulms\",\n    \"syllabus-assist-service-cluster-present\",\n    \"syllabus-assist-fallback-contract-preserved\",\n    \"syllabus-ambiguity-no-guess-preserved\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-course-grades-tabs.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"course-scores-route-supported\",\n    \"course-grades-parser-present\",\n    \"course-grades-render-present\",\n    \"course-header-tabs-extended\",\n    \"native-score-form-fields-preserved\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-course-title-syllabus-normalization.mjs",
+      "exitCode": 0,
+      "stdout": "{\"ok\":true,\"checks\":[\"visible-course-title-normalization\",\"account-identity-kept-separate-from-course-brand\",\"syllabus-top-level-heading-normalization\",\"nested-syllabus-labels-preserved\",\"remembered-direct-detail-fallback\",\"remembered-detail-expiry-respected\",\"home-history-restore-rebind\"]}\n",
+      "stderr": ""
+    },
+    {
+      "script": "verify-syllabus-detail-redesign.mjs",
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"public syllabus fixtures describe search and direct-open detail pages\",\n    \"syllabus manifest remains standalone and never loads the KU-LMS shell\",\n    \"direct-open detail rendering is booted without pending resolver state\",\n    \"detail-only takeover is guarded to public detail pages\",\n    \"resolver-first ambiguity checks are preserved\",\n    \"detail parser contract targets stable native fixture labels\",\n    \"native fallback contract is explicit and fail-open\",\n    \"syllabus detail table-of-contents hydration is explicit\",\n    \"shared syllabus css stays ku-scoped or dataset-gated\"\n  ]\n}\n",
+      "stderr": ""
+    }
+  ]
+}

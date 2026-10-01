@@ -1,0 +1,1 @@
+{"path":"/webclass/login.php","guard":"true","formConnected":true,"formInert":false,"labels":[{"text":"ユーザID","position":"static","width":632.296875,"height":21.6953125,"hiddenClass":false},{"text":"パスワード","position":"static","width":632.296875,"height":21.6953125,"hiddenClass":false}],"fieldCount":3}

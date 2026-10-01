@@ -17,8 +17,8 @@ function renderManual(view) {
             <article class="ku-card ku-manual-card">
               <div class="ku-card-header"><h2 class="ku-card-title">${escapeHtml(section.title)}</h2></div>
               <div class="ku-manual-card-body">
-                ${section.description.map((text) => `<p class="ku-manual-copy">${escapeHtml(text)}</p>`).join('')}
-                ${section.links.length ? `<div class="ku-manual-links">${section.links.map((link) => `<a class="ku-title-link ku-manual-link" href="${escapeAttr(link.href)}">${escapeHtml(link.label)}</a>${link.meta ? `<div class="ku-mini-meta">${escapeHtml(link.meta)}</div>` : ''}`).join('')}</div>` : ''}
+                ${section.bodyHtml || section.description.map((text) => `<p class="ku-manual-copy">${escapeHtml(text)}</p>`).join('')}
+                ${!section.bodyHtml && section.links.length ? `<div class="ku-manual-links">${section.links.map((link) => `<a class="ku-title-link ku-manual-link" href="${escapeAttr(link.href)}">${escapeHtml(link.label)}</a>${link.meta ? `<div class="ku-mini-meta">${escapeHtml(link.meta)}</div>` : ''}`).join('')}</div>` : ''}
               </div>
             </article>`).join('')}
         </section>

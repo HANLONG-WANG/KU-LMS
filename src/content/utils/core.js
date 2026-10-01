@@ -25,21 +25,26 @@ function parseAvailabilityEnd(text) {
   }
 
 function parseAvailabilityRange(text) {
-    const normalized = String(text || '')
-      .replace(/[～〜‐‑‒–—―]/g, '-')
-      .replace(/\u3000/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    const matches = Array.from(normalized.matchAll(/(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s*\([^)]*\))?\s*(\d{1,2})?:(\d{2})?/g));
-    const first = matches[0];
-    const last = matches[matches.length - 1];
-    if (!first || !last) return { start: null, end: null };
-    const [, startYear, startMonth, startDay, startHour = '00', startMinute = '00'] = first;
-    const [, endYear, endMonth, endDay, endHour = '23', endMinute = '59'] = last;
-    return {
-      start: new Date(Number(startYear), Number(startMonth) - 1, Number(startDay), Number(startHour), Number(startMinute)),
-      end: new Date(Number(endYear), Number(endMonth) - 1, Number(endDay), Number(endHour), Number(endMinute))
+    const normalized = String(text || '').replace(/[０-９]/g, (digit) => String(digit.charCodeAt(0) - 0xff10))
+      .replace(/\u3000/g, ' ').replace(/\s+/g, ' ').trim();
+    const matches = Array.from(normalized.matchAll(/(\d{4})(?:\/|-|年)(\d{1,2})(?:\/|-|月)(\d{1,2})日?(?:\s*[（(][^）)]*[）)])?(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/g));
+    const parse = (match, endOfDay) => {
+      if (!match) return null;
+      const [, y, m, d, h, min, s] = match;
+      const values = [Number(y), Number(m), Number(d), h === undefined ? (endOfDay ? 23 : 0) : Number(h), min === undefined ? (endOfDay ? 59 : 0) : Number(min), s === undefined ? (endOfDay && h === undefined ? 59 : 0) : Number(s)];
+      const [year, month, day, hour, minute, second] = values;
+      if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return null;
+      const date = new Date(year, month - 1, day, hour, minute, second, endOfDay && h === undefined ? 999 : 0);
+      return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
     };
+    if (!matches.length) return { start: null, end: null };
+    if (matches.length > 1) return { start: parse(matches[0], false), end: parse(matches.at(-1), true) };
+    const match = matches[0];
+    const before = normalized.slice(0, match.index).trim();
+    const after = normalized.slice(match.index + match[0].length).trim();
+    if (/^(?:[～〜~–—-]|から)/.test(after)) return { start: parse(match, false), end: null };
+    if (/[～〜~–—-]$/.test(before) || /まで|締切|期限/.test(before + after)) return { start: null, end: parse(match, true) };
+    return { start: parse(match, false), end: parse(match, true) };
   }
 
 function getWeekDays(baseDate, offset) {
@@ -100,18 +105,17 @@ function buildUpcomingSubtitle(item) {
   }
 
 function extractPublishDate(text) {
-    const match = text.match(/(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2})/);
-    return match ? match[1] : text;
+    const source = String(text || '').split(/公開期限|掲載期限|有効期限/)[0];
+    const match = source.match(/\d{4}\/\d{1,2}\/\d{1,2}(?:\s+\d{1,2}:\d{2})?/);
+    return match ? match[0] : '';
   }
 
 function isUpcomingDueSoonUnused(item) {
     const dueDate = item?.dueDate;
-    if (!dueDate || Number.isNaN(dueDate.getTime())) return false;
-    if (item?.hasUsage) return false;
+    if (!dueDate || Number.isNaN(dueDate.getTime()) || item?.usageKnown !== true || item?.hasUsage) return false;
     const range = parseAvailabilityRange(item?.availability || '');
     const now = Date.now();
-    if (!range.start || !range.end) return false;
-    if (now < range.start.getTime() || now > range.end.getTime()) return false;
+    if (!range.start || !range.end || now < range.start.getTime() || now > range.end.getTime()) return false;
     const remaining = dueDate.getTime() - now;
     return remaining >= 0 && remaining <= 7 * 86400000;
   }
@@ -311,6 +315,18 @@ function absoluteUrl(path) {
       return new URL(`/webclass/${path.replace(/^\.?\//, '')}`, window.location.origin).toString();
     }
     return new URL(path, window.location.href || window.location.origin).toString();
+  }
+
+function isExtensionOwnedNode(node) {
+    return !!node?.closest?.('#ku-redesign-root, #ku-syllabus-root, #ku-home-refresh-overlay, #ku-all-upcoming-overlay');
+  }
+
+function nativeQuerySelectorAll(root, selector) {
+    return Array.from(root?.querySelectorAll?.(selector) || []).filter((node) => !isExtensionOwnedNode(node));
+  }
+
+function nativeQuerySelector(root, selector) {
+    return nativeQuerySelectorAll(root, selector)[0] || null;
   }
 
 function normalizeNotificationsUrl(path) {

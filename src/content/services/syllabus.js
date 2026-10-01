@@ -4,9 +4,13 @@ var SYLLABUS_DETAIL_CACHE_KEY = 'ku-redesign-syllabus-detail-v1';
 var MAX_REMEMBERED_SYLLABUS_DETAILS = 32;
 var SYLLABUS_WINDOW_STATE_PREFIX = '__KU_SYLLABUS_STATE__';
 var SYLLABUS_PENDING_PREFIX = '__KU_SYLLABUS_AUTO__';
+var SYLLABUS_DETAIL_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+var syllabusPendingAbortController = new AbortController();
 
 async function handleSyllabusNavigation(anchor) {
     if (anchor.dataset.loading === 'true') return;
+    resumeSyllabusPendingWork();
+    const signal = syllabusPendingAbortController.signal;
     anchor.dataset.loading = 'true';
     const originalText = anchor.textContent;
     anchor.textContent = '…';
@@ -17,18 +21,22 @@ async function handleSyllabusNavigation(anchor) {
         year: anchor.dataset.syllabusYear || ''
       };
       const remembered = await readRememberedSyllabusDetail(payload);
+      if (signal.aborted || state.extensionSettings?.enabled === false) return;
+      if (remembered) {
+        window.location.href = remembered;
+        return;
+      }
       const resolved = await resolveSyllabusUrl(payload);
+      if (signal.aborted || state.extensionSettings?.enabled === false) return;
       if (resolved) {
         await rememberSyllabusDetail(payload, resolved);
-        window.location.href = resolved;
-      } else if (remembered) {
-        window.location.href = remembered;
+        if (!signal.aborted && state.extensionSettings?.enabled !== false) window.location.href = resolved;
       } else {
         await submitSyllabusSearchNavigation(payload);
       }
     } catch (error) {
       console.warn('[KU Redesign] syllabus lookup failed', error);
-      window.location.href = anchor.href;
+      if (!signal.aborted && state.extensionSettings?.enabled !== false) window.location.href = anchor.href;
     } finally {
       anchor.dataset.loading = 'false';
       anchor.textContent = originalText;
@@ -81,7 +89,9 @@ async function readRememberedSyllabusDetail(payload = {}) {
     const key = buildSyllabusResolvedDetailKey(payload);
     if (!key) return '';
     const entry = readSyllabusResolvedDetails()[key];
-    if (entry && isRememberedSyllabusDetailUrl(entry.url)) return entry.url;
+    const age = Date.now() - Date.parse(entry?.storedAt || '');
+    if (entry?.version === 2 && Number.isFinite(age) && age >= 0 && age < SYLLABUS_DETAIL_CACHE_TTL_MS
+      && isRememberedSyllabusDetailUrl(entry.url)) return entry.url;
     return await readRememberedSyllabusDetailFromBackground(key);
   }
 
@@ -91,6 +101,7 @@ async function rememberSyllabusDetail(payload = {}, detailUrl = '') {
     if (!key) return;
     const cache = readSyllabusResolvedDetails();
     cache[key] = {
+      version: 2,
       url: detailUrl,
       storedAt: new Date().toISOString()
     };
@@ -108,7 +119,8 @@ async function rememberSyllabusDetail(payload = {}, detailUrl = '') {
 function isRememberedSyllabusDetailUrl(url = '') {
     try {
       const parsed = new URL(String(url || ''), window.location.origin);
-      return /\/syllabus\//.test(parsed.pathname)
+      return parsed.origin === 'https://syllabus3.jm.kansai-u.ac.jp'
+        && parsed.pathname.startsWith('/syllabus/')
         && parsed.searchParams.get('actionClass') === 'syllabus.search.DetailKeySearchSt'
         && !!cleanText(parsed.searchParams.get('UJikanwari_cd') || '');
     } catch (error) {
@@ -117,50 +129,58 @@ function isRememberedSyllabusDetailUrl(url = '') {
   }
 
 async function lookupSyllabusDirectUrl(payload) {
-    if (!chrome?.runtime?.sendMessage) return '';
-    return new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage({ type: 'ku:lms:lookup-syllabus', payload }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.warn('[KU Redesign] syllabus runtime lookup failed', chrome.runtime.lastError.message);
-            resolve('');
-            return;
-          }
-          resolve(response?.url || '');
-        });
-      } catch (error) {
-        console.warn('[KU Redesign] syllabus runtime message threw', error);
-        resolve('');
-      }
-    });
+    const response = await sendSyllabusRuntimeMessage('ku:lms:lookup-syllabus', payload, 12000);
+    return isRememberedSyllabusDetailUrl(response?.url || '') ? response.url : '';
   }
 
 async function readRememberedSyllabusDetailFromBackground(key = '') {
-    if (!key || !chrome?.runtime?.sendMessage) return '';
-    return new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage({ type: 'ku:lms:read-remembered-syllabus-detail', payload: { key } }, (response) => {
-          if (chrome.runtime.lastError) {
-            resolve('');
-            return;
-          }
-          resolve(isRememberedSyllabusDetailUrl(response?.url || '') ? response.url : '');
-        });
-      } catch (error) {
-        resolve('');
-      }
-    });
+    if (!key) return '';
+    const response = await sendSyllabusRuntimeMessage('ku:lms:read-remembered-syllabus-detail', { key }, 1500);
+    return isRememberedSyllabusDetailUrl(response?.url || '') ? response.url : '';
   }
 
 async function rememberSyllabusDetailInBackground(key = '', detailUrl = '') {
-    if (!key || !isRememberedSyllabusDetailUrl(detailUrl) || !chrome?.runtime?.sendMessage) return;
+    if (!key || !isRememberedSyllabusDetailUrl(detailUrl)) return;
+    await sendSyllabusRuntimeMessage('ku:lms:remember-syllabus-detail', { key, url: detailUrl }, 1500);
+  }
+
+function cancelSyllabusPendingWork() {
+    syllabusPendingAbortController.abort('cancelled');
+  }
+
+function resumeSyllabusPendingWork() {
+    cancelSyllabusPendingWork();
+    syllabusPendingAbortController = new AbortController();
+  }
+
+function isSyllabusNativeViewRequested() {
+    return new URL(window.location.href).searchParams.get('ku-native') === '1';
+  }
+
+function sendSyllabusRuntimeMessage(type, payload, timeoutMs) {
+    if (!globalThis.chrome?.runtime?.sendMessage) return Promise.resolve(null);
+    const signal = syllabusPendingAbortController.signal;
     return new Promise((resolve) => {
+      let timer;
+      const finish = (response = null) => {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', onAbort);
+        resolve(response);
+      };
+      const onAbort = () => finish();
+      if (signal.aborted) {
+        finish();
+        return;
+      }
+      signal.addEventListener('abort', onAbort, { once: true });
+      timer = setTimeout(() => finish(), timeoutMs);
       try {
-        chrome.runtime.sendMessage({ type: 'ku:lms:remember-syllabus-detail', payload: { key, url: detailUrl } }, () => {
-          resolve();
+        chrome.runtime.sendMessage({ type, payload }, (response) => {
+          const failed = chrome.runtime.lastError;
+          finish(failed ? null : response);
         });
       } catch (error) {
-        resolve();
+        finish();
       }
     });
   }
@@ -184,13 +204,20 @@ async function submitSyllabusSearchNavigation({ title = '', courseHref = '', yea
 function rememberPendingSyllabusNavigation(payload) {
     const statePayload = readSyllabusWindowState();
     writeSyllabusWindowState({
-      pending: payload,
+      pending: { ...payload, createdAt: new Date().toISOString() },
       remembered: statePayload.remembered
     });
   }
 
 function readPendingSyllabusNavigation() {
-    return readSyllabusWindowState().pending || null;
+    const pending = readSyllabusWindowState().pending;
+    if (!pending) return null;
+    const age = Date.now() - Date.parse(pending.createdAt || '');
+    if (!Number.isFinite(age) || age < 0 || age >= 5 * 60 * 1000) {
+      clearPendingSyllabusNavigation();
+      return null;
+    }
+    return pending;
   }
 
 function clearPendingSyllabusNavigation() {
@@ -304,11 +331,19 @@ function ensureSyllabusRoot() {
   }
 
 function mountSyllabusDetailBootShell() {
+    if (isSyllabusNativeViewRequested()) {
+      releaseSyllabusDetailRedesign();
+      return;
+    }
     const root = ensureSyllabusRoot();
+    hideNativePageForExtension(SYLLABUS_ROOT_ID);
     root.innerHTML = '<div class="ku-app ku-syllabus-app"><main class="ku-page ku-syllabus-page"><div class="ku-card ku-loading"><div class="ku-spinner"></div><div>シラバス詳細を読み込み中…</div></div></main></div>';
   }
 
 function releaseSyllabusDetailRedesign() {
+    cancelSyllabusPendingWork();
+    if (typeof cleanupRouteHydration === 'function') cleanupRouteHydration();
+    restoreNativePageForExtension(SYLLABUS_ROOT_ID);
     delete document.documentElement.dataset.kuSyllabusRedesignState;
     const root = document.getElementById(SYLLABUS_ROOT_ID);
     if (root) root.remove();
@@ -316,6 +351,11 @@ function releaseSyllabusDetailRedesign() {
 
 function initSyllabusDetailRedesign() {
     try {
+      if (isSyllabusNativeViewRequested() || state.extensionSettings?.enabled === false) {
+        clearSyllabusAssistOverlay();
+        releaseSyllabusDetailRedesign();
+        return;
+      }
       const view = parseSyllabusDetailDocument(document);
       if (!view) {
         releaseSyllabusDetailRedesign();
@@ -325,6 +365,7 @@ function initSyllabusDetailRedesign() {
       clearSyllabusAssistOverlay();
       document.documentElement.dataset.kuSyllabusAssist = 'detail';
       const root = ensureSyllabusRoot();
+      hideNativePageForExtension(SYLLABUS_ROOT_ID);
       root.innerHTML = renderSyllabusDetailPage(view);
       hydrateSyllabusDetail(root);
       document.documentElement.dataset.kuSyllabusRedesignState = 'ready';
@@ -370,6 +411,12 @@ function submitSyllabusSearchForm({ query = '', year = '' } = {}) {
 
 function initSyllabusAssist() {
     const run = () => {
+      if (isSyllabusNativeViewRequested() || state.extensionSettings?.enabled === false) {
+        clearSyllabusAssistOverlay();
+        releaseSyllabusDetailRedesign();
+        return;
+      }
+      resumeSyllabusPendingWork();
       document.documentElement.dataset.kuSyllabusAssist = 'booted';
       const pending = readPendingSyllabusNavigation();
       if (!pending) {
@@ -404,25 +451,34 @@ function initSyllabusAssist() {
   }
 
 async function autoResolveSyllabusResult(pending, candidates) {
-    const normalizedTitle = normalizeSyllabusCourseQuery(pending.title || '');
-    const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedTitle);
-    if (exactMatches.length === 1) {
-      document.documentElement.dataset.kuSyllabusAssist = 'redirect-exact';
-      await rememberSyllabusDetail(pending, buildSyllabusDetailUrl(exactMatches[0], pending.title, pending.year));
-      clearPendingSyllabusNavigation();
-      window.location.replace(buildSyllabusDetailUrl(exactMatches[0], pending.title, pending.year));
-      return;
+    const controller = syllabusPendingAbortController;
+    const signal = controller.signal;
+    const timer = setTimeout(() => controller.abort('timeout'), 12000);
+    try {
+      const normalizedTitle = normalizeSyllabusCourseQuery(pending.title || '');
+      const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedTitle);
+      let resolved = '';
+      let reason = 'redirect-course-code';
+      if (!pending.courseCode && exactMatches.length === 1) {
+        resolved = buildSyllabusDetailUrl(exactMatches[0], pending.title, pending.year);
+        reason = 'redirect-exact';
+      } else {
+        resolved = await resolveSyllabusCandidateByCourseCode(exactMatches, pending);
+      }
+      if (signal.aborted || state.extensionSettings?.enabled === false || isSyllabusNativeViewRequested()) return;
+      if (resolved) {
+        await rememberSyllabusDetail(pending, resolved);
+        if (signal.aborted || state.extensionSettings?.enabled === false) return;
+        document.documentElement.dataset.kuSyllabusAssist = reason;
+        clearPendingSyllabusNavigation();
+        window.location.replace(resolved);
+        return;
+      }
+      document.documentElement.dataset.kuSyllabusAssist = 'unresolved';
+    } finally {
+      clearTimeout(timer);
+      if (controller === syllabusPendingAbortController) clearSyllabusAssistOverlay();
     }
-    const exactResolved = await resolveSyllabusCandidateByCourseCode(exactMatches, pending);
-    if (exactResolved) {
-      document.documentElement.dataset.kuSyllabusAssist = 'redirect-course-code';
-      await rememberSyllabusDetail(pending, exactResolved);
-      clearPendingSyllabusNavigation();
-      window.location.replace(exactResolved);
-      return;
-    }
-    document.documentElement.dataset.kuSyllabusAssist = 'unresolved';
-    clearSyllabusAssistOverlay();
   }
 
 function parseSyllabusResultCandidates(doc) {
@@ -453,30 +509,46 @@ function parseSyllabusResultCandidates(doc) {
   }
 
 async function resolveSyllabusCandidateByCourseCode(candidates, pending) {
+    const signal = syllabusPendingAbortController.signal;
     const courseCode = String(pending.courseCode || '').trim();
-    if (!courseCode || candidates.length < 2) return '';
+    if (!courseCode || !candidates.length) return '';
     for (const candidate of candidates) {
+      if (signal.aborted) return '';
       const detailUrl = buildSyllabusDetailUrl(candidate, pending.title, pending.year);
-      const detailCode = await loadSyllabusCourseCodeViaFrame(detailUrl);
-      if (detailCode === courseCode) {
-        return detailUrl;
-      }
+      const detailCode = await loadSyllabusCourseCodeViaFrame(detailUrl, signal);
+      if (detailCode === courseCode) return detailUrl;
     }
     return '';
   }
 
-async function loadSyllabusCourseCodeViaFrame(detailUrl) {
+async function loadSyllabusCourseCodeViaFrame(detailUrl, signal = syllabusPendingAbortController.signal) {
+    if (signal.aborted || !isRememberedSyllabusDetailUrl(detailUrl)) return '';
     return new Promise((resolve) => {
       const iframe = document.createElement('iframe');
       iframe.style.display = 'none';
+      let timer;
+      let settled = false;
+      const finish = (value = '') => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        signal.removeEventListener('abort', onAbort);
+        window.removeEventListener('pagehide', onAbort);
+        iframe.onload = null;
+        iframe.onerror = null;
+        iframe.remove();
+        resolve(value);
+      };
+      const onAbort = () => finish();
+      signal.addEventListener('abort', onAbort, { once: true });
+      window.addEventListener('pagehide', onAbort, { once: true });
+      timer = setTimeout(() => finish(), 5000);
+      iframe.onerror = () => finish();
       iframe.onload = () => {
         try {
-          const text = iframe.contentDocument?.body?.textContent || '';
-          resolve(extractSyllabusCourseCodeFromText(text));
+          finish(extractSyllabusCourseCodeFromText(iframe.contentDocument?.body?.textContent || ''));
         } catch (error) {
-          resolve('');
-        } finally {
-          iframe.remove();
+          finish();
         }
       };
       iframe.src = detailUrl;

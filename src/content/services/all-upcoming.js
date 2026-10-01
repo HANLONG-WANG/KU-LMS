@@ -2,6 +2,7 @@
 
 async function startAllUpcomingCollection(view) {
     if (isPageLeaving()) return;
+    if (typeof invalidatePageTasks === 'function') invalidatePageTasks();
     const existing = readAllUpcomingState();
     if (isAllUpcomingActive(existing)) {
       syncAllUpcomingOverlay(existing);
@@ -70,13 +71,13 @@ async function continueAllUpcomingIfNeeded(route, view) {
   }
 
 async function continueAllUpcomingOnHome(view, payload, route) {
-    if (payload.phase === 'arming') {
+    if (payload.phase === 'arming' || payload.phase === 'returning-home-between-courses') {
       const nextPayload = writeAllUpcomingState({
         ...payload,
         phase: 'navigating-to-course',
         lastProgressAt: new Date().toISOString()
       });
-      navigateToAllUpcomingTarget(nextPayload);
+      await navigateToAllUpcomingTarget(nextPayload);
       return;
     }
     if (payload.phase === 'navigating-to-course' || payload.phase === 'advancing') {
@@ -95,6 +96,12 @@ async function continueAllUpcomingOnHome(view, payload, route) {
           restoreAttempts: restoreAttempts + 1,
           lastProgressAt: new Date().toISOString()
         });
+        if (!await waitForLmsRequestsBeforeNavigation()) {
+          abortAllUpcoming(payload, 'request-not-settled');
+          showCourseTraversalFailure('request-not-settled');
+          return;
+        }
+        if (state.extensionSettings?.enabled === false || !isAllUpcomingActive(readAllUpcomingState())) return;
         submitHomeFilters(payload.homeYear || view.filters.year, payload.homeSemester || view.filters.semester);
         return;
       }
@@ -123,17 +130,17 @@ async function continueAllUpcomingOnCourse(view, payload) {
     if (nextIndex < payload.targets.length) {
       const nextPayload = writeAllUpcomingState({
         ...payload,
-        phase: 'navigating-to-course',
+        phase: 'returning-home-between-courses',
         currentIndex: nextIndex,
         visitedCourseCount: nextIndex,
         items: mergedItems,
         lastProcessedCourse: currentCourseHref,
         lastProgressAt: new Date().toISOString()
       });
-      navigateToAllUpcomingTarget(nextPayload);
+      await restoreAllUpcomingState(nextPayload, 'between-courses');
       return;
     }
-    restoreAllUpcomingState({
+    await restoreAllUpcomingState({
       ...payload,
       phase: 'restoring-home',
       currentIndex: nextIndex,
@@ -238,7 +245,7 @@ function getAllUpcomingCollectionTargets(scheduleEntries = [], otherCourseGroups
     return targets.sort((a, b) => (a.sortIndex ?? Number.MAX_SAFE_INTEGER) - (b.sortIndex ?? Number.MAX_SAFE_INTEGER));
   }
 
-function navigateToAllUpcomingTarget(payload) {
+async function navigateToAllUpcomingTarget(payload) {
     if (isPageLeaving()) {
       abortAllUpcoming(payload, 'page-leaving');
       return;
@@ -249,31 +256,51 @@ function navigateToAllUpcomingTarget(payload) {
       return;
     }
     syncAllUpcomingOverlay(payload);
+    if (!await waitForLmsRequestsBeforeNavigation()) {
+      abortAllUpcoming(payload, 'request-not-settled');
+      showCourseTraversalFailure('request-not-settled');
+      return;
+    }
+    const current = readAllUpcomingState();
+    if (!isAllUpcomingActive(current) || current.currentIndex !== payload.currentIndex
+      || state.extensionSettings?.enabled === false || isPageLeaving()) return;
     window.location.href = target.href;
   }
 
-function restoreAllUpcomingState(payload, reason = '') {
+async function restoreAllUpcomingState(payload, reason = '') {
     if (isPageLeaving()) {
       abortAllUpcoming(payload, 'page-leaving');
       return;
     }
     const currentPayload = payload || readAllUpcomingState() || {};
-    const restoreAttempts = Number(currentPayload.restoreAttempts || 0) + 1;
+    const betweenCourses = reason === 'between-courses';
+    const restoreAttempts = Number(currentPayload.restoreAttempts || 0) + (betweenCourses ? 0 : 1);
     if (restoreAttempts > ALL_UPCOMING_MAX_RESTORE_ATTEMPTS) {
       abortAllUpcoming(currentPayload, reason ? `restore-limit:${reason}` : 'restore-limit');
       return;
     }
     const nextPayload = writeAllUpcomingState({
       ...currentPayload,
-      phase: 'restoring-home',
+      phase: betweenCourses ? 'returning-home-between-courses' : 'restoring-home',
       restoreAttempts,
-      abortReason: reason || payload?.abortReason || '',
+      abortReason: betweenCourses ? '' : (reason || payload?.abortReason || ''),
       lastProgressAt: new Date().toISOString(),
       collectedAt: currentPayload.collectedAt || new Date().toISOString()
     });
     syncAllUpcomingOverlay(nextPayload);
-    const homeUrl = nextPayload.homeUrl || absoluteUrl('/webclass/');
+    const homeUrl = getCourseTraversalReturnHref(nextPayload);
+    if (!homeUrl) {
+      abortAllUpcoming(nextPayload, 'missing-native-course-exit');
+      showCourseTraversalFailure('missing-native-course-exit');
+      return;
+    }
     if (normalizeAllUpcomingHomeUrl(window.location.href) !== normalizeAllUpcomingHomeUrl(homeUrl)) {
+      if (!await waitForLmsRequestsBeforeNavigation()) {
+        abortAllUpcoming(nextPayload, 'request-not-settled');
+        showCourseTraversalFailure('request-not-settled');
+        return;
+      }
+      if (state.extensionSettings?.enabled === false || !isAllUpcomingActive(readAllUpcomingState())) return;
       window.location.href = homeUrl;
       return;
     }

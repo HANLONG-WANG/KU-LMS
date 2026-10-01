@@ -1,0 +1,142 @@
+{
+  "ok": true,
+  "scope": "offline manifest VM without main entrypoints; real fetch/forms/browser navigation disabled",
+  "results": [
+    {
+      "name": "verify-content-services-safety-contract",
+      "exitCode": 0,
+      "report": {
+        "ok": true,
+        "checks": [
+          "service-cluster-present",
+          "abortable-fetch-contract-preserved",
+          "syllabus-background-bridge-preserved",
+          "syllabus-assist-chain-preserved",
+          "syllabus-ambiguity-no-guess-preserved",
+          "syllabus-domain-never-boots-kulms",
+          "retired-worker-fetch-path-still-removed",
+          "refresh-fsm-auth-terminal-guard-preserved"
+        ]
+      }
+    },
+    {
+      "name": "verify-deadlines-syllabus-session-safety",
+      "exitCode": 0,
+      "report": {
+        "ok": true,
+        "checks": [
+          "no-nonhome-home-fetch",
+          "explicit-course-visits-still-refresh-cache",
+          "retired-worker-upcoming-fetch-path",
+          "refresh-mode-side-effects-suppressed",
+          "course-upcoming-parser-still-valid",
+          "syllabus-direct-resolver-contract-preserved",
+          "active-docs-point-to-safe-refresh-phase"
+        ]
+      }
+    },
+    {
+      "name": "verify-home-upcoming-session-safety",
+      "exitCode": 0,
+      "report": {
+        "ok": true,
+        "checks": [
+          "home-enrich-retired-worker-fetch-path",
+          "home-upcoming-cache-first",
+          "home-display-only-other-course-details-separated-from-refresh-targeting",
+          "refresh-button-exposed-on-home-card",
+          "due-flag-contract-explicit-redflag-only",
+          "cache-pruning-persists-valid-items-only",
+          "refresh-targets-schedule-and-native-other-course-reminders",
+          "other-course-native-reminders-render-on-first-home-render",
+          "docs-point-to-native-reminder-parity-phase"
+        ]
+      }
+    },
+    {
+      "name": "verify-home-refresh-login-loop-safety",
+      "exitCode": 0,
+      "report": {
+        "ok": true,
+        "checks": [
+          "auth-invalid-route-classification-present",
+          "boot-overlay-sync-occurs-before-shell-mount",
+          "boot-overlay-helper-remains-visual-only",
+          "init-preserves-top-level-abort-taxonomy",
+          "course-conflict-page-detection-present",
+          "unsupported-routes-abort-not-restore",
+          "continue-phase-unexpected-route-taxonomy-preserved",
+          "manual-home-return-aborts-refresh",
+          "target-mismatch-aborts-refresh",
+          "native-exit-before-next-course-navigation",
+          "restore-attempt-loop-breaker-aborts",
+          "abort-contract-resyncs-and-clears-overlay",
+          "navigation-aborts-inflight-page-requests",
+          "pageshow-resets-page-leaving-guards",
+          "visible-refresh-affordance-describes-sequential-update",
+          "expired-refresh-state-self-clears",
+          "durable-docs-point-to-login-loop-safety"
+        ]
+      }
+    },
+    {
+      "name": "verify-home-all-upcoming-assignments-page",
+      "exitCode": 0,
+      "report": {
+        "ok": true,
+        "checks": [
+          "route-and-home-nav-support-all-upcoming-page",
+          "home-cta-interception-present-without-removing-refresh-button",
+          "dedicated-state-key-and-overlay-path-present",
+          "all-course-target-collection-dedupes-visible-courses",
+          "five-day-filter-keeps-used-items",
+          "overlay-runtime-contract-executed",
+          "native-course-exits-and-async-home-resumption",
+          "completion-synchronizes-results-route",
+          "mismatched-course-exit-fails-closed",
+          "docs-reference-new-route-and-service"
+        ]
+      }
+    },
+    {
+      "name": "verify-home-safe-refresh-deadlines",
+      "exitCode": 0,
+      "report": {
+        "ok": true,
+        "checks": [
+          "refresh-state-key-and-functions-present",
+          "boot-overlay-sync-happens-before-shell-mount",
+          "boot-overlay-helper-preserves-visual-only-boundary",
+          "init-rereads-fresh-state-and-preserves-top-level-abort-taxonomy",
+          "explicit-refresh-targeting-hooked",
+          "home-url-snapshotted-before-navigation",
+          "home-and-course-boot-resume-contracts-present",
+          "restoration-scope-defined",
+          "overlay-exempt-from-takeover-hide-selector",
+          "overlay-above-redesign-root",
+          "overlay-and-header-action-styles-present",
+          "overlay-progress-ui-present",
+          "overlay-singleton-contract-preserved",
+          "overlay-prebody-boot-sync-safe",
+          "overlay-render-behavior-executed",
+          "docs-frame-refresh-as-validation-gated"
+        ]
+      }
+    },
+    {
+      "name": "verify-review-followups",
+      "exitCode": 0,
+      "report": {
+        "ok": true,
+        "checks": [
+          "background-direct-resolver-bridge-preserved",
+          "single-exact-title-redirect-without-known-code",
+          "unique-known-code-candidates-verified",
+          "course-code-disambiguation-still-works",
+          "ambiguous-results-still-fall-back",
+          "durable-repository-contracts-without-personal-PRD-dependency"
+        ]
+      }
+    }
+  ]
+}

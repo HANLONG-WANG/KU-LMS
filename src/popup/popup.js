@@ -2,6 +2,7 @@
 
 const form = document.getElementById('settings-form');
 const enabledInput = document.getElementById('enabled');
+const autoLoginInput = document.getElementById('auto-login');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const showPasswordInput = document.getElementById('show-password');
@@ -14,6 +15,7 @@ async function initPopup() {
   try {
     const settings = await kuReadExtensionSettings();
     enabledInput.checked = settings.enabled;
+    autoLoginInput.checked = settings.autoLogin;
     usernameInput.value = settings.username;
     passwordInput.value = settings.password;
     setStatus('');
@@ -41,6 +43,7 @@ async function saveSettings(message) {
   try {
     await kuWriteExtensionSettings({
       enabled: enabledInput.checked,
+      autoLogin: autoLoginInput.checked,
       username: usernameInput.value.trim(),
       password: passwordInput.value
     });

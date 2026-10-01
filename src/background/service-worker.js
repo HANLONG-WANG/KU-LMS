@@ -27,47 +27,75 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function rememberSyllabusDetailForTab(tabId, { key = '', url = '' } = {}) {
-  if (!tabId || !key || !url) return;
+  if (!Number.isInteger(tabId) || tabId < 0 || !key || !isSyllabusBackgroundDetailUrl(url)) return;
   const cache = rememberedSyllabusDetailsByTab.get(tabId) || {};
-  cache[key] = {
-    url,
-    storedAt: new Date().toISOString()
-  };
+  cache[key] = { url, storedAt: new Date().toISOString() };
   const entries = Object.entries(cache);
   if (entries.length > 32) {
-    entries
-      .sort(([, a], [, b]) => String(a?.storedAt || '').localeCompare(String(b?.storedAt || '')))
-      .slice(0, entries.length - 32)
-      .forEach(([staleKey]) => delete cache[staleKey]);
+    entries.sort(([, a], [, b]) => String(a?.storedAt || '').localeCompare(String(b?.storedAt || '')))
+      .slice(0, entries.length - 32).forEach(([staleKey]) => delete cache[staleKey]);
   }
   rememberedSyllabusDetailsByTab.set(tabId, cache);
 }
 
 function readRememberedSyllabusDetailForTab(tabId, key = '') {
-  if (!tabId || !key) return '';
-  return rememberedSyllabusDetailsByTab.get(tabId)?.[key]?.url || '';
+  if (!Number.isInteger(tabId) || tabId < 0 || !key) return '';
+  const cache = rememberedSyllabusDetailsByTab.get(tabId);
+  const entry = cache?.[key];
+  const age = Date.now() - Date.parse(entry?.storedAt || '');
+  if (!entry || !Number.isFinite(age) || age < 0 || age >= 24 * 60 * 60 * 1000
+    || !isSyllabusBackgroundDetailUrl(entry.url)) {
+    if (cache) delete cache[key];
+    return '';
+  }
+  return entry.url;
 }
+
+function isSyllabusBackgroundDetailUrl(url = '') {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin === 'https://syllabus3.jm.kansai-u.ac.jp'
+      && parsed.pathname.startsWith('/syllabus/')
+      && parsed.searchParams.get('actionClass') === 'syllabus.search.DetailKeySearchSt'
+      && !!parsed.searchParams.get('UJikanwari_cd');
+  } catch (error) {
+    return false;
+  }
+}
+
+chrome.tabs?.onRemoved?.addListener((tabId) => rememberedSyllabusDetailsByTab.delete(tabId));
 
 async function lookupSyllabusDetailUrl({ title = '', year = '', courseCode = '' } = {}) {
-  const nendo = String(year || new Date().getFullYear());
-  for (const query of buildQueryVariants(title)) {
-    const candidates = parseSyllabusCandidates(await searchSyllabus({ query, nendo, tantousya: '0', kamoku: '1' }));
-    if (!candidates.length) continue;
-    const normalizedQuery = normalizeQuery(query);
-    const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizedQuery);
-    if (exactMatches.length === 1) {
-      return buildSyllabusDetailUrl(exactMatches[0], query, nendo);
-    }
-    const exactResolved = await resolveCandidateByCourseCode(exactMatches, query, nendo, courseCode);
-    if (exactResolved) {
-      return exactResolved;
-    }
+  const controller = new AbortController();
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error('Syllabus lookup timed out'));
+      controller.abort('timeout');
+    }, 10000);
+  });
+  try {
+    return await Promise.race([
+      (async () => {
+        const nendo = String(year || new Date().getFullYear());
+        for (const query of buildQueryVariants(title)) {
+          const candidates = parseSyllabusCandidates(await searchSyllabus({ query, nendo, tantousya: '0', kamoku: '1', signal: controller.signal }));
+          const exactMatches = candidates.filter((candidate) => candidate.normalizedTitle === normalizeQuery(query));
+          if (!courseCode && exactMatches.length === 1) return buildSyllabusDetailUrl(exactMatches[0], query, nendo);
+          const resolved = await resolveCandidateByCourseCode(exactMatches, query, nendo, courseCode, controller.signal);
+          if (resolved) return resolved;
+        }
+        return '';
+      })(),
+      deadline
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
-  return '';
 }
 
-async function searchSyllabus({ query, nendo, tantousya, kamoku }) {
-  const response = await fetch('https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller', {
+async function searchSyllabus({ query, nendo, tantousya, kamoku, signal }) {
+  return fetchSyllabusText('https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
     body: new URLSearchParams({
@@ -88,8 +116,7 @@ async function searchSyllabus({ query, nendo, tantousya, kamoku }) {
       tileNendo: nendo,
       Nendo: nendo
     })
-  });
-  return response.text();
+  }, signal);
 }
 
 function parseSyllabusCandidates(html = '') {
@@ -143,22 +170,52 @@ function buildSyllabusDetailUrl(candidate, query, nendo) {
   return `https://syllabus3.jm.kansai-u.ac.jp/syllabus/Controller?UJikanwari_cd=${encodeURIComponent(candidate.id)}&actionClass=syllabus.search.DetailKeySearchSt&nendo=${encodeURIComponent(candidate.year || nendo)}&queryString=${encodeURIComponent(query)}&st=key`;
 }
 
-async function resolveCandidateByCourseCode(candidates, query, nendo, courseCode = '') {
-  if (!courseCode || candidates.length < 2) return '';
+async function resolveCandidateByCourseCode(candidates, query, nendo, courseCode = '', signal) {
+  if (!courseCode || !candidates.length) return '';
   for (const candidate of candidates) {
     const detailUrl = buildSyllabusDetailUrl(candidate, query, nendo);
-    const detailCode = await fetchSyllabusCourseCode(detailUrl);
-    if (detailCode && detailCode === courseCode) {
-      return detailUrl;
-    }
+    const detailCode = await fetchSyllabusCourseCode(detailUrl, signal);
+    if (detailCode && detailCode === String(courseCode).trim()) return detailUrl;
   }
   return '';
 }
 
-async function fetchSyllabusCourseCode(detailUrl) {
-  const response = await fetch(detailUrl);
-  const html = await response.text();
+async function fetchSyllabusCourseCode(detailUrl, signal) {
+  const html = await fetchSyllabusText(detailUrl, {}, signal);
   return extractSyllabusCourseCode(html);
+}
+
+async function fetchSyllabusText(url, options = {}, signal) {
+  const parsedUrl = new URL(url);
+  if (parsedUrl.origin !== 'https://syllabus3.jm.kansai-u.ac.jp') throw new Error('Unexpected syllabus URL');
+  if (signal?.aborted) throw new DOMException('Syllabus request aborted', 'AbortError');
+  const controller = new AbortController();
+  const abortForLookup = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abortForLookup();
+  else signal?.addEventListener('abort', abortForLookup, { once: true });
+  let timer;
+  const stopped = new Promise((_, reject) => {
+    controller.signal.addEventListener('abort', () => reject(new DOMException('Syllabus request aborted', 'AbortError')), { once: true });
+    if (controller.signal.aborted) reject(new DOMException('Syllabus request aborted', 'AbortError'));
+    timer = setTimeout(() => {
+      reject(new Error('Syllabus request timed out'));
+      controller.abort('timeout');
+    }, 8000);
+  });
+  try {
+    return await Promise.race([
+      (async () => {
+        const response = await fetch(parsedUrl.href, { ...options, signal: controller.signal });
+        if (!response.ok) throw new Error(`Syllabus HTTP ${response.status}`);
+        if (new URL(response.url || parsedUrl.href).origin !== parsedUrl.origin) throw new Error('Unexpected syllabus redirect');
+        return response.text();
+      })(),
+      stopped
+    ]);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', abortForLookup);
+  }
 }
 
 function extractSyllabusCourseCode(html = '') {

@@ -27,6 +27,13 @@ var state = {
   loginNativeFormNextSibling: null,
   loginNativeFormSnapshot: null,
   loginNoticeSyncTimer: null,
+  loginNoticeSyncObserver: null,
+  loginAutoSubmitTimer: null,
+  loginAutoSubmitVersion: 0,
+  pageTaskVersion: 0,
+  isComposing: false,
+  renderDeferred: false,
+  nativePageVisibility: new Map(),
   extensionSettings: kuNormalizeExtensionSettings(KU_LMS_DEFAULT_SETTINGS),
   kulmsLifecycleBound: false,
   kulmsSettingsListenerBound: false,
@@ -35,6 +42,60 @@ var state = {
 
 function getDefaultGlobalInboxHref() {
   return absoluteUrl(DEFAULT_GLOBAL_INBOX_HREF);
+}
+
+function hideNativePageForExtension(rootId) {
+  if (!state.nativePageVisibility) state.nativePageVisibility = new Map();
+  if (state.nativePageVisibility.has(rootId)) return;
+  const snapshots = new Map();
+  const apply = () => {
+    for (const node of Array.from(document.body?.children || [])) {
+      if (['ku-redesign-root', 'ku-syllabus-root', 'ku-home-refresh-overlay', 'ku-all-upcoming-overlay'].includes(node.id)
+        || ['SCRIPT', 'STYLE', 'LINK'].includes(node.tagName)) continue;
+      if (!snapshots.has(node)) {
+        snapshots.set(node, { inert: node.inert, ariaHidden: node.getAttribute('aria-hidden') });
+      }
+      node.inert = true;
+      node.setAttribute('aria-hidden', 'true');
+    }
+  };
+  const observer = typeof MutationObserver === 'function' ? new MutationObserver((records) => {
+    if (records.some((record) => record.target === document.body || !document.body || record.target === document.documentElement)) apply();
+  }) : null;
+  state.nativePageVisibility.set(rootId, { snapshots, observer });
+  apply();
+  observer?.observe(document.documentElement, { childList: true, subtree: true });
+}
+
+function restoreNativePageForExtension(rootId) {
+  const visibility = state.nativePageVisibility?.get(rootId);
+  if (!visibility) return;
+  visibility.observer?.disconnect();
+  for (const [node, snapshot] of visibility.snapshots) {
+    node.inert = snapshot.inert;
+    if (snapshot.ariaHidden == null) node.removeAttribute('aria-hidden');
+    else node.setAttribute('aria-hidden', snapshot.ariaHidden);
+  }
+  state.nativePageVisibility.delete(rootId);
+}
+
+function withNativeInteraction(node, callback) {
+  const snapshots = [];
+  for (let current = node; current; current = current.parentElement) {
+    if (!current.inert) continue;
+    snapshots.push({ node: current, inert: current.inert, ariaHidden: current.getAttribute('aria-hidden') });
+    current.inert = false;
+    current.removeAttribute('aria-hidden');
+  }
+  try {
+    return callback();
+  } finally {
+    for (const snapshot of snapshots) {
+      snapshot.node.inert = snapshot.inert;
+      if (snapshot.ariaHidden == null) snapshot.node.removeAttribute('aria-hidden');
+      else snapshot.node.setAttribute('aria-hidden', snapshot.ariaHidden);
+    }
+  }
 }
 
 function isSupportedMessageContextSourceRoute(routeName = '') {
@@ -48,6 +109,7 @@ function isMessageRouteName(routeName = '') {
 function isGlobalMessageResetRoute(routeName = '') {
   return routeName === 'home'
     || routeName === 'home-all-upcoming'
+    || routeName === 'course-return'
     || routeName === 'notifications'
     || routeName === 'notifications-detail'
     || routeName === 'manual'

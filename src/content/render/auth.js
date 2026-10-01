@@ -8,7 +8,7 @@ function renderLogin(view) {
           subtitle: escapeHtml(item.source || ''),
           trailing: item.deadline ? `<div class="ku-mini-meta">${escapeHtml(item.deadline)}</div>` : ''
         })))
-      : `<div class="ku-empty">通告はまだ読み込まれていません。</div>`;
+      : `<div class="ku-empty">現在表示されている通告はありません。新しい通告は読み込み次第表示します。</div>`;
     return `
       <section class="ku-login-shell">
         <div class="ku-login-main">

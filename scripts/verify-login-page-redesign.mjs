@@ -1,4 +1,4 @@
-import { read, readKulmsSource, assert } from './lib/content-source.mjs';
+import { read, readKulmsSource, extractFunction, assert } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
 const css = read('src/content/critical.css');
@@ -6,16 +6,15 @@ const manifest = read('manifest.json');
 const architecture = read('docs/ku-lms-extension-architecture.md');
 const designCode = read('docs/ku-lms-design-code.md');
 const entrypoint = read('docs/AI_DOCS_ENTRYPOINT.md');
-const prd = read('.omx/plans/prd-ku-lms-login-page-redesign.md');
-const testSpec = read('.omx/plans/test-spec-ku-lms-login-page-redesign.md');
-const followupPrd = read('.omx/plans/prd-ku-lms-login-page-followups.md');
-const followupTestSpec = read('.omx/plans/test-spec-ku-lms-login-page-followups.md');
 
 const checks = [];
 const record = (name, fn) => { fn(); checks.push(name); };
 
-record('manifest description mentions login support', () => {
-  assert(/login, logout, home, course, notices, messages, and manual routes/.test(manifest), 'Manifest description missing login support wording.');
+record('manifest loads native login parser, renderer and hydration', () => {
+  const scripts = JSON.parse(manifest).content_scripts[0].js;
+  for (const file of ['src/content/parsers/auth.js', 'src/content/render/auth.js', 'src/content/hydrate/auth.js']) {
+    assert(scripts.includes(file), `Login module missing: ${file}`);
+  }
 });
 
 record('detectRoute supports login route', () => {
@@ -41,7 +40,8 @@ record('login form parity fields are preserved in code', () => {
   ]) {
     assert(source.includes(token), `Missing login parity token: ${token}`);
   }
-  assert(/function releaseNative\(\) \{\s*stopLoginNoticeSync\(\);\s*restoreNativeLoginForm\(\);/s.test(source), 'releaseNative() must restore the native login form before fail-open fallback.');
+  const release = extractFunction(source, 'releaseNative');
+  assert(release.indexOf('stopLoginNoticeSync();') >= 0 && release.indexOf('restoreNativeLoginForm();') > release.indexOf('stopLoginNoticeSync();') && release.indexOf('root.remove()') > release.indexOf('restoreNativeLoginForm();'), 'Fail-open must stop notice updates and restore the native form before removing the shell.');
   assert(source.includes("if (entry.style == null) entry.element.removeAttribute('style');"), 'restore path no longer clears inline style when the original element had none.');
   assert(source.includes("else entry.element.setAttribute('style', entry.style);"), 'restore path no longer restores original inline style values.');
 });
@@ -60,7 +60,7 @@ record('login shell keeps scope limited', () => {
 record('login follow-up invariants are locked in code', () => {
   for (const token of [
     'renderLoginLanguageLinks(view.languages, view.languageCode)', 'function markHydratedLoginFormDecorations(',
-    'ku-login-native-extra', 'function syncLoginNotices(', 'window.setTimeout(trySync, 300)', 'function cleanLoginSupportLabel('
+    'ku-login-native-extra', 'function syncLoginNotices(', 'new MutationObserver', 'function cleanLoginSupportLabel('
   ]) {
     assert(source.includes(token), `Missing login follow-up token: ${token}`);
   }
@@ -92,11 +92,9 @@ record('AI docs entrypoint includes login PRD and test spec', () => {
   }
 });
 
-record('phase artifacts exist', () => {
-  assert(prd.includes('KU-LMS Login Page Redesign'), 'Login PRD content missing.');
-  assert(testSpec.includes('KU-LMS Login Page Redesign'), 'Login test spec content missing.');
-  assert(followupPrd.includes('KU-LMS Login Page Follow-ups'), 'Login follow-up PRD content missing.');
-  assert(followupTestSpec.includes('KU-LMS Login Page Follow-ups'), 'Login follow-up test spec content missing.');
+record('durable login contract replaces private planning prerequisites', () => {
+  assert(architecture.includes('only preserve native login, inquiry/contact, and notice content'), 'The versioned architecture must retain native login content scope.');
+  assert(designCode.includes('Login = pre-auth sign-in + support/notices surface'), 'The versioned design contract must retain the pre-auth surface.');
 });
 
 console.log(JSON.stringify({ ok: true, checks }, null, 2));

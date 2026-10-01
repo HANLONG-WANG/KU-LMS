@@ -3,6 +3,7 @@
 var KU_LMS_SETTINGS_STORAGE_KEY = 'kuLmsSettingsV1';
 var KU_LMS_DEFAULT_SETTINGS = {
   enabled: true,
+  autoLogin: true,
   username: '',
   password: ''
 };
@@ -10,6 +11,7 @@ var KU_LMS_DEFAULT_SETTINGS = {
 function kuNormalizeExtensionSettings(settings = {}) {
   return {
     enabled: settings.enabled !== false,
+    autoLogin: settings.autoLogin === undefined ? true : settings.autoLogin === true,
     username: String(settings.username || ''),
     password: String(settings.password || '')
   };

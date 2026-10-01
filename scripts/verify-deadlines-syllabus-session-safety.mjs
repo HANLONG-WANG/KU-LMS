@@ -1,4 +1,4 @@
-import vm from 'node:vm';
+import { loadOfflineKulmsInto, loadOfflineSourceInto } from './lib/offline-content-vm.mjs';
 import { read, readKulmsSource, extractFunction, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
@@ -10,7 +10,7 @@ const collectContextSource = extractFunction(source, 'collectContext');
 assert(!collectContextSource.includes("loadSupplementalDocument('/webclass/')"), 'Non-home context boot should not fetch /webclass/ automatically anymore.');
 const buildCourseMaterialsViewSource = extractFunction(source, 'buildCourseMaterialsView');
 assert(buildCourseMaterialsViewSource.includes('rememberCourseUpcoming('), 'Explicit course-page visits should continue to refresh the course cache.');
-assert(buildCourseMaterialsViewSource.includes('shouldSuppressRefreshSideEffects('), 'Course-page refresh mode should suppress nonessential side effects.');
+assert(buildCourseMaterialsViewSource.includes('shouldSuppressCourseTraversalSideEffects('), 'Course-page refresh and all-upcoming collection should suppress nonessential side effects.');
 const enrichHomeAsyncSource = extractFunction(source, 'enrichHomeAsync');
 assert(!enrichHomeAsyncSource.includes('loadNotificationFeed('), 'Home enrich should no longer load the announcements feed for the homepage notice card.');
 assert(enrichHomeAsyncSource.includes('loadUpcomingFromDueCourses('), 'Home enrich should still load homepage upcoming data.');
@@ -18,7 +18,7 @@ assert(!enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements('), 'Home
 assert(!source.includes('ku:lms:fetch-upcoming-courses'), 'Content script should no longer reference the retired background upcoming-course message.');
 assert(!workerSource.includes('ku:lms:fetch-upcoming-courses'), 'Service worker should no longer expose the retired background upcoming-course message.');
 assert(!workerSource.includes('fetchUpcomingCourseHtml'), 'Service worker should no longer keep the homepage course fetch helper.');
-assert(source.includes("chrome.runtime.sendMessage({ type: 'ku:lms:lookup-syllabus'"), 'Content script should still call the background syllabus resolver.');
+assert(extractFunction(source, 'lookupSyllabusDirectUrl').includes("sendSyllabusRuntimeMessage('ku:lms:lookup-syllabus'"), 'Content script should still call the background syllabus resolver.');
 assert(source.includes('シラバスを検索中…'), 'Syllabus fallback should still mount a visible searching overlay.');
 assert(!source.includes('コース内で確認'), 'Home upcoming UI must not render the old placeholder copy.');
 assert(entrypointDoc.includes('prd-ku-lms-home-safe-refresh-deadlines.md'), 'AI docs entrypoint should point to the active safe-refresh PRD.');
@@ -46,25 +46,10 @@ const contentSandbox = {
     }
   }
 };
-vm.createContext(contentSandbox);
-for (const name of [
-  'normalizeSyllabusCourseQuery', 'extractNotificationPageCount', 'buildNotificationPageUrl', 'extractCourseId', 'deriveSyllabusCourseCode',
-  'buildCourseCacheKey', 'dueSoonReminderText', 'isDueFlagNote', 'parseAvailabilityRange', 'parseAvailabilityEnd', 'isUpcomingDueSoonUnused',
-  'shortenCourseTitle', 'sanitizeCourseItemTitle', 'extractPrimaryTitleText', 'inferMaterialType', 'extractCourseItem',
-  'parseUpcomingFromCourse', 'readHomeRefreshState', 'writeHomeRefreshState', 'clearHomeRefreshState', 'getCurrentHomeRefreshTarget',
-  'isHomeRefreshActive', 'shouldSuppressRefreshSideEffects', 'doesHomeRefreshMatchCurrentView'
-]) {
-  vm.runInContext(extractFunction(source, name), contentSandbox, { filename: 'kulms-source.js' });
-}
+loadOfflineKulmsInto(contentSandbox);
 
 const workerSandbox = { console };
-vm.createContext(workerSandbox);
-for (const name of [
-  'stripHtml', 'normalizeQuery', 'uniqueBy', 'buildQueryVariants', 'parseSyllabusCandidates', 'extractSyllabusCourseCode',
-  'buildSyllabusDetailUrl', 'fetchSyllabusCourseCode', 'resolveCandidateByCourseCode', 'lookupSyllabusDetailUrl'
-]) {
-  vm.runInContext(extractFunction(workerSource, name), workerSandbox, { filename: 'src/background/service-worker.js' });
-}
+loadOfflineSourceInto(workerSandbox, ['src/background/service-worker.js']);
 
 assert(contentSandbox.normalizeSyllabusCourseQuery('知的財産法（著作権）＜M＞＜S＞＜C＞ (2026-春学期-月曜日-3限-70427)') === '知的財産法（著作権）', 'Content syllabus normalizer should still strip noisy suffixes while preserving meaningful parentheses.');
 assert(contentSandbox.normalizeSyllabusCourseQuery('活用法を見聞するAI・データサイエンス[A 1] (2026-春学期---00311)') === '活用法を見聞するAI・データサイエンス', 'Content syllabus normalizer should still strip trailing section tags.');
@@ -148,7 +133,7 @@ const sampleSearchHtml = `<table><tr><td>法学部</td><td><a onclick="linkSetGo
 const parsedCandidates = workerSandbox.parseSyllabusCandidates(sampleSearchHtml);
 assert(parsedCandidates.length === 1 && parsedCandidates[0].normalizedTitle === '知的財産法（著作権）', 'parseSyllabusCandidates should still normalize noisy syllabus titles.');
 assert(workerSandbox.extractSyllabusCourseCode('<div>時間割コード Course Code 70427</div>') === '70427', 'extractSyllabusCourseCode should still recover the public syllabus course code.');
-workerSandbox.fetch = async (url) => ({ text: async () => (url.includes('UJikanwari_cd=A') ? '<div>Course Code 11111</div>' : '<div>Course Code 70427</div>') });
+workerSandbox.fetch = async (url) => ({ ok: true, status: 200, url, text: async () => (url.includes('UJikanwari_cd=A') ? '<div>Course Code 11111</div>' : '<div>Course Code 70427</div>') });
 const resolvedByCode = await workerSandbox.resolveCandidateByCourseCode([
   { id: 'A', year: '2026', query: '知的財産法（著作権）', title: '知的財産法（著作権）' },
   { id: 'B', year: '2026', query: '知的財産法（著作権）', title: '知的財産法（著作権）' }

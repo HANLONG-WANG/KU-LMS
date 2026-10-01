@@ -67,31 +67,102 @@ function buildUpcomingIdentityKey(item) {
   }
 
 function readCourseUpcomingCache() {
+    courseUpcomingCollectedAtByKey.clear();
     try {
-      const raw = window.sessionStorage?.getItem(COURSE_UPCOMING_CACHE_KEY) || '{}';
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === 'object' ? parsed : {};
+      const stored = JSON.parse(window.sessionStorage?.getItem(COURSE_UPCOMING_CACHE_KEY) || '{}');
+      const identity = courseUpcomingCacheIdentity || stored.identity || '';
+      if (stored.version !== 2 || !identity || stored.identity !== identity) return {};
+      const cache = {};
+      const now = Date.now();
+      for (const [key, entry] of Object.entries(stored.entries || {})) {
+        const collectedAt = Date.parse(entry?.collectedAt || '');
+        if (!Array.isArray(entry?.items) || !Number.isFinite(collectedAt)
+          || collectedAt > now || now - collectedAt >= COURSE_UPCOMING_CACHE_TTL_MS) continue;
+        cache[key] = entry.items;
+        courseUpcomingCollectedAtByKey.set(key, entry.collectedAt);
+      }
+      return cache;
     } catch (error) {
       return {};
     }
   }
 
 function writeCourseUpcomingCache(cache) {
+    if (!courseUpcomingCacheIdentity) return false;
     try {
-      window.sessionStorage?.setItem(COURSE_UPCOMING_CACHE_KEY, JSON.stringify(cache));
+      const entries = {};
+      for (const [key, items] of Object.entries(cache || {})) {
+        if (!Array.isArray(items)) continue;
+        const collectedAt = courseUpcomingCollectedAtByKey.get(key);
+        if (!collectedAt) continue;
+        entries[key] = { collectedAt, items };
+      }
+      window.sessionStorage?.setItem(COURSE_UPCOMING_CACHE_KEY, JSON.stringify({
+        version: 2,
+        identity: courseUpcomingCacheIdentity,
+        entries
+      }));
+      return true;
     } catch (error) {
       console.warn('[KU Redesign] failed to write course upcoming cache', error);
+      return false;
     }
   }
 
 function rememberCourseUpcoming(courseHref = '', items = []) {
     const cacheKey = buildCourseCacheKey(courseHref);
-    if (!cacheKey) return;
+    if (!cacheKey || !courseUpcomingCacheIdentity) return;
     const cache = readCourseUpcomingCache();
     const serializedItems = pruneUpcomingItems(items || []).map(serializeCourseUpcomingItem);
-    if (serializedItems.length) cache[cacheKey] = serializedItems;
-    else delete cache[cacheKey];
+    if (serializedItems.length) {
+      cache[cacheKey] = serializedItems;
+      courseUpcomingCollectedAtByKey.set(cacheKey, new Date().toISOString());
+    } else {
+      delete cache[cacheKey];
+      courseUpcomingCollectedAtByKey.delete(cacheKey);
+    }
     writeCourseUpcomingCache(cache);
+  }
+
+var COURSE_UPCOMING_CACHE_TTL_MS = 15 * 60 * 1000;
+var courseUpcomingCacheIdentity = '';
+var courseUpcomingCollectedAtByKey = new Map();
+
+function syncCourseUpcomingCacheIdentity(userName = '', options = {}) {
+    let storedIdentity = '';
+    try {
+      const stored = JSON.parse(window.sessionStorage?.getItem(COURSE_UPCOMING_CACHE_KEY) || '{}');
+      storedIdentity = stored.version === 2 ? String(stored.identity || '') : '';
+    } catch (error) {
+      // Invalid legacy caches are discarded when a current identity is known.
+    }
+    const nextIdentity = String(userName || '').trim();
+    if (!options.clear && !nextIdentity) {
+      courseUpcomingCacheIdentity = courseUpcomingCacheIdentity || storedIdentity;
+      return;
+    }
+    const previousIdentity = courseUpcomingCacheIdentity || storedIdentity;
+    const changed = options.clear || (nextIdentity && nextIdentity !== previousIdentity);
+    if (changed) {
+      courseUpcomingCollectedAtByKey.clear();
+      for (const key of [COURSE_UPCOMING_CACHE_KEY, HOME_REFRESH_STATE_KEY, ALL_UPCOMING_STATE_KEY]) {
+        try {
+          window.sessionStorage?.removeItem(key);
+        } catch (error) {
+          console.warn('[KU Redesign] failed to clear previous user cache', error);
+        }
+      }
+      invalidateLmsDocumentCache();
+    }
+    courseUpcomingCacheIdentity = options.clear ? '' : nextIdentity;
+    if (!options.clear && nextIdentity && (!storedIdentity || changed)) {
+      writeCourseUpcomingCache({});
+    }
+  }
+
+function getCourseUpcomingCacheCollectedAt(courseHref = '') {
+    readCourseUpcomingCache();
+    return courseUpcomingCollectedAtByKey.get(buildCourseCacheKey(courseHref)) || '';
   }
 
 function hydrateCourseUpcomingItem(item, scheduleEntry, cacheKey = '') {
