@@ -16,6 +16,11 @@ async function bootKulms(options = {}) {
   }
   resetPageLifecycleGuards();
   const route = detectRoute(window.location);
+  // Course login is a native JavaScript redirect; collect only on the destination materials page.
+  if (route.name === 'course-entry') {
+    releaseNative();
+    return;
+  }
   if (route.name === 'course-return') {
     resetActiveMessageContext();
     releaseNative();
@@ -69,6 +74,7 @@ async function init() {
   if (state.extensionSettings?.enabled === false || isPageLeaving()) return;
   const version = state.pageTaskVersion = (state.pageTaskVersion || 0) + 1;
   const route = detectRoute(window.location);
+  if (route.name === 'course-entry') return releaseNative();
   if (route.name === 'course-return') {
     resetActiveMessageContext();
     return releaseNative();
@@ -117,11 +123,11 @@ async function init() {
     state.currentView = view;
     rerender();
 
-    const collecting = isHomeRefreshActive(readHomeRefreshState()) || isAllUpcomingActive(readAllUpcomingState());
     await continueHomeRefreshIfNeeded(route, view);
     if (!isCurrentPageTask(version)) return;
     await continueAllUpcomingIfNeeded(route, view);
     if (!isCurrentPageTask(version)) return;
+    const collecting = isHomeRefreshActive(readHomeRefreshState()) || isAllUpcomingActive(readAllUpcomingState());
     if (route.name === 'home' && !collecting && state.currentRoute?.name === 'home' && state.currentView === view) {
       enrichHomeAsync(context, view, version).catch((error) => console.warn('[KU Redesign] home enrichment failed', error));
     }
@@ -247,7 +253,7 @@ function rebindHomeInterceptionOnHistoryRestore(event) {
   if (!event?.persisted && getHomeRefreshNavigationType() !== 'back_forward') return;
   const route = detectRoute(window.location);
   if (!route?.supported || state.extensionSettings?.enabled === false) return;
-  if (route.name === 'course-return') return releaseNative();
+  if (route.name === 'course-entry' || route.name === 'course-return') return releaseNative();
   if (document.documentElement.dataset.kuRedesignState !== 'ready') return;
   if (!state.currentRoute || !state.currentContext || !state.currentView || state.currentRoute.name !== route.name) {
     init().catch((error) => console.warn('[KU Redesign] history restore re-init failed', error));

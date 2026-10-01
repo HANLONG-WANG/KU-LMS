@@ -27,7 +27,7 @@ assert(source.includes("window.addEventListener('beforeunload', abortInFlightPag
 assert(source.includes("window.addEventListener('pageshow', resetPageLifecycleGuards);"), 'Pageshow should reset page-leaving guards after history restore.');
 assert(source.includes("if (normalized === '/webclass/login.php') return { supported: true, name: 'login' };"), 'Route detection should classify login.php as a supported direct login route.');
 assert(source.includes("if (normalized === '/webclass/logout.php') return { supported: true, name: 'logout' };"), 'Route detection should classify logout.php as a supported direct logout route.');
-assert(extractFunction(source, 'detectRoute').includes("(?:\\/login)?$"), 'Route detection should treat native course login URLs as course-materials routes.');
+assert(extractFunction(source, 'detectRoute').includes("name: 'course-entry'"), 'Route detection should distinguish native course login transitions from materials pages.');
 assert(source.includes("abortHomeRefresh(refreshState, isAuthInvalidRoute(route) ? 'auth-invalid-route' : `unsupported-route:${route.name}`);"), 'Unsupported refresh routes should abort instead of restoring home.');
 assert(source.includes("abortHomeRefresh(payload, 'manual-home-navigation');"), 'Manual return to home mid-refresh should abort.');
 assert(source.includes("abortHomeRefresh(payload, 'target-mismatch');"), 'Target mismatch should abort instead of forcing home restoration.');

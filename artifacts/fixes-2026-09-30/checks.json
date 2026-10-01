@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-30T23:24:07.004Z",
-  "passed": 29,
-  "total": 29,
+  "generatedAt": "2026-10-01T01:52:02.678Z",
+  "passed": 30,
+  "total": 30,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -96,6 +96,14 @@
       "passed": true,
       "exitCode": 0,
       "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"syllabus-manifest-chain-preserved\",\n    \"syllabus-domain-never-boots-kulms\",\n    \"syllabus-assist-service-cluster-present\",\n    \"syllabus-assist-fallback-contract-preserved\",\n    \"syllabus-ambiguity-no-guess-preserved\"\n  ]\n}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-course-entry-transition.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "{\n  \"ok\": true,\n  \"checks\": [\n    \"refresh: entry boot, init and history restoration preserve collectors and native redirect\",\n    \"refresh: returning home clears the queue, displays cached assignments and settles both loading cards\",\n    \"refresh: two real course pages collect items and navigate through native exits in order\",\n    \"all-upcoming: entry boot, init and history restoration preserve collectors and native redirect\",\n    \"all-upcoming: two real course pages collect items and navigate through native exits in order\",\n    \"global login/logout, materials, course exits, reports and scores retain their routes\",\n    \"the real login page still renders and clears authenticated collector/cache state\"\n  ]\n}\n",
       "stderr": "",
       "error": ""
     },

@@ -12,7 +12,8 @@ function detectRoute(locationObj) {
     if (/\/webclass\/course\.php\/[^/]+\/logout$/.test(normalized)) return { supported: true, name: 'course-return' };
     if (/\/webclass\/course\.php\/[^/]+\/scores$/.test(normalized)) return { supported: true, name: 'course-scores' };
     if (/\/webclass\/course\.php\/[^/]+\/my-reports$/.test(normalized)) return { supported: true, name: 'course-myreports' };
-    if (/\/webclass\/course\.php\/[^/]+(?:\/login)?$/.test(normalized)) return { supported: true, name: 'course-materials' };
+    if (/\/webclass\/course\.php\/[^/]+\/login$/.test(normalized)) return { supported: true, name: 'course-entry' };
+    if (/\/webclass\/course\.php\/[^/]+$/.test(normalized)) return { supported: true, name: 'course-materials' };
     if (normalized === '/webclass/information.php' || normalized === '/webclass/information.php/mbl') return { supported: true, name: 'notifications' };
     if (/\/webclass\/information\.php(?:\/mbl)?\/post\/[^/]+$/.test(normalized)) return { supported: true, name: 'notifications-detail' };
     if (normalized === '/webclass/msg_editor.php' && query.get('msgappmode') === 'inbox') return { supported: true, name: 'messages-inbox' };
