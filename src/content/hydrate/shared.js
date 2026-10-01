@@ -1,6 +1,7 @@
 /* src/content/hydrate/shared.js */
 
 function bindInteractiveHandlers(root, route, view) {
+    if (typeof kuBindTodos === 'function') kuBindTodos(root, route, view);
     root.querySelectorAll('[data-action="home-search"]').forEach((input) => {
       input.addEventListener('input', (event) => {
         state.homeSearch = event.target.value;
@@ -193,6 +194,7 @@ function bindSectionNavigation(root) {
   }
 
 function cleanupRouteHydration() {
+    if (typeof kuCleanupTodos === 'function') kuCleanupTodos();
     state.routeRightNavCleanup?.();
     state.syllabusRightNavCleanup?.();
     state.lmsLinkNavigationCleanup?.();

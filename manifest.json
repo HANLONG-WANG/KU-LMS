@@ -29,10 +29,13 @@
         "https://kulms.tl.kansai-u.ac.jp/webclass/*"
       ],
       "css": [
-        "src/content/critical.css"
+        "src/content/critical.css",
+        "src/shared/todo-ui.css"
       ],
       "js": [
         "src/shared/settings.js",
+        "src/shared/todo-client.js",
+        "src/shared/todo-ui.js",
         "src/content/runtime/constants.js",
         "src/content/runtime/state.js",
         "src/content/runtime/routes.js",
@@ -59,6 +62,7 @@
         "src/content/services/syllabus.js",
         "src/content/services/refresh.js",
         "src/content/services/all-upcoming.js",
+        "src/content/services/todo.js",
         "src/content/runtime/boot-kulms.js",
         "src/content/main.js"
       ],

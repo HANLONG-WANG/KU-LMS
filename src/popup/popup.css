@@ -14,7 +14,7 @@
 }
 
 body {
-  width: 320px;
+  width: 400px;
   margin: 0;
   background: var(--bg);
   color: var(--text);
@@ -158,3 +158,8 @@ button:disabled {
 .status.error {
   color: #a33b3b;
 }
+
+[hidden] { display: none !important; }
+.popup-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.popup-tabs button { flex: 1; background: #eef3ff; color: #315ee8; }
+.popup-tabs button[aria-selected="true"] { background: #315ee8; color: #fff; }

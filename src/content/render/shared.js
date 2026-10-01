@@ -80,7 +80,7 @@ function renderSchedule(schedule, week, year = '') {
 function renderScheduleCard(entry, year = '') {
     const palette = pickPalette(entry.title);
     const meta = entry.title.match(/(\d限-\d+)/)?.[1] || entry.weekday;
-    return `<div class="ku-class-card ${palette}"><a class="ku-card-link ku-class-title-link" href="${escapeAttr(entry.href)}" title="${escapeAttr(entry.title)}">${escapeHtml(shortenCourseTitle(entry.title))}</a><div class="ku-class-meta"><div class="ku-class-sub">${escapeHtml(meta)}</div>${renderSyllabusChip({ title: entry.title, href: entry.href, year })}</div>${entry.note ? `<div class="ku-class-reminder" title="${escapeAttr(entry.note)}"><span aria-hidden="true">●</span><span>${escapeHtml(isDueFlagNote(entry.note) ? '締切間近' : entry.note)}</span></div>` : ''}</div>`;
+    return `<div class="ku-class-card ${palette}"><a class="ku-card-link ku-class-title-link" href="${escapeAttr(entry.href)}" title="${escapeAttr(entry.title)}">${escapeHtml(shortenCourseTitle(entry.title))}</a><div class="ku-class-meta"><div class="ku-class-sub">${escapeHtml(meta)}</div></div><div class="ku-class-actions">${renderSyllabusChip({ title: entry.title, href: entry.href, year })}${typeof kuRenderTodoChip === 'function' ? kuRenderTodoChip(entry) : ''}</div>${entry.note ? `<div class="ku-class-reminder" title="${escapeAttr(entry.note)}"><span aria-hidden="true">●</span><span>${escapeHtml(isDueFlagNote(entry.note) ? '締切間近' : entry.note)}</span></div>` : ''}</div>`;
   }
 
 function renderSidebar(active) {

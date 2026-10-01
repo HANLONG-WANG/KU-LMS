@@ -3,8 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>KU-LMS 设置</title>
+    <title>KU-LMS TODO</title>
     <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="../shared/todo-ui.css">
   </head>
   <body>
     <main class="popup">
@@ -12,11 +13,13 @@
         <img src="../../assets/icons/icon48.png" alt="" class="popup-icon">
         <div>
           <h1>KU-LMS</h1>
-          <p>扩展设置</p>
+          <p>课程待办与扩展设置</p>
         </div>
       </header>
 
-      <form id="settings-form" class="settings-form">
+      <nav class="popup-tabs" role="tablist" aria-label="扩展功能"><button id="todo-tab" type="button" role="tab" aria-selected="true" aria-controls="todo-page">TODO</button><button id="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-form">设置</button></nav>
+      <section id="todo-page" role="tabpanel" aria-labelledby="todo-tab"></section>
+      <form id="settings-form" class="settings-form" role="tabpanel" aria-labelledby="settings-tab" hidden>
         <label class="switch-row">
           <span>
             <strong>启用扩展</strong>
@@ -54,5 +57,8 @@
     </main>
     <script src="../shared/settings.js"></script>
     <script src="popup.js"></script>
+    <script src="../shared/todo-client.js"></script>
+    <script src="../shared/todo-ui.js"></script>
+    <script src="todo-popup.js"></script>
   </body>
 </html>

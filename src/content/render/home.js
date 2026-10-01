@@ -70,6 +70,7 @@ function renderHome(view) {
         </div>
         <aside class="ku-side-stack">
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><button type="button" class="ku-button ghost" data-action="refresh-upcoming" title="対象コースを順に開いて締切情報を更新" ${refreshActive ? 'disabled aria-disabled=\"true\"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(allUpcomingHref)}" data-action="open-all-upcoming">すべて見る</a></div></div>${upcomingHtml}</section>
+          <section class="ku-card" data-todo-summary><div class="ku-card-header"><h2 class="ku-card-title">TODO</h2><button type="button" class="ku-button ghost" data-todo-open="">すべて見る</button></div><div class="ku-empty" data-todo-summary-body>読み込み中…</div></section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">最新のお知らせ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.notifications)}">すべて見る</a></div>${announcementsHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">メッセージ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.messages)}">すべて見る</a></div>${messagesHtml}</section>
         </aside>
@@ -82,7 +83,7 @@ function renderHomeOtherCourses(view) {
       ${group.title ? `<div class="ku-other-group-title">${escapeHtml(group.title)}</div>` : ''}
       ${group.items.map((item) => {
         const hasReminder = Boolean(item.hasNativeDueReminder || isDueFlagNote(item.note));
-        return `<div class="ku-other-row"><div class="ku-course-link-stack"><div class="ku-title-inline ku-other-course-title-row"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(shortenCourseTitle(item.title))}</a>${hasReminder ? `<div class="ku-chip red">${escapeHtml(dueSoonReminderText())}</div>` : ''}${renderSyllabusChip({ title: item.title, href: item.href, year: view.filters.year })}</div><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div></div></div>`;
+        return `<div class="ku-other-row"><div class="ku-course-link-stack"><div class="ku-title-inline ku-other-course-title-row"><a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(shortenCourseTitle(item.title))}</a>${hasReminder ? `<div class="ku-chip red">${escapeHtml(dueSoonReminderText())}</div>` : ''}${renderSyllabusChip({ title: item.title, href: item.href, year: view.filters.year })}${typeof kuRenderTodoChip === 'function' ? kuRenderTodoChip(item) : ''}</div><div class="ku-mini-meta">${escapeHtml(item.meta || '')}</div></div></div>`;
       }).join('')}
     </section>`).join('') || `<div class="ku-empty">${state.homeSearch ? '一致するコースがありません。' : 'その他のコースはありません。'}</div>`;
   }

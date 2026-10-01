@@ -1,3 +1,5 @@
+if (typeof importScripts === 'function') importScripts('todo-store.js');
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[KU-LMS Redesign] service worker installed');
 });
