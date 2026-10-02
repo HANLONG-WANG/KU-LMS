@@ -2,8 +2,10 @@
 var KuTodoUI = {
   mount(host, options = {}) {
     const api = options.client || KuTodoClient;
+    const fixedCourseKey = options.fixedCourseKey === undefined ? '' : (api.courseKey?.(options.fixedCourseKey) || '');
+    if (options.fixedCourseKey !== undefined && !fixedCourseKey) throw new Error('无法识别固定课程。');
     let db, editor, imported, disposed = false, loading = 0, busy = false, readOnly = false;
-    let selected = options.courseKey || '', filter = 'active';
+    let selected = fixedCourseKey || options.courseKey || '', filter = 'active';
     let pageScope = options.courseScope || null;
     let draftQueue = Promise.resolve();
     const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
@@ -20,11 +22,22 @@ var KuTodoUI = {
       <div data-list class="ku-todo-list"></div><details class="ku-todo-drafts"><summary>未提交的草稿 <span data-draft-count></span></summary><div data-drafts></div></details>
       <details class="ku-todo-backup"><summary>备份与恢复</summary><p class="ku-todo-hint">卸载扩展会清除本地数据。备份包含课程、待办和课题完成状态。TODO 冲突另存副本；课题状态冲突需先统一状态再导入。</p><div class="ku-todo-inline"><button type="button" class="ku-todo-button" data-export>导出当前资料</button><label class="ku-todo-file">导入 JSON<input data-file type="file" accept=".json,application/json"></label></div><div class="ku-todo-import" data-preview hidden><p data-preview-text></p><button type="button" class="ku-todo-button" data-import>确认合并导入</button><button type="button" class="ku-todo-button" data-import-cancel>取消</button></div><button type="button" class="ku-todo-button" data-restore>恢复导入前快照</button></details>`;
     const q = name => host.querySelector(`[data-${name}]`);
-    const on = (name, event, fn) => q(name).addEventListener(event, fn);
+    if (fixedCourseKey) {
+      host.classList.add('ku-todo-fixed');
+      host.querySelector('.ku-todo-workspace').remove();
+      q('workspace-form').remove();
+      host.querySelector('.ku-todo-hint').remove();
+      q('course').closest('label').remove();
+      q('editor-course').closest('label').remove();
+      host.querySelector('.ku-todo-backup').remove();
+      q('search').placeholder = '搜索当前课程待办…';
+      q('search').setAttribute('aria-label', '搜索当前课程待办');
+    }
+    const on = (name, event, fn) => q(name)?.addEventListener(event, fn);
     const current = () => db?.workspaces.find(w => w.id === db.activeId);
     const scopeFor = w => pageScope || w?.courseScope;
     const scopedCourses = w => {
-      const keys = new Set(scopeFor(w)?.keys || []);
+      const keys = fixedCourseKey ? new Set([fixedCourseKey]) : new Set(scopeFor(w)?.keys || []);
       return (w?.courses || []).filter(course => keys.has(course.key));
     };
     const status = (text, error = false) => { q('status').textContent = text; q('status').classList.toggle('is-error', error); };
@@ -35,7 +48,7 @@ var KuTodoUI = {
     }
     function accept(data) {
       if (disposed || (db && data.revision < db.revision)) return;
-      if (db && db.activeId !== data.activeId) { selected = ''; if (editor) status('资料已切换，原资料的编辑内容仍保留。', true); }
+      if (db && db.activeId !== data.activeId) { selected = fixedCourseKey || ''; if (editor) status('资料已切换，原资料的编辑内容仍保留。', true); }
       db = data; readOnly = false; render();
     }
     async function refresh() {
@@ -55,17 +68,21 @@ var KuTodoUI = {
     function render() {
       if (disposed) return; const w = current();
       const courses = scopedCourses(w), courseKeys = new Set(courses.map(c => c.key));
-      q('add').disabled = readOnly || !courses.length; q('workspace').disabled = readOnly;
+      q('add').disabled = readOnly || !courses.length;
+      if (!fixedCourseKey) q('workspace').disabled = readOnly;
       if (!w) return;
-      select(q('workspace'), db.workspaces, w.id);
-      q('course-scope').textContent = scopeFor(w) ? `课程范围：${scopeFor(w).label || '当前 LMS 页面'}（${courses.length} 门）` : '请先打开 LMS 主页选择学期；历史 TODO 仍然保留。';
+      if (fixedCourseKey) q('course-scope').textContent = `${courses[0]?.title || '当前课程'} · ${w.name}`;
+      else {
+        select(q('workspace'), db.workspaces, w.id);
+        q('course-scope').textContent = scopeFor(w) ? `课程范围：${scopeFor(w).label || '当前 LMS 页面'}（${courses.length} 门）` : '请先打开 LMS 主页选择学期；历史 TODO 仍然保留。';
+      }
       if (editor) {
         const visible = editor.workspaceId === w.id && courseKeys.has(editor.courseKey);
         q('editor').hidden = !visible;
-        if (visible) select(q('editor-course'), courses, editor.courseKey);
+        if (visible && !fixedCourseKey) select(q('editor-course'), courses, editor.courseKey);
       }
-      if (selected && !courseKeys.has(selected)) selected = '';
-      select(q('course'), [...courses].sort((a,b) => a.title.localeCompare(b.title)), selected, true);
+      if (selected && !courseKeys.has(selected)) selected = fixedCourseKey || '';
+      if (!fixedCourseKey) select(q('course'), [...courses].sort((a,b) => a.title.localeCompare(b.title)), selected, true);
       host.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(filter === b.dataset.filter)));
       const search = q('search').value.trim().toLocaleLowerCase();
       const list = q('list'); list.replaceChildren();
@@ -74,7 +91,8 @@ var KuTodoUI = {
         const row = el('div', 'ku-todo-row'); row.dataset.todoId = t.id;
         if (!t.deletedAt) { const c = el('input'); c.type = 'checkbox'; c.checked = !!t.completedAt; c.disabled = readOnly; c.setAttribute('aria-label', `完成：${t.text}`); c.addEventListener('change', () => void action('update', { id:t.id, expectedRevision:t.revision, completed:c.checked })); row.append(c); }
         const content = el('div', 'ku-todo-row-content'); const title = button(t.text, () => start(t), `ku-todo-text${t.completedAt ? ' is-done' : ''}`); title.disabled = !!t.deletedAt || readOnly; content.append(title);
-        content.append(button(w.courses.find(c => c.key === t.courseKey)?.title || '课程', () => { selected = t.courseKey; render(); }, 'ku-todo-course-link')); row.append(content);
+        if (!fixedCourseKey) content.append(button(w.courses.find(c => c.key === t.courseKey)?.title || '课程', () => { selected = t.courseKey; render(); }, 'ku-todo-course-link'));
+        row.append(content);
         const buttons = el('div', 'ku-todo-row-actions');
         if (t.deletedAt) {
           buttons.append(button('恢复', () => void action('restore', { id:t.id, expectedRevision:t.revision })));
@@ -82,7 +100,7 @@ var KuTodoUI = {
         } else buttons.append(button('删除', () => void action('delete', { id:t.id, expectedRevision:t.revision }, '已移入回收站，可随时恢复。'), 'ku-todo-quiet'));
         row.append(buttons); list.append(row);
       });
-      if (!entries.length) list.append(el('p','ku-todo-empty',!courses.length ? '当前范围没有课程，请在 LMS 主页选择学期。' : search ? '没有匹配的 TODO。' : filter === 'active' ? '没有未完成的 TODO。' : filter === 'done' ? '还没有已完成的 TODO。' : '回收站为空。'));
+      if (!entries.length) list.append(el('p','ku-todo-empty',!courses.length ? (fixedCourseKey ? '正在准备当前课程，请稍候或重试读取。' : '当前范围没有课程，请在 LMS 主页选择学期。') : search ? '没有匹配的 TODO。' : filter === 'active' ? '没有未完成的 TODO。' : filter === 'done' ? '还没有已完成的 TODO。' : '回收站为空。'));
       q('drafts').replaceChildren(); const drafts = w.drafts.filter(d => courseKeys.has(d.courseKey) && d.text.trim()); q('draft-count').textContent = String(drafts.length);
       drafts.forEach(d => { const row = el('div','ku-todo-draft-row'); row.append(button(`${w.courses.find(c=>c.key===d.courseKey)?.title || '课程'} · ${d.text.slice(0,70)}`,()=>start(null,d),'ku-todo-draft-title')); row.append(button('丢弃',()=>{if(window.confirm('丢弃这份草稿？')) void action('dropDraft',{id:d.id});},'ku-todo-quiet')); q('drafts').append(row); });
       options.onUpdate?.(db);
@@ -91,7 +109,8 @@ var KuTodoUI = {
       const w = current();
       const courses = scopedCourses(w);
       if (readOnly || !courses.length || busy) return;
-      const targetKey = draft?.courseKey || t?.courseKey || selected || courses[0].key;
+      if (fixedCourseKey && ((draft && draft.courseKey !== fixedCourseKey) || (t && t.courseKey !== fixedCourseKey))) return;
+      const targetKey = fixedCourseKey || draft?.courseKey || t?.courseKey || selected || courses[0].key;
       if (!courses.some(c => c.key === targetKey)) { status('请切回该课程所在的学期后编辑。', true); return; }
       const draftId = draft?.id || api.uuid();
       const todoId = draft?.todoId || t?.id || null;
@@ -105,15 +124,17 @@ var KuTodoUI = {
       q('editor').hidden = false;
       q('conflict').hidden = true;
       q('editor-title').textContent = todoId ? '编辑 TODO' : '新增 TODO';
-      select(q('editor-course'), courses, editor.courseKey);
-      q('editor-course').disabled = !!todoId;
+      if (!fixedCourseKey) {
+        select(q('editor-course'), courses, editor.courseKey);
+        q('editor-course').disabled = !!todoId;
+      }
       q('editor-text').value = draft?.text ?? t?.text ?? '';
       q('draft-status').textContent = draft ? '已恢复保存的草稿。' : '输入后保存草稿；点击保存提交为 TODO。';
       q('editor-text').focus();
     }
     function saveDraft() {
       if (!editor) return;
-      editor.courseKey = q('editor-course').value;
+      editor.courseKey = fixedCourseKey || q('editor-course').value;
       const captured = { ...editor }, value = q('editor-text').value;
       q('draft-status').textContent = '草稿保存中…';
       // Dispatch immediately; the popup may disappear before a local queue drains.
@@ -149,7 +170,7 @@ var KuTodoUI = {
       busy = true;
       q('save').disabled = true;
       q('editor-text').readOnly = true;
-      q('editor-course').disabled = true;
+      if (!fixedCourseKey) q('editor-course').disabled = true;
       status('保存中…');
       try {
         await draftQueue.catch(() => {});
@@ -184,7 +205,7 @@ var KuTodoUI = {
         busy = false;
         q('save').disabled = false;
         q('editor-text').readOnly = false;
-        q('editor-course').disabled = !!editor?.todoId;
+        if (!fixedCourseKey) q('editor-course').disabled = !!editor?.todoId;
       }
     }
     on('conflict-save','click',()=>{if(!editor)return;const t=db.workspaces.find(w=>w.id===editor.workspaceId)?.todos.find(t=>t.id===editor.todoId);if(!t||t.deletedAt)return;editor.baseRevision=t.revision;editor.operationId=api.uuid();void submit();});
@@ -201,6 +222,6 @@ var KuTodoUI = {
     on('import','click',async()=>{if(!imported)return;const data=imported;if(await action('import',{workspaceId:data.workspaceId,data:data.value,expectedRevision:data.revision},'已合并导入，原有内容保留。')){imported=null;q('preview').hidden=true;}});
     on('restore','click',()=>{if(db && window.confirm('将所有本地资料恢复到导入前？当前数据会保留为可再次恢复的快照。建议先导出。'))void action('restoreBackup',{expectedRevision:db.revision},'已恢复快照。');});
     const unsubscribe=api.subscribe(()=>void refresh()); const ready=refresh().then(()=>{if(!readOnly)status('已读取本地 TODO。');});
-    return {ready,refresh,selectCourse(key){selected=key;render();},setScope(scope){pageScope=scope;render();},destroy(){disposed=true;loading++;unsubscribe();}};
+    return {ready,refresh,selectCourse(key){selected=fixedCourseKey||key;render();},setScope(scope){if(!fixedCourseKey)pageScope=scope;render();},destroy(){disposed=true;loading++;unsubscribe();}};
   }
 };

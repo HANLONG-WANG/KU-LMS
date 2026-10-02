@@ -5,13 +5,20 @@ function renderCourseMaterials(view) {
     return `
       ${renderCourseHeader(view.course.course, view.currentTab)}
       <div class="ku-course-grid">
-        <aside class="ku-card ku-timeline-card">
-          <div class="ku-card-title">タイムライン</div>
-          ${view.course.timeline.items.length ? view.course.timeline.items.map((item) => {
+        <aside class="ku-course-left-column">
+          <section class="ku-card ku-course-todo-card" aria-label="このコースの TODO">
+            <header class="ku-course-todo-header"><h2 class="ku-card-title">TODO</h2><span class="ku-chip blue" data-course-todo-count aria-label="TODO 读取中">…</span></header>
+            <div class="ku-course-todo-notice" data-course-todo-notice role="status">读取当前课程 TODO…</div>
+            <div class="ku-course-todo-body" data-course-todo-host></div>
+          </section>
+          <section class="ku-card ku-timeline-card">
+            <div class="ku-card-title">タイムライン</div>
+            <div class="ku-course-timeline-scroll" tabindex="0" aria-label="タイムラインの活動">${view.course.timeline.items.length ? view.course.timeline.items.map((item) => {
             const token = materialTypeToken(item.subtitle, item.title);
             const body = renderTimelineBody(item);
             return `<div class="ku-timeline-item"><div class="ku-timeline-icon ku-token-${token.key}">${icon(token.icon)}</div><div class="ku-timeline-content"><div class="ku-timeline-head"><div class="ku-timeline-head-main"><span class="ku-mini-meta ku-timeline-kicker">${escapeHtml(item.subtitle)}</span><span class="ku-chip ${item.label === 'New' ? 'red' : token.tone}">${escapeHtml(item.label || '更新')}</span></div><span class="ku-mini-meta ku-timeline-recency">${escapeHtml(item.recency)}</span></div><div class="ku-timeline-body">${body}</div></div></div>`;
-          }).join('') : `<div class="ku-empty">${view.course.timeline.error ? 'タイムラインを取得できませんでした。' : '表示できる活動はありません。'}</div>`}
+          }).join('') : `<div class="ku-empty">${view.course.timeline.error ? 'タイムラインを取得できませんでした。' : '表示できる活動はありません。'}</div>`}</div>
+          </section>
         </aside>
         <section class="ku-sidebar-layout">
           ${view.course.sections.map((section, index) => {

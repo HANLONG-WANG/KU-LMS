@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-02T02:53:39.652Z",
-  "passed": 41,
-  "total": 41,
+  "generatedAt": "2026-10-02T04:50:57.649Z",
+  "passed": 42,
+  "total": 42,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -120,6 +120,14 @@
       "passed": true,
       "exitCode": 0,
       "stdout": "{\"ok\":true,\"checks\":[\"visible-course-title-normalization\",\"account-identity-kept-separate-from-course-brand\",\"syllabus-top-level-heading-normalization\",\"nested-syllabus-labels-preserved\",\"remembered-direct-detail-fallback\",\"remembered-detail-expiry-respected\",\"home-history-restore-rebind\"]}\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
+      "script": "verify-course-todo-panel.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: inline current-course TODO, compact complete timeline, direct registration, scope isolation, DOM/IME preservation, retries, multi-page updates and late-response cleanup\n",
       "stderr": "",
       "error": ""
     },
@@ -295,7 +303,7 @@
       "script": "verify-todo-course-scope.mjs",
       "passed": true,
       "exitCode": 0,
-      "stdout": "PASS: semester-scoped creation/list/drafts/trash, preserved history, persistent last view, per-page scope, inactive-tab isolation and local-only sync metadata\nPASS: Google conflict panel follows the local course scope without discarding conflicts\n",
+      "stdout": "PASS: semester-scoped creation/list/drafts/trash, preserved history, persistent last view, per-page scope, inactive-tab isolation and local-only sync metadata\nPASS: Google conflict panel follows the local course scope without discarding conflicts\nPASS: fixed course locks creation, lists, drafts, completion and trash across scope/profile changes without course dropdowns\n",
       "stderr": "",
       "error": ""
     },

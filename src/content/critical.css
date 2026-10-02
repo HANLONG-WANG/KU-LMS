@@ -1041,6 +1041,39 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   gap: 20px;
 }
 
+.ku-course-left-column {
+  position: sticky;
+  top: calc(var(--ku-nav-height) + 16px);
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  max-height: calc(100dvh - var(--ku-nav-height) - 32px);
+}
+
+.ku-course-todo-card { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 280px; overflow: hidden; }
+.ku-course-todo-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 16px 18px 8px; flex: 0 0 auto; }
+.ku-course-todo-header .ku-card-title { margin: 0; }
+.ku-course-todo-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 16px; scrollbar-width: thin; }
+.ku-course-todo-body [data-course-scope] { overflow-wrap: anywhere; }
+.ku-course-todo-body .ku-todo-toolbar { position: sticky; top: 0; z-index: 1; padding: 6px 0; background: #fff; }
+.ku-course-todo-body .ku-todo-toolbar .ku-todo-button { padding-left: 8px; padding-right: 8px; }
+.ku-course-todo-notice { padding: 8px 16px; font-size: 13px; color: var(--ku-text-soft); overflow-wrap: anywhere; }
+.ku-course-todo-notice[hidden] { display: none; }
+.ku-course-todo-notice p { margin: 0 0 6px; }
+.ku-course-todo-notice.is-error { color: #b4263c; }
+.ku-course-left-column > .ku-timeline-card { display: flex; flex-direction: column; flex: 0 0 auto; max-height: 180px; min-height: 0; overflow: hidden; }
+.ku-course-left-column > .ku-timeline-card > .ku-card-title { flex: 0 0 auto; margin-bottom: 8px; }
+.ku-course-timeline-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.ku-course-timeline-scroll:focus-visible { outline: 2px solid var(--ku-blue); outline-offset: 2px; }
+.ku-course-timeline-scroll > .ku-empty { padding: 10px 0; }
+
+@media (max-width: 1180px), (max-height: 600px) {
+  .ku-course-left-column { position: static; max-height: none; }
+  .ku-course-todo-card { max-height: min(560px, 72dvh); }
+}
+
 .ku-timeline-card,
 .ku-rightnav-card,
 .ku-center-card,

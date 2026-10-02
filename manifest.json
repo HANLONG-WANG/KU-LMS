@@ -66,6 +66,7 @@
         "src/content/services/refresh.js",
         "src/content/services/all-upcoming.js",
         "src/content/services/todo.js",
+        "src/content/services/course-todo.js",
         "src/content/services/task-completion.js",
         "src/content/runtime/boot-kulms.js",
         "src/content/main.js"
