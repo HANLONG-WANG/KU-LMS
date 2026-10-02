@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-02T04:50:57.649Z",
-  "passed": 42,
-  "total": 42,
+  "generatedAt": "2026-10-02T05:56:39.730Z",
+  "passed": 43,
+  "total": 43,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -308,6 +308,14 @@
       "error": ""
     },
     {
+      "script": "verify-todo-deadlines.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: deadlines validate, persist, migrate, export/import, sync offline, resolve conflicts and clear; shipped v1 transport rejects v2 without writing or uploading\nPASS: restoring an old snapshot also preserves the pre-upgrade database\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
       "script": "verify-todo-drive.mjs",
       "passed": true,
       "exitCode": 0,
@@ -335,7 +343,7 @@
       "script": "verify-todo-ui.mjs",
       "passed": true,
       "exitCode": 0,
-      "stdout": "PASS: TODO shared views, XSS, conflicting edits, draft reopen, storage failure, completion, recovery, home lifecycle and popup settings\nPASS: lost-response retry preserves new edits without duplicate records\nPASS: immediate draft dispatch and lost-response recovery across popup reopen\n",
+      "stdout": "PASS: TODO shared views, XSS, conflicting edits, draft reopen, storage failure, completion, recovery, home lifecycle and popup settings\nPASS: lost-response retry preserves new edits without duplicate records\nPASS: immediate draft dispatch and lost-response recovery across popup reopen\nPASS: deadline local-time conversion, draft reopen, ordering, overdue state, clearing and lost-ACK recovery\nPASS: clock-only overdue refresh, timer cleanup and invalid calendar input\nPASS: unchanged imported seconds and DST-overlap instant survive editing\n",
       "stderr": "",
       "error": ""
     }

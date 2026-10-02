@@ -86,7 +86,7 @@ const versions=(await f.status()).conflicts.flatMap(c=>c.versions.map(v=>v.value
 const allExported=(await f.local('export')).todos.map(t=>t.text);
 assert.ok(versions.every(text=>allExported.includes(text)),'external backup must not omit an unresolved text version');
 console.log('PASS: external export preserves unresolved text versions');
-assert.equal((await f.local('read')).schemaVersion,3,'completion-aware replication protects history from old schema-1/2 writers');
+assert.equal((await f.local('read')).schemaVersion,4,'deadline-aware replication protects history from old writers');
 assert.equal((await device('unused').local('read')).schemaVersion,1,'legacy local-only stores remain readable without migration');
 console.log('PASS: schema migration protects replication metadata from accidental downgrade');
 

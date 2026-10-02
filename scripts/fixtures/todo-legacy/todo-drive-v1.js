@@ -66,8 +66,7 @@ var KuTodoDrive = (() => {
     }
     async function download(fileId, accountId) {
       const data = await request(`drive/v3/files/${encodeURIComponent(fileId)}?alt=media`, {}, MAX_BATCH_BYTES);
-      if ([TAG, ASSIGNMENT_TAG].includes(data.format) && Number.isInteger(data.schemaVersion) && data.schemaVersion > (data.format === TAG ? 2 : 1)) throw failure('VERSION', '云端使用了更新的同步格式，请更新扩展后重试。本地修改仍保留。');
-      if (![TAG, ASSIGNMENT_TAG].includes(data.format) || !(data.format === TAG ? [1, 2].includes(data.schemaVersion) : data.schemaVersion === 1) || data.accountId !== accountId || !Array.isArray(data.events) || data.events.length > 2000
+      if (![TAG, ASSIGNMENT_TAG].includes(data.format) || data.schemaVersion !== 1 || data.accountId !== accountId || !Array.isArray(data.events) || data.events.length > 2000
         || data.events.some(e => !e || !(data.format === ASSIGNMENT_TAG ? e.entity === 'assignment' : ['course', 'todo'].includes(e.entity)))) throw failure('SYNC_DATA', '云端同步格式或账号不匹配，未覆盖本地数据。');
       return data.events;
     }
@@ -75,9 +74,7 @@ var KuTodoDrive = (() => {
       const assignments = events.length > 0 && events.every(e => e?.entity === 'assignment');
       if (events.some(e => !e || !(assignments ? e.entity === 'assignment' : ['course', 'todo'].includes(e.entity)))) throw failure('SYNC_DATA', '不同同步格式不能混入同一批次。');
       const format = assignments ? ASSIGNMENT_TAG : TAG;
-      // Keep the discovery tag: old clients must find v2 and fail before uploading,
-      // rather than silently ignore deadlines and continue writing v1 records.
-      const data = JSON.stringify({ format, schemaVersion: assignments ? 1 : 2, accountId, events });
+      const data = JSON.stringify({ format, schemaVersion: 1, accountId, events });
       if (!events.length || new TextEncoder().encode(data).length > MAX_BATCH_BYTES) throw failure('QUOTA', '本次同步批次过大。');
       const boundary = `ku_${uuid()}`, metadata = { name: `${assignments ? 'completion' : 'todo'}-${uuid()}.json`, mimeType: 'application/json', parents: ['appDataFolder'], appProperties: assignments ? { kuAssignmentFormat: format } : { kuTodoFormat: format } };
       const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${data}\r\n--${boundary}--\r\n`;

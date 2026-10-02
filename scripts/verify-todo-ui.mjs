@@ -99,3 +99,69 @@ const priorCount=(await request('read')).workspaces[0].todos.length;recover.inpu
 assert.equal((await request('read')).workspaces[0].todos.length,priorCount,'recovered ambiguous save must use the original record identity');
 assert.equal(recover.q('editor').hidden,false);recover.submit();await tick();assert.ok((await request('read')).workspaces[0].todos.some(t=>t.text==='changed after reopening'));recover.instance.destroy();
 console.log('PASS: immediate draft dispatch and lost-response recovery across popup reopen');
+
+// Deadline controls share the same durable editor, including draft and ACK recovery.
+const deadlineUI = ui(); await deadlineUI.instance.ready;
+deadlineUI.click('add'); deadlineUI.input('editor-text', 'deadline editor');
+deadlineUI.input('editor-due', '2030-10-02T18:30'); await tick();
+const utcDeadline = new Date('2030-10-02T18:30').toISOString();
+assert.ok((await request('read')).workspaces[0].drafts.some(d => d.text === 'deadline editor' && d.dueAt === utcDeadline));
+deadlineUI.instance.destroy();
+const deadlineReopen = ui(); await deadlineReopen.instance.ready;
+[...deadlineReopen.host.querySelectorAll('.ku-todo-draft-title')].find(n => n.textContent.includes('deadline editor')).click();
+assert.equal(deadlineReopen.q('editor-due').value, '2030-10-02T18:30');
+deadlineReopen.submit(); await tick();
+const deadlineTodo = (await request('read')).workspaces[0].todos.find(t => t.text === 'deadline editor');
+assert.equal(deadlineTodo.dueAt, utcDeadline);
+assert.equal(deadlineReopen.host.querySelector('.ku-todo-row').dataset.todoId, deadlineTodo.id, 'dated unfinished TODO precedes undated items');
+assert.ok(deadlineReopen.host.querySelector('.ku-todo-due'));
+deadlineReopen.host.querySelector(`[data-todo-id="${deadlineTodo.id}"] .ku-todo-text`).click();
+deadlineReopen.input('editor-due', '2000-01-01T12:00'); await tick(); deadlineReopen.submit(); await tick();
+assert.match(deadlineReopen.host.querySelector(`[data-todo-id="${deadlineTodo.id}"] .ku-todo-due`).textContent, /已逾期/);
+deadlineReopen.host.querySelector(`[data-todo-id="${deadlineTodo.id}"] .ku-todo-text`).click();
+deadlineReopen.click('clear-due'); await tick(); deadlineReopen.submit(); await tick();
+assert.equal((await request('read')).workspaces[0].todos.find(t => t.id === deadlineTodo.id).dueAt, null);
+assert.equal(deadlineReopen.host.querySelector(`[data-todo-id="${deadlineTodo.id}"] .ku-todo-due`), null);
+// A date-only change after an ambiguous write must survive the retry too.
+let loseDeadlineAck = true;
+client.request = async (name, payload) => { const value = await originalRequest(name, payload); if (name === 'update' && loseDeadlineAck) { loseDeadlineAck = false; throw Error('lost deadline ACK'); } return value; };
+deadlineReopen.host.querySelector(`[data-todo-id="${deadlineTodo.id}"] .ku-todo-text`).click();
+deadlineReopen.input('editor-due', '2030-10-02T18:30'); await tick(); deadlineReopen.submit(); await tick();
+deadlineReopen.input('editor-due', '2030-10-03T18:30'); await tick(); deadlineReopen.submit(); await tick();
+assert.equal(deadlineReopen.q('editor').hidden, false);
+assert.equal(deadlineReopen.q('editor-due').value, '2030-10-03T18:30');
+deadlineReopen.submit(); await tick();
+assert.equal((await request('read')).workspaces[0].todos.find(t => t.id === deadlineTodo.id).dueAt, new Date('2030-10-03T18:30').toISOString());
+client.request = originalRequest;
+deadlineReopen.instance.destroy();
+console.log('PASS: deadline local-time conversion, draft reopen, ordering, overdue state, clearing and lost-ACK recovery');
+
+// Clock-only expiry updates an open list and its timer is released on unmount.
+let wallTime = Date.parse('2029-01-01T00:00:00Z'), timerCallback, clearedTimer = false;
+Object.assign(deadlineReopen.ctx, {
+  Date: class extends Date { static now() { return wallTime; } },
+  setInterval(fn, delay) { assert.equal(delay, 60000); timerCallback = fn; return 42; },
+  clearInterval(id) { assert.equal(id, 42); clearedTimer = true; }
+});
+const timed = deadlineReopen.ctx.KuTodoUI.mount(deadlineReopen.host, { client }); await timed.ready;
+assert.equal(deadlineReopen.host.querySelector('.ku-todo-due.is-overdue'), null);
+wallTime = Date.parse('2031-01-01T00:00:00Z'); timerCallback();
+assert.match(deadlineReopen.host.querySelector('.ku-todo-due.is-overdue').textContent, /已逾期/);
+deadlineReopen.host.querySelector(`[data-todo-id="${deadlineTodo.id}"] .ku-todo-text`).click();
+deadlineReopen.input('editor-due', '2030-02-30T12:00'); deadlineReopen.submit(); await tick();
+assert.match(deadlineReopen.q('status').textContent, /截止时间无效/);
+assert.equal(deadlineReopen.q('editor').hidden, false, 'invalid calendar date retains editor input');
+timed.destroy(); assert.equal(clearedTimer, true);
+console.log('PASS: clock-only overdue refresh, timer cleanup and invalid calendar input');
+
+// Editing text alone preserves sub-minute precision and ambiguous DST instants.
+const precise = ui(); await precise.instance.ready;
+for (const originalDue of ['2030-10-02T09:30:45.123Z', '2030-11-03T06:30:00.000Z']) {
+  const before = (await request('read')).workspaces[0].todos.find(t => t.id === deadlineTodo.id);
+  await originalRequest('update', { workspaceId: 'local', operationId: webcrypto.randomUUID(), id: before.id, expectedRevision: before.revision, dueAt: originalDue }); await tick();
+  precise.host.querySelector(`[data-todo-id="${before.id}"] .ku-todo-text`).click();
+  precise.input('editor-text', 'only text changed'); await tick(); precise.submit(); await tick();
+  assert.equal((await request('read')).workspaces[0].todos.find(t => t.id === before.id).dueAt, originalDue);
+}
+precise.instance.destroy();
+console.log('PASS: unchanged imported seconds and DST-overlap instant survive editing');

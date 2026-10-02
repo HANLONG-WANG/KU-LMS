@@ -3,6 +3,7 @@ var KuTodoStore = (() => {
   const KEY = 'kuLmsTodosV1';
   const BACKUP_KEY = 'kuLmsTodosBeforeImportV1';
   const MIGRATION_KEY = 'kuLmsTodosBeforeCompletionV3';
+  const DEADLINE_MIGRATION_KEY = 'kuLmsTodosBeforeDeadlineV4';
   const ORIGIN = 'https://kulms.tl.kansai-u.ac.jp';
   const MAX_BYTES = 4 * 1024 * 1024;
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -24,6 +25,12 @@ var KuTodoStore = (() => {
     if (!Number.isSafeInteger(value) || value < 0) fail('INVALID', '无效的数据版本。');
     return value;
   };
+  function deadline(value = null) {
+    if (value === null) return null;
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
+      || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString() !== value) fail('INVALID', '无效的截止时间。');
+    return value;
+  }
   function courseKey(href) {
     try {
       const url = new URL(href, ORIGIN);
@@ -38,7 +45,7 @@ var KuTodoStore = (() => {
   }
   function todo(value, keys) {
     if (!value || !keys.has(value.courseKey)) fail('INVALID', '待办缺少对应课程。');
-    return { id: id(value.id), courseKey: value.courseKey, text: text(value.text), revision: revision(value.revision),
+    return { id: id(value.id), courseKey: value.courseKey, text: text(value.text), dueAt: deadline(value.dueAt), revision: revision(value.revision),
       createdAt: date(value.createdAt), updatedAt: date(value.updatedAt), completedAt: date(value.completedAt, true), deletedAt: date(value.deletedAt, true) };
   }
   function assignment(value, keys) {
@@ -62,7 +69,7 @@ var KuTodoStore = (() => {
     unique(todos, 'id');
     const drafts = value.drafts.map(d => {
       if (!keys.has(d.courseKey) || typeof d.text !== 'string' || d.text.length > 2000) fail('INVALID', '草稿格式异常。');
-      return { id: id(d.id), courseKey: d.courseKey, todoId: d.todoId ? id(d.todoId) : null, text: d.text, updatedAt: date(d.updatedAt), baseRevision: revision(d.baseRevision) };
+      return { id: id(d.id), courseKey: d.courseKey, todoId: d.todoId ? id(d.todoId) : null, text: d.text, dueAt: deadline(d.dueAt), updatedAt: date(d.updatedAt), baseRevision: revision(d.baseRevision) };
     });
     unique(drafts, 'id');
     if (value.assignmentCompletions !== undefined && !Array.isArray(value.assignmentCompletions)) fail('INVALID', '课题完成记录格式异常，原数据未改动。');
@@ -82,9 +89,9 @@ var KuTodoStore = (() => {
     return result;
   }
   function database(value) {
-    if (![1, 2, 3].includes(value?.schemaVersion)) fail('VERSION', '无法读取此版本的 TODO；原数据已保留。请更新扩展或恢复备份。');
+    if (![1, 2, 3, 4].includes(value?.schemaVersion)) fail('VERSION', '无法读取此版本的 TODO；原数据已保留。请更新扩展或恢复备份。');
     if (!Array.isArray(value.workspaces) || !value.workspaces.length) fail('INVALID', 'TODO 资料格式异常，未覆盖原数据。');
-    if (value.schemaVersion === 3 && value.workspaces.some(w => !Array.isArray(w.assignmentCompletions))) fail('INVALID', '课题完成记录缺失，未覆盖原数据。');
+    if (value.schemaVersion >= 3 && value.workspaces.some(w => !Array.isArray(w.assignmentCompletions))) fail('INVALID', '课题完成记录缺失，未覆盖原数据。');
     const workspaces = value.workspaces.map(workspace);
     unique(workspaces, 'id');
     if (!workspaces.some(w => w.id === value.activeId)) fail('INVALID', '当前资料不存在。');
@@ -93,7 +100,7 @@ var KuTodoStore = (() => {
   const blankWorkspace = (value = 'local', name = '本地待办') => ({ id: value, name, courses: [], todos: [], assignmentCompletions: [], drafts: [], operations: [] });
   const empty = () => ({ schemaVersion: 1, revision: 0, activeId: 'local', workspaces: [blankWorkspace()] });
   function imported(value) {
-    if (value?.format !== 'ku-lms-todo' || ![1, 2].includes(value.schemaVersion) || !Array.isArray(value.courses) || !Array.isArray(value.todos)) fail('INVALID', '请选择有效的 KU-LMS TODO 备份。');
+    if (value?.format !== 'ku-lms-todo' || ![1, 2, 3].includes(value.schemaVersion) || !Array.isArray(value.courses) || !Array.isArray(value.todos)) fail('INVALID', '请选择有效的 KU-LMS TODO 备份。');
     if (value.assignmentConflicts !== undefined && (!Array.isArray(value.assignmentConflicts) || value.assignmentConflicts.length)) {
       fail('CONFLICT', '此备份包含未解决的课题完成冲突。所有版本仍在备份中，请先在来源设备解决冲突后重新导出。');
     }
@@ -113,7 +120,7 @@ var KuTodoStore = (() => {
       if (message.action === 'read') return db;
       const w = db.workspaces.find(w => w.id === message.workspaceId);
       if (!w && !['createWorkspace', 'selectWorkspace', 'restoreBackup'].includes(message.action)) fail('INVALID', '请选择本地资料。');
-      if (message.action === 'export') return { format: 'ku-lms-todo', schemaVersion: 2, exportedAt: new Date().toISOString(), courses: w.courses,
+      if (message.action === 'export') return { format: 'ku-lms-todo', schemaVersion: 3, exportedAt: new Date().toISOString(), courses: w.courses,
         todos: w.replica ? KuTodoReplica.exportTodos(w) : w.todos, assignmentCompletions: w.assignmentCompletions,
         assignmentConflicts: w.replica ? KuTodoReplica.conflicts(w.replica).filter(c => c.entity === 'assignment') : [] };
       if (message.action === 'previewImport') {
@@ -128,6 +135,7 @@ var KuTodoStore = (() => {
       if (message.action === '__syncRead') return clone(w);
       const beforeSync = w?.replica ? { courses: clone(w.courses), todos: clone(w.todos), assignmentCompletions: clone(w.assignmentCompletions) } : null;
       const beforeMigration = db.schemaVersion < 3 ? ((await storage.get(KEY))[KEY] || clone(db)) : null;
+      const beforeDeadlineMigration = db.schemaVersion < 4 ? ((await storage.get(KEY))[KEY] || clone(db)) : null;
       const operationId = id(message.operationId);
       if (w?.operations.includes(operationId)) return db;
       const now = new Date().toISOString();
@@ -136,7 +144,7 @@ var KuTodoStore = (() => {
         case '__syncAttach':
           await storage.set({ [BACKUP_KEY]: db });
           KuTodoReplica.attach(w, text(message.accountId, 100), () => crypto.randomUUID());
-          db.schemaVersion = 3; // Older extensions must not strip completion data or replication history.
+          db.schemaVersion = 4; // Older extensions must not strip deadlines or replication history.
           break;
         case '__syncMerge':
         case '__syncAck':
@@ -175,7 +183,7 @@ var KuTodoStore = (() => {
           const key = courseKey(message.courseKey);
           if (!w.courses.some(c => c.key === key)) fail('INVALID', '课程不存在，请重新打开主页。');
           if (w.todos.some(t => t.id === operationId)) return db;
-          w.todos.push({ id: operationId, courseKey: key, text: text(message.text), revision: 1, createdAt: now, updatedAt: now, completedAt: null, deletedAt: null });
+          w.todos.push({ id: operationId, courseKey: key, text: text(message.text), dueAt: deadline(message.dueAt), revision: 1, createdAt: now, updatedAt: now, completedAt: null, deletedAt: null });
           break;
         }
         case 'setAssignment': {
@@ -203,6 +211,7 @@ var KuTodoStore = (() => {
             if (message.action === 'update') {
               if (t.deletedAt) fail('CONFLICT', '此待办已移入回收站。请先恢复。');
               if (message.text !== undefined) t.text = text(message.text);
+              if (message.dueAt !== undefined) t.dueAt = deadline(message.dueAt);
               if (message.completed !== undefined) {
                 if (typeof message.completed !== 'boolean') fail('INVALID', '完成状态无效。');
                 t.completedAt = message.completed ? now : null;
@@ -214,7 +223,7 @@ var KuTodoStore = (() => {
         }
         case 'draft': {
           if (!w.courses.some(c => c.key === message.courseKey) || typeof message.text !== 'string' || message.text.length > 2000) fail('INVALID', '草稿内容无效。');
-          const draft = { id: id(message.id), courseKey: message.courseKey, todoId: message.todoId ? id(message.todoId) : null, text: message.text, baseRevision: revision(message.baseRevision), updatedAt: now };
+          const draft = { id: id(message.id), courseKey: message.courseKey, todoId: message.todoId ? id(message.todoId) : null, text: message.text, dueAt: deadline(message.dueAt), baseRevision: revision(message.baseRevision), updatedAt: now };
           w.drafts = w.drafts.filter(d => d.id !== draft.id); w.drafts.push(draft); break;
         }
         case 'dropDraft': w.drafts = w.drafts.filter(d => d.id !== message.id); break;
@@ -244,22 +253,24 @@ var KuTodoStore = (() => {
           const raw = await storage.get(BACKUP_KEY);
           if (!raw[BACKUP_KEY]) fail('INVALID', '还没有导入前快照。');
           const backup = database(raw[BACKUP_KEY]); backup.revision = db.revision + 1;
-          backup.schemaVersion = 3;
-          size(backup); await storage.set({ [KEY]: backup, [BACKUP_KEY]: db }); return backup;
+          backup.schemaVersion = 4;
+          size(backup); await storage.set({ [KEY]: backup, [BACKUP_KEY]: db,
+            ...(beforeMigration ? { [MIGRATION_KEY]: beforeMigration } : {}),
+            ...(beforeDeadlineMigration ? { [DEADLINE_MIGRATION_KEY]: beforeDeadlineMigration } : {}) }); return backup;
         }
         default: fail('INVALID', '不支持的 TODO 操作。');
       }
       if (!changed) return db;
       if (w) w.operations = [...w.operations, operationId].slice(-512);
       if (w?.replica && beforeSync && !message.action.startsWith('__')) KuTodoReplica.record(w.replica, beforeSync, w, () => crypto.randomUUID(), message.action === 'setAssignment');
-      db.schemaVersion = 3;
+      db.schemaVersion = 4;
       db.revision += 1; size(db);
-      await storage.set({ [KEY]: db, ...(beforeMigration ? { [MIGRATION_KEY]: beforeMigration } : {}) });
+      await storage.set({ [KEY]: db, ...(beforeMigration ? { [MIGRATION_KEY]: beforeMigration } : {}), ...(beforeDeadlineMigration ? { [DEADLINE_MIGRATION_KEY]: beforeDeadlineMigration } : {}) });
       return db;
     }
     return { dispatch(message) { const result = queue.then(() => perform(message)); queue = result.catch(() => {}); return result; } };
   }
-  return { KEY, BACKUP_KEY, MIGRATION_KEY, create, courseKey, database };
+  return { KEY, BACKUP_KEY, MIGRATION_KEY, DEADLINE_MIGRATION_KEY, create, courseKey, database };
 })();
 
 if (globalThis.chrome?.runtime?.onMessage && globalThis.chrome?.storage?.local) {

@@ -22,6 +22,30 @@ var KuTodoUI = {
       <div data-list class="ku-todo-list"></div><details class="ku-todo-drafts"><summary>未提交的草稿 <span data-draft-count></span></summary><div data-drafts></div></details>
       <details class="ku-todo-backup"><summary>备份与恢复</summary><p class="ku-todo-hint">卸载扩展会清除本地数据。备份包含课程、待办和课题完成状态。TODO 冲突另存副本；课题状态冲突需先统一状态再导入。</p><div class="ku-todo-inline"><button type="button" class="ku-todo-button" data-export>导出当前资料</button><label class="ku-todo-file">导入 JSON<input data-file type="file" accept=".json,application/json"></label></div><div class="ku-todo-import" data-preview hidden><p data-preview-text></p><button type="button" class="ku-todo-button" data-import>确认合并导入</button><button type="button" class="ku-todo-button" data-import-cancel>取消</button></div><button type="button" class="ku-todo-button" data-restore>恢复导入前快照</button></details>`;
     const q = name => host.querySelector(`[data-${name}]`);
+    const dueField = el('label', 'ku-todo-field', '截止时间（可选）');
+    const dueInput = el('input'); dueInput.type = 'datetime-local'; dueInput.step = '60'; dueInput.setAttribute('data-editor-due', ''); dueInput.setAttribute('aria-label', '截止时间');
+    dueField.append(dueInput);
+    const dueHint = el('p', 'ku-todo-hint', `按本地时区 ${Intl.DateTimeFormat().resolvedOptions().timeZone} 输入，留空表示无截止时间。`);
+    const clearDue = button('清除截止时间', () => { if (busy) return; dueInput.value = ''; saveDraft(); });
+    clearDue.setAttribute('data-clear-due', '');
+    q('draft-status').before(dueField, dueHint, clearDue);
+    const formatDue = value => value ? new Date(value).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }) : '无截止时间';
+    const localDue = value => {
+      if (!value) return '';
+      const d = new Date(value), pad = n => String(n).padStart(2, '0');
+      return `${String(d.getFullYear()).padStart(4, '0')}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+    function readDue() {
+      const value = dueInput.value;
+      if (dueInput.validity?.badInput) throw new Error('请输入完整的截止日期和时间。');
+      if (!value) return null;
+      // An unchanged wall time must retain imported seconds and the original
+      // instant during a DST overlap, even though this editor displays minutes.
+      if (editor?.initialDueAt && value === localDue(editor.initialDueAt)) return editor.initialDueAt;
+      const date = new Date(value);
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) || !Number.isFinite(date.getTime()) || localDue(date.toISOString()) !== value) throw new Error('截止时间无效，请检查日期、时间或夏令时。');
+      return date.toISOString();
+    }
     if (fixedCourseKey) {
       host.classList.add('ku-todo-fixed');
       host.querySelector('.ku-todo-workspace').remove();
@@ -87,10 +111,15 @@ var KuTodoUI = {
       const search = q('search').value.trim().toLocaleLowerCase();
       const list = q('list'); list.replaceChildren();
       const entries = w.todos.filter(t => courseKeys.has(t.courseKey) && (!selected || t.courseKey === selected) && (filter === 'trash' ? t.deletedAt : !t.deletedAt && (filter === 'done' ? t.completedAt : !t.completedAt)) && (!search || `${t.text} ${w.courses.find(c => c.key === t.courseKey)?.title}`.toLocaleLowerCase().includes(search)));
-      entries.sort((a,b) => b.createdAt.localeCompare(a.createdAt)).forEach(t => {
+      entries.sort((a,b) => (filter === 'active' ? (a.dueAt || '9999').localeCompare(b.dueAt || '9999') : 0) || b.createdAt.localeCompare(a.createdAt)).forEach(t => {
         const row = el('div', 'ku-todo-row'); row.dataset.todoId = t.id;
         if (!t.deletedAt) { const c = el('input'); c.type = 'checkbox'; c.checked = !!t.completedAt; c.disabled = readOnly; c.setAttribute('aria-label', `完成：${t.text}`); c.addEventListener('change', () => void action('update', { id:t.id, expectedRevision:t.revision, completed:c.checked })); row.append(c); }
         const content = el('div', 'ku-todo-row-content'); const title = button(t.text, () => start(t), `ku-todo-text${t.completedAt ? ' is-done' : ''}`); title.disabled = !!t.deletedAt || readOnly; content.append(title);
+        if (t.dueAt) {
+          const overdue = !t.completedAt && !t.deletedAt && Date.parse(t.dueAt) <= Date.now();
+          const due = el('time', `ku-todo-due${overdue ? ' is-overdue' : ''}`, `${overdue ? '已逾期 · ' : '截止：'}${formatDue(t.dueAt)}`);
+          due.dateTime = t.dueAt; content.append(due);
+        }
         if (!fixedCourseKey) content.append(button(w.courses.find(c => c.key === t.courseKey)?.title || '课程', () => { selected = t.courseKey; render(); }, 'ku-todo-course-link'));
         row.append(content);
         const buttons = el('div', 'ku-todo-row-actions');
@@ -117,6 +146,7 @@ var KuTodoUI = {
       editor = {
         id: draftId, workspaceId: w.id, todoId,
         courseKey: targetKey,
+        initialDueAt: draft ? draft.dueAt : t?.dueAt,
         baseRevision: draft?.baseRevision ?? t?.revision ?? 0,
         // Survives closing the popup between a successful write and its response.
         operationId: todoId ? api.uuid() : draftId
@@ -129,11 +159,14 @@ var KuTodoUI = {
         q('editor-course').disabled = !!todoId;
       }
       q('editor-text').value = draft?.text ?? t?.text ?? '';
+      dueInput.value = localDue(draft ? draft.dueAt : t?.dueAt);
       q('draft-status').textContent = draft ? '已恢复保存的草稿。' : '输入后保存草稿；点击保存提交为 TODO。';
       q('editor-text').focus();
     }
     function saveDraft() {
       if (!editor) return;
+      let dueAt;
+      try { dueAt = readDue(); } catch (error) { q('draft-status').textContent = error.message; return; }
       editor.courseKey = fixedCourseKey || q('editor-course').value;
       const captured = { ...editor }, value = q('editor-text').value;
       q('draft-status').textContent = '草稿保存中…';
@@ -141,11 +174,11 @@ var KuTodoUI = {
       const writing = api.request('draft', {
         id: captured.id, workspaceId: captured.workspaceId, todoId: captured.todoId,
         courseKey: captured.courseKey, baseRevision: captured.baseRevision,
-        operationId: api.uuid(), text: value
+        operationId: api.uuid(), text: value, dueAt
       });
       draftQueue = Promise.all([draftQueue.catch(() => {}), writing]).then(([, data]) => {
         accept(data);
-        if (editor?.id === captured.id && q('editor-text').value === value) q('draft-status').textContent = '草稿已保存。';
+        if (editor?.id === captured.id && q('editor-text').value === value && readDue() === dueAt) q('draft-status').textContent = '草稿已保存。';
       }).catch(error => {
         if (editor?.id === captured.id) q('draft-status').textContent = `草稿保存失败：${error.message} 请保留输入并重试。`;
         throw error;
@@ -160,16 +193,19 @@ var KuTodoUI = {
       }
       const value = q('editor-text').value.trim();
       if (!value) { status('请输入内容。', true); return; }
+      let dueAt;
+      try { dueAt = readDue(); } catch (error) { status(error.message, true); return; }
       // A lost response is retried with the exact original command.
       if (!editor.submission) editor.submission = {
         workspaceId: editor.workspaceId, operationId: editor.operationId,
         id: editor.todoId, courseKey: editor.courseKey,
-        expectedRevision: editor.baseRevision, text: value
+        expectedRevision: editor.baseRevision, text: value, dueAt
       };
       const captured = { ...editor }, payload = captured.submission;
       busy = true;
       q('save').disabled = true;
       q('editor-text').readOnly = true;
+      dueInput.disabled = true; clearDue.disabled = true;
       if (!fixedCourseKey) q('editor-course').disabled = true;
       status('保存中…');
       try {
@@ -177,7 +213,7 @@ var KuTodoUI = {
         const data = await api.request(payload.id ? 'update' : 'add', payload);
         accept(data);
         const saved = data.workspaces.find(w => w.id === payload.workspaceId)?.todos.find(t => t.id === (payload.id || payload.operationId));
-        if (q('editor-text').value.trim() !== payload.text || (!payload.id && saved && saved.text !== payload.text)) {
+        if (q('editor-text').value.trim() !== payload.text || readDue() !== payload.dueAt || (!payload.id && saved && (saved.text !== payload.text || saved.dueAt !== payload.dueAt))) {
           editor.todoId = saved?.id || payload.id || payload.operationId;
           editor.baseRevision = saved?.revision || payload.expectedRevision + 1;
           editor.operationId = api.uuid();
@@ -198,18 +234,19 @@ var KuTodoUI = {
           await refresh();
           const latest = db.workspaces.find(w => w.id === captured.workspaceId)?.todos.find(t => t.id === captured.todoId);
           q('conflict').hidden = false;
-          q('conflict-text').textContent = latest ? `最新内容：${latest.text}${latest.deletedAt ? '（已删除，请先恢复）' : ''}` : '原记录已不存在，请复制输入后新建。';
+          q('conflict-text').textContent = latest ? `最新内容：${latest.text}；截止时间：${formatDue(latest.dueAt)}${latest.deletedAt ? '（已删除，请先恢复）' : ''}` : '原记录已不存在，请复制输入后新建。';
           q('conflict-save').disabled = !latest || !!latest.deletedAt;
         }
       } finally {
         busy = false;
         q('save').disabled = false;
         q('editor-text').readOnly = false;
+        dueInput.disabled = false; clearDue.disabled = false;
         if (!fixedCourseKey) q('editor-course').disabled = !!editor?.todoId;
       }
     }
     on('conflict-save','click',()=>{if(!editor)return;const t=db.workspaces.find(w=>w.id===editor.workspaceId)?.todos.find(t=>t.id===editor.todoId);if(!t||t.deletedAt)return;editor.baseRevision=t.revision;editor.operationId=api.uuid();void submit();});
-    on('editor-text','input',saveDraft);on('editor-course','change',saveDraft);on('editor','submit',submit);
+    on('editor-text','input',saveDraft);on('editor-due','input',saveDraft);on('editor-course','change',saveDraft);on('editor','submit',submit);
     on('cancel','click',()=>{if(busy)return;editor=null;q('editor').hidden=true;});on('add','click',()=>start());on('search','input',render);on('course','change',e=>{selected=e.target.value;render();});
     host.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;render();}));
     on('retry','click',()=>{status('读取中…');void refresh().then(()=>{if(!readOnly)status('已重新读取。');});});
@@ -222,6 +259,7 @@ var KuTodoUI = {
     on('import','click',async()=>{if(!imported)return;const data=imported;if(await action('import',{workspaceId:data.workspaceId,data:data.value,expectedRevision:data.revision},'已合并导入，原有内容保留。')){imported=null;q('preview').hidden=true;}});
     on('restore','click',()=>{if(db && window.confirm('将所有本地资料恢复到导入前？当前数据会保留为可再次恢复的快照。建议先导出。'))void action('restoreBackup',{expectedRevision:db.revision},'已恢复快照。');});
     const unsubscribe=api.subscribe(()=>void refresh()); const ready=refresh().then(()=>{if(!readOnly)status('已读取本地 TODO。');});
-    return {ready,refresh,selectCourse(key){selected=fixedCourseKey||key;render();},setScope(scope){if(!fixedCourseKey)pageScope=scope;render();},destroy(){disposed=true;loading++;unsubscribe();}};
+    const deadlineTimer = globalThis.setInterval?.(() => { if (current()?.todos.some(t => t.dueAt && !t.completedAt && !t.deletedAt)) render(); }, 60000);
+    return {ready,refresh,selectCourse(key){selected=fixedCourseKey||key;render();},setScope(scope){if(!fixedCourseKey)pageScope=scope;render();},destroy(){disposed=true;loading++;unsubscribe();globalThis.clearInterval?.(deadlineTimer);}};
   }
 };

@@ -17,6 +17,9 @@
 .ku-todo-workspace select, .ku-todo-field select, .ku-todo-field textarea, .ku-todo-search, .ku-todo-inline input { display: block; width: 100%; border: 1px solid #dce4f2; border-radius: 8px; padding: 8px; background: #fff; min-width: 0; }
 .ku-todo-field { display: grid; gap: 5px; margin-top: 12px; }
 .ku-todo-field textarea { resize: vertical; min-height: 98px; }
+.ku-todo-field input[type="datetime-local"] { width: 100%; min-width: 0; border: 1px solid #dce4f2; border-radius: 8px; padding: 8px; background: #fff; }
+.ku-todo-due { display: block; color: #66748e; font-size: 12px; margin-top: 3px; }
+.ku-todo-due.is-overdue { color: #a6243b; font-weight: 600; }
 .ku-todo-search { margin-top: 10px; }
 .ku-todo-ui .ku-todo-hint { color: #66748e; font-size: 12px; margin: 8px 0; }
 .ku-todo-toolbar, .ku-todo-inline, .ku-todo-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }

@@ -24,7 +24,10 @@ var KuTodoReplica = (() => {
     }
     if (!identifier(id) || raw.id !== id || typeof raw.text !== 'string' || !raw.text.trim() || raw.text.length > 2000
       || !raw.createdAt || !raw.updatedAt || !stamp(raw.createdAt) || !stamp(raw.updatedAt) || !stamp(raw.completedAt) || !stamp(raw.deletedAt)) error('同步待办格式无效。');
-    return { id, courseKey: key(raw.courseKey), text: raw.text, createdAt: raw.createdAt, updatedAt: raw.updatedAt, completedAt: raw.completedAt, deletedAt: raw.deletedAt };
+    const dueAt = raw.dueAt === undefined ? null : raw.dueAt;
+    if (dueAt !== null && (typeof dueAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(dueAt)
+      || !Number.isFinite(Date.parse(dueAt)) || new Date(dueAt).toISOString() !== dueAt)) error('同步截止时间无效。');
+    return { id, courseKey: key(raw.courseKey), text: raw.text, dueAt, createdAt: raw.createdAt, updatedAt: raw.updatedAt, completedAt: raw.completedAt, deletedAt: raw.deletedAt };
   }
   function event(raw) {
     if (!raw || !identifier(raw.id) || !identifier(raw.device) || !['course', 'todo', 'assignment'].includes(raw.entity)
@@ -35,7 +38,7 @@ var KuTodoReplica = (() => {
     return { id: raw.id, device: raw.device, entity: raw.entity, key: entityKey, parents: [...raw.parents].sort(), value: valueOf(raw.entity, entityKey, raw.value) };
   }
   function validate(raw) {
-    if (!raw || ![1, 2].includes(raw.schemaVersion) || !identifier(raw.deviceId) || typeof raw.accountId !== 'string' || !raw.accountId || raw.accountId.length > 100
+    if (!raw || ![1, 2, 3].includes(raw.schemaVersion) || !identifier(raw.deviceId) || typeof raw.accountId !== 'string' || !raw.accountId || raw.accountId.length > 100
       || !Array.isArray(raw.events) || !Array.isArray(raw.outbox) || !Array.isArray(raw.files) || raw.events.length > 20000 || raw.files.length > 20000) error('同步历史格式或版本无效，原数据未改动。');
     const events = raw.events.map(event), ids = new Set(events.map(e => e.id));
     if (ids.size !== events.length || raw.outbox.some(id => !ids.has(id)) || raw.files.some(id => !identifier(id))) error('同步历史标识无效。');
@@ -56,7 +59,7 @@ var KuTodoReplica = (() => {
       for (const child of children.get(queue[i]) || []) { remaining.set(child, remaining.get(child) - 1); if (!remaining.get(child)) queue.push(child); }
     }
     if (count !== events.length) error('同步变更存在循环，未覆盖本地内容。');
-    return { schemaVersion: 2, accountId: raw.accountId, deviceId: raw.deviceId, events, outbox: [...new Set(raw.outbox)], files: [...new Set(raw.files)] };
+    return { schemaVersion: 3, accountId: raw.accountId, deviceId: raw.deviceId, events, outbox: [...new Set(raw.outbox)], files: [...new Set(raw.files)] };
   }
   function groups(replica) {
     const superseded = new Set(replica.events.flatMap(e => e.parents)), result = new Map();
@@ -80,7 +83,7 @@ var KuTodoReplica = (() => {
     if (value === null) return 'purged';
     if (typeof value.completed === 'boolean' && value.contentId) return JSON.stringify([value.key, value.completed]);
     if (value.key) return JSON.stringify(value);
-    return JSON.stringify([value.id, value.courseKey, value.text, !!value.completedAt, !!value.deletedAt]);
+    return JSON.stringify([value.id, value.courseKey, value.text, value.dueAt ?? null, !!value.completedAt, !!value.deletedAt]);
   }
   function conflicts(replica) {
     if (!replica) return [];
@@ -113,7 +116,7 @@ var KuTodoReplica = (() => {
       if (workspace.replica.accountId !== accountId) error('此资料已绑定其他 Google 账号。请新建本地资料，避免跨账号上传。');
       return;
     }
-    workspace.replica = { schemaVersion: 2, accountId, deviceId: uuid(), events: [], outbox: [], files: [] };
+    workspace.replica = { schemaVersion: 3, accountId, deviceId: uuid(), events: [], outbox: [], files: [] };
     record(workspace.replica, { courses: [], todos: [], assignmentCompletions: [] }, workspace, uuid);
   }
   function project(workspace) {

@@ -42,7 +42,7 @@
       const title = document.createElement('h3'); title.textContent = assignment ? '这项课题的完成状态有冲突' : '这条 TODO 有多个版本'; section.append(title);
       for (const version of conflict.versions) {
         const row = document.createElement('div'), text = document.createElement('p'), choose = document.createElement('button');
-        text.textContent = version.value ? (assignment ? `${version.value.title}（${version.value.completed ? '已完成' : '未完成'}）` : `${version.value.text}（${version.value.deletedAt ? '已删除' : version.value.completedAt ? '已完成' : '未完成'}）`) : '永久删除的版本';
+        text.textContent = version.value ? (assignment ? `${version.value.title}（${version.value.completed ? '已完成' : '未完成'}）` : `${version.value.text}（${version.value.deletedAt ? '已删除' : version.value.completedAt ? '已完成' : '未完成'}；${version.value.dueAt ? '截止：' + new Date(version.value.dueAt).toLocaleString(undefined, { timeZoneName: 'short' }) : '无截止时间'}）`) : '永久删除的版本';
         choose.type = 'button'; choose.textContent = '选择此版本'; choose.disabled = busy;
         choose.addEventListener('click', () => void execute('resolve', { entity: conflict.entity || 'todo', id: conflict.key, heads: conflict.heads, eventId: version.eventId }));
         row.append(text, choose); section.append(row);
@@ -64,7 +64,7 @@
       succeeded = true;
       if (action === 'prepare') {
         ticket = data.ticket;
-        q('preview-text').textContent = `账号：${data.account.email || data.account.name}。资料「${data.workspaceName}」TODO 本地 ${data.localCount} 条，合并后 ${data.mergedCount} 条；课题状态本地 ${data.localAssignments || 0} 条，合并后 ${data.mergedAssignments || 0} 条。${data.conflicts} 条冲突会保留版本供选择。课程目录、正式 TODO、删除状态和课题完成状态会同步；草稿仅保存在本机。`;
+        q('preview-text').textContent = `账号：${data.account.email || data.account.name}。资料「${data.workspaceName}」TODO 本地 ${data.localCount} 条，合并后 ${data.mergedCount} 条；课题状态本地 ${data.localAssignments || 0} 条，合并后 ${data.mergedAssignments || 0} 条。${data.conflicts} 条冲突会保留版本供选择。课程目录、正式 TODO（含截止时间）、删除状态和课题完成状态会同步；草稿仅保存在本机。新版写入 TODO 后，旧版扩展将停止同步，请更新其他设备的扩展。`;
         q('preview').hidden = false; message('请确认账号和合并范围。尚未上传本地内容。');
       } else { ticket = ''; q('preview').hidden = true; state = data; }
     } catch (error) { message(error.message, true); }
