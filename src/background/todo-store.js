@@ -2,6 +2,7 @@
 var KuTodoStore = (() => {
   const KEY = 'kuLmsTodosV1';
   const BACKUP_KEY = 'kuLmsTodosBeforeImportV1';
+  const MIGRATION_KEY = 'kuLmsTodosBeforeCompletionV3';
   const ORIGIN = 'https://kulms.tl.kansai-u.ac.jp';
   const MAX_BYTES = 4 * 1024 * 1024;
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -40,6 +41,15 @@ var KuTodoStore = (() => {
     return { id: id(value.id), courseKey: value.courseKey, text: text(value.text), revision: revision(value.revision),
       createdAt: date(value.createdAt), updatedAt: date(value.updatedAt), completedAt: date(value.completedAt, true), deletedAt: date(value.deletedAt, true) };
   }
+  function assignment(value, keys) {
+    if (!value || !keys.has(value.courseKey) || courseKey(value.courseKey) !== value.courseKey
+      || typeof value.contentId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(value.contentId)
+      || value.key !== `${value.courseKey}contents/${value.contentId}/`
+      || !['試験', 'アンケート', 'レポート', '自習'].includes(value.type)
+      || typeof value.completed !== 'boolean') fail('INVALID', '课题完成记录或课程标识无效。');
+    return { key: value.key, courseKey: value.courseKey, contentId: value.contentId, title: text(value.title, 500), type: value.type,
+      completed: value.completed, updatedAt: date(value.updatedAt), revision: revision(value.revision) };
+  }
   function unique(values, key) {
     if (new Set(values.map(value => value[key])).size !== values.length) fail('INVALID', '数据包含重复标识。');
   }
@@ -55,7 +65,10 @@ var KuTodoStore = (() => {
       return { id: id(d.id), courseKey: d.courseKey, todoId: d.todoId ? id(d.todoId) : null, text: d.text, updatedAt: date(d.updatedAt), baseRevision: revision(d.baseRevision) };
     });
     unique(drafts, 'id');
-    const result = { id: id(value.id), name: text(value.name, 60), courses, todos, drafts, operations: value.operations.map(id).slice(-512) };
+    if (value.assignmentCompletions !== undefined && !Array.isArray(value.assignmentCompletions)) fail('INVALID', '课题完成记录格式异常，原数据未改动。');
+    const assignmentCompletions = (value.assignmentCompletions || []).map(v => assignment(v, keys));
+    unique(assignmentCompletions, 'key');
+    const result = { id: id(value.id), name: text(value.name, 60), courses, todos, assignmentCompletions, drafts, operations: value.operations.map(id).slice(-512) };
     if (value.courseScope) {
       const scope = value.courseScope;
       if (!Array.isArray(scope.keys) || scope.keys.length > 1000 || scope.keys.some(key => !keys.has(key))
@@ -69,18 +82,22 @@ var KuTodoStore = (() => {
     return result;
   }
   function database(value) {
-    if (![1, 2].includes(value?.schemaVersion)) fail('VERSION', '无法读取此版本的 TODO；原数据已保留。请更新扩展或恢复备份。');
+    if (![1, 2, 3].includes(value?.schemaVersion)) fail('VERSION', '无法读取此版本的 TODO；原数据已保留。请更新扩展或恢复备份。');
     if (!Array.isArray(value.workspaces) || !value.workspaces.length) fail('INVALID', 'TODO 资料格式异常，未覆盖原数据。');
+    if (value.schemaVersion === 3 && value.workspaces.some(w => !Array.isArray(w.assignmentCompletions))) fail('INVALID', '课题完成记录缺失，未覆盖原数据。');
     const workspaces = value.workspaces.map(workspace);
     unique(workspaces, 'id');
     if (!workspaces.some(w => w.id === value.activeId)) fail('INVALID', '当前资料不存在。');
     return { schemaVersion: value.schemaVersion, revision: revision(value.revision), activeId: value.activeId, workspaces };
   }
-  const blankWorkspace = (value = 'local', name = '本地待办') => ({ id: value, name, courses: [], todos: [], drafts: [], operations: [] });
+  const blankWorkspace = (value = 'local', name = '本地待办') => ({ id: value, name, courses: [], todos: [], assignmentCompletions: [], drafts: [], operations: [] });
   const empty = () => ({ schemaVersion: 1, revision: 0, activeId: 'local', workspaces: [blankWorkspace()] });
   function imported(value) {
-    if (value?.format !== 'ku-lms-todo' || value.schemaVersion !== 1 || !Array.isArray(value.courses) || !Array.isArray(value.todos)) fail('INVALID', '请选择有效的 KU-LMS TODO 备份。');
-    return workspace({ id: 'import', name: 'import', courses: value.courses, todos: value.todos, drafts: [], operations: [] });
+    if (value?.format !== 'ku-lms-todo' || ![1, 2].includes(value.schemaVersion) || !Array.isArray(value.courses) || !Array.isArray(value.todos)) fail('INVALID', '请选择有效的 KU-LMS TODO 备份。');
+    if (value.assignmentConflicts !== undefined && (!Array.isArray(value.assignmentConflicts) || value.assignmentConflicts.length)) {
+      fail('CONFLICT', '此备份包含未解决的课题完成冲突。所有版本仍在备份中，请先在来源设备解决冲突后重新导出。');
+    }
+    return workspace({ id: 'import', name: 'import', courses: value.courses, todos: value.todos, assignmentCompletions: value.assignmentCompletions, drafts: [], operations: [] });
   }
   function size(value) {
     if (new TextEncoder().encode(JSON.stringify(value)).length > MAX_BYTES) fail('QUOTA', 'TODO 数据过大。请先导出备份，再整理回收站。');
@@ -96,15 +113,21 @@ var KuTodoStore = (() => {
       if (message.action === 'read') return db;
       const w = db.workspaces.find(w => w.id === message.workspaceId);
       if (!w && !['createWorkspace', 'selectWorkspace', 'restoreBackup'].includes(message.action)) fail('INVALID', '请选择本地资料。');
-      if (message.action === 'export') return { format: 'ku-lms-todo', schemaVersion: 1, exportedAt: new Date().toISOString(), courses: w.courses, todos: w.replica ? KuTodoReplica.exportTodos(w) : w.todos };
+      if (message.action === 'export') return { format: 'ku-lms-todo', schemaVersion: 2, exportedAt: new Date().toISOString(), courses: w.courses,
+        todos: w.replica ? KuTodoReplica.exportTodos(w) : w.todos, assignmentCompletions: w.assignmentCompletions,
+        assignmentConflicts: w.replica ? KuTodoReplica.conflicts(w.replica).filter(c => c.entity === 'assignment') : [] };
       if (message.action === 'previewImport') {
         size(message.data);
         const incoming = imported(message.data);
         return { courses: incoming.courses.length, added: incoming.todos.filter(t => !w.todos.some(old => old.id === t.id)).length,
-          conflicts: incoming.todos.filter(t => w.todos.some(old => old.id === t.id && JSON.stringify(old) !== JSON.stringify(t))).length, revision: db.revision };
+          conflicts: incoming.todos.filter(t => w.todos.some(old => old.id === t.id && JSON.stringify(old) !== JSON.stringify(t))).length,
+          assignmentCount: incoming.assignmentCompletions.length,
+          assignmentConflicts: incoming.assignmentCompletions.filter(t => w.assignmentCompletions.some(old => old.key === t.key && old.completed !== t.completed)).length,
+          revision: db.revision };
       }
       if (message.action === '__syncRead') return clone(w);
-      const beforeSync = w?.replica ? { courses: clone(w.courses), todos: clone(w.todos) } : null;
+      const beforeSync = w?.replica ? { courses: clone(w.courses), todos: clone(w.todos), assignmentCompletions: clone(w.assignmentCompletions) } : null;
+      const beforeMigration = db.schemaVersion < 3 ? ((await storage.get(KEY))[KEY] || clone(db)) : null;
       const operationId = id(message.operationId);
       if (w?.operations.includes(operationId)) return db;
       const now = new Date().toISOString();
@@ -113,7 +136,7 @@ var KuTodoStore = (() => {
         case '__syncAttach':
           await storage.set({ [BACKUP_KEY]: db });
           KuTodoReplica.attach(w, text(message.accountId, 100), () => crypto.randomUUID());
-          db.schemaVersion = 2; // Old extensions reject v2 rather than stripping replication history.
+          db.schemaVersion = 3; // Older extensions must not strip completion data or replication history.
           break;
         case '__syncMerge':
         case '__syncAck':
@@ -125,7 +148,7 @@ var KuTodoStore = (() => {
             w.replica.outbox = w.replica.outbox.filter(id => !acknowledged.has(id));
             w.replica.files = [...new Set([...w.replica.files, ...message.files])];
           }
-          if (message.action === '__syncResolve') KuTodoReplica.resolve(w, message.id, message.heads, message.eventId, () => crypto.randomUUID());
+          if (message.action === '__syncResolve') KuTodoReplica.resolve(w, message.id, message.heads, message.eventId, () => crypto.randomUUID(), message.entity || 'todo');
           break;
         }
         case 'createWorkspace':
@@ -153,6 +176,20 @@ var KuTodoStore = (() => {
           if (!w.courses.some(c => c.key === key)) fail('INVALID', '课程不存在，请重新打开主页。');
           if (w.todos.some(t => t.id === operationId)) return db;
           w.todos.push({ id: operationId, courseKey: key, text: text(message.text), revision: 1, createdAt: now, updatedAt: now, completedAt: null, deletedAt: null });
+          break;
+        }
+        case 'setAssignment': {
+          if (db.activeId !== w.id) fail('CONFLICT', '当前资料已切换，请重新确认课题状态。');
+          const c = course(message.course);
+          const key = `${c.key}contents/${id(message.contentId)}/`;
+          const old = w.assignmentCompletions.find(t => t.key === key);
+          if ((old?.revision || 0) !== message.expectedRevision) fail('CONFLICT', '另一个窗口或设备修改了此课题，请读取最新状态后重新确认。');
+          const heads = w.replica ? KuTodoReplica.headsFor(w.replica, 'assignment', key) : [];
+          if (!Array.isArray(message.expectedHeads) || JSON.stringify([...message.expectedHeads].sort()) !== JSON.stringify(heads)) fail('CONFLICT', '课题的同步版本已改变，请重新确认。');
+          const value = assignment({ key, courseKey: c.key, contentId: message.contentId, title: message.title, type: message.assignmentType,
+            completed: message.completed, updatedAt: now, revision: (old?.revision || 0) + 1 }, new Set([c.key]));
+          if (!w.courses.some(v => v.key === c.key)) w.courses.push(c);
+          if (old) Object.assign(old, value); else w.assignmentCompletions.push(value);
           break;
         }
         case 'update': case 'delete': case 'restore': case 'purge': {
@@ -184,6 +221,9 @@ var KuTodoStore = (() => {
         case 'import': {
           if (db.revision !== message.expectedRevision) fail('CONFLICT', '预览后数据已改变，请重新预览导入。');
           size(message.data); const incoming = imported(message.data);
+          if (incoming.assignmentCompletions.some(t => w.assignmentCompletions.some(old => old.key === t.key && old.completed !== t.completed))) {
+            fail('CONFLICT', '备份与本机的课题完成状态不同，未覆盖任何数据。请先在课题页面统一状态后重新预览导入。');
+          }
           await storage.set({ [BACKUP_KEY]: db });
           for (const c of incoming.courses) if (!w.courses.some(old => old.key === c.key)) w.courses.push(c);
           for (const t of incoming.todos) {
@@ -195,6 +235,7 @@ var KuTodoStore = (() => {
               w.todos.push({ ...t, id: conflictId, text: t.text, revision: 1 });
             }
           }
+          for (const t of incoming.assignmentCompletions) if (!w.assignmentCompletions.some(old => old.key === t.key)) w.assignmentCompletions.push({ ...t, revision: 1 });
           break;
         }
         case 'restoreBackup': {
@@ -203,20 +244,22 @@ var KuTodoStore = (() => {
           const raw = await storage.get(BACKUP_KEY);
           if (!raw[BACKUP_KEY]) fail('INVALID', '还没有导入前快照。');
           const backup = database(raw[BACKUP_KEY]); backup.revision = db.revision + 1;
+          backup.schemaVersion = 3;
           size(backup); await storage.set({ [KEY]: backup, [BACKUP_KEY]: db }); return backup;
         }
         default: fail('INVALID', '不支持的 TODO 操作。');
       }
       if (!changed) return db;
       if (w) w.operations = [...w.operations, operationId].slice(-512);
-      if (w?.replica && beforeSync && !message.action.startsWith('__')) KuTodoReplica.record(w.replica, beforeSync, w, () => crypto.randomUUID());
+      if (w?.replica && beforeSync && !message.action.startsWith('__')) KuTodoReplica.record(w.replica, beforeSync, w, () => crypto.randomUUID(), message.action === 'setAssignment');
+      db.schemaVersion = 3;
       db.revision += 1; size(db);
-      await storage.set({ [KEY]: db });
+      await storage.set({ [KEY]: db, ...(beforeMigration ? { [MIGRATION_KEY]: beforeMigration } : {}) });
       return db;
     }
     return { dispatch(message) { const result = queue.then(() => perform(message)); queue = result.catch(() => {}); return result; } };
   }
-  return { KEY, BACKUP_KEY, create, courseKey, database };
+  return { KEY, BACKUP_KEY, MIGRATION_KEY, create, courseKey, database };
 })();
 
 if (globalThis.chrome?.runtime?.onMessage && globalThis.chrome?.storage?.local) {

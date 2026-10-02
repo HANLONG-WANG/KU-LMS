@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-01T14:28:02.410Z",
-  "passed": 40,
-  "total": 40,
+  "generatedAt": "2026-10-02T02:53:39.652Z",
+  "passed": 41,
+  "total": 41,
   "results": [
     {
       "script": "verify-audit-course-regressions.mjs",
@@ -284,6 +284,14 @@
       "error": ""
     },
     {
+      "script": "verify-task-completion.mjs",
+      "passed": true,
+      "exitCode": 0,
+      "stdout": "PASS: four assignment types, stable identity, safe rendering, confirmation/cancel, multi-page updates, undo, restart, save failures, conflicts, workspace changes, candidate refill and lifecycle cleanup\n",
+      "stderr": "",
+      "error": ""
+    },
+    {
       "script": "verify-todo-course-scope.mjs",
       "passed": true,
       "exitCode": 0,
@@ -295,7 +303,7 @@
       "script": "verify-todo-drive.mjs",
       "passed": true,
       "exitCode": 0,
-      "stdout": "PASS: Drive appData requests, pagination, multipart, account validation, token invalidation, 401/403/429/5xx and offline handling\nPASS: malformed repeated pagination token terminates safely\n",
+      "stdout": "PASS: Drive appData requests, pagination, multipart, account validation, token invalidation, 401/403/429/5xx and offline handling\nPASS: malformed repeated pagination token terminates safely\nPASS: legacy TODO and completion formats are separately discoverable, uploaded and validated\n",
       "stderr": "",
       "error": ""
     },
@@ -303,7 +311,7 @@
       "script": "verify-todo-store.mjs",
       "passed": true,
       "exitCode": 0,
-      "stdout": "PASS: TODO durability, concurrency, conflict, drafts, recovery, import validation, future schema and sender boundary\nPASS: popup and LMS message handlers persist and acknowledge writes\n",
+      "stdout": "PASS: TODO durability, concurrency, conflict, drafts, recovery, import validation, future schema and sender boundary\nPASS: popup and LMS message handlers persist and acknowledge writes\nPASS: completion identity, durability, idempotency, undo, conflicts, workspace/scope isolation, backup and lossless lazy migration\n",
       "stderr": "",
       "error": ""
     },
@@ -311,7 +319,7 @@
       "script": "verify-todo-sync.mjs",
       "passed": true,
       "exitCode": 0,
-      "stdout": "PASS: two-device offline merge, causal conflicts, delete/edit, restart/outbox, lost upload ACK, account isolation, consent preview and internal message boundary\nPASS: identical backup migration does not create false concurrent conflicts\nPASS: external export preserves unresolved text versions\nPASS: schema migration protects replication metadata from accidental downgrade\n",
+      "stdout": "PASS: two-device offline merge, causal conflicts, delete/edit, restart/outbox, lost upload ACK, account isolation, consent preview and internal message boundary\nPASS: identical backup migration does not create false concurrent conflicts\nPASS: external export preserves unresolved text versions\nPASS: schema migration protects replication metadata from accidental downgrade\nPASS: completion batch isolation, offline/restart convergence, causal conflict confirmation, undo, lost ACK, account isolation and v2 migration\n",
       "stderr": "",
       "error": ""
     },

@@ -17,7 +17,8 @@ const renderHomeSource = extractFunction(source, 'renderHome');
 assert(renderHomeSource.includes('data-action="open-all-upcoming"'), 'Home due card should expose a dedicated open-all-upcoming action.');
 assert(renderHomeSource.includes('buildAllUpcomingUrl('), 'Home due card should target the dedicated all-upcoming page URL.');
 assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Existing home refresh action should remain present on the card.');
-assert(renderHomeSource.includes('unreadReminderCourses') && renderHomeSource.includes('コースを開いて詳細を確認してください。'), 'Native reminders without collected detail must retain actionable course fallbacks.');
+const renderUpcomingSource = extractFunction(source, 'renderHomeUpcoming');
+assert(renderUpcomingSource.includes('hasNativeDueReminder') && renderUpcomingSource.includes('コースを開いて確認してください。'), 'Native reminders without collected detail must retain actionable course fallbacks.');
 assert(extractFunction(source, 'bindInteractiveHandlers').includes('startAllUpcomingCollection(view)'), 'Hydration should intercept the all-upcoming CTA.');
 assert(extractFunction(source, 'bindInteractiveHandlers').includes('startHomeRefresh(view)'), 'Existing homepage refresh button binding should remain intact.');
 
@@ -32,7 +33,8 @@ assert(extractFunction(source, 'presentAllUpcomingResults').includes('state.curr
 assert(extractFunction(source, 'collectAllUpcomingCourseItems').includes('parseUpcomingFromCourse'), 'All-upcoming workflow should source course items from current course-detail parsing.');
 assert(extractFunction(source, 'collectAllUpcomingCourseItems').includes('isUpcomingDueWithinDays(item, ALL_UPCOMING_WINDOW_DAYS)'), 'All-upcoming workflow should apply the five-day window filter.');
 assert(extractFunction(source, 'isUpcomingDueWithinDays').includes('remaining >= 0'), 'Five-day helper should only include future-due items.');
-assert(extractFunction(source, 'isUpcomingDueSoonUnused').includes('item?.hasUsage'), 'Homepage reminders must still exclude used items.');
+assert(!extractFunction(source, 'isUpcomingDueSoonUnused').includes('item?.hasUsage'), 'Homepage date candidates are independent of usage counts.');
+assert(renderUpcomingSource.includes('kuIsAssignmentCompleted'), 'Only manual completion should exclude a homepage assignment.');
 assert(extractFunction(source, 'syncAllUpcomingOverlay').includes("overlay.id = 'ku-all-upcoming-overlay';"), 'Dedicated overlay should use its own DOM id.');
 assert(extractFunction(source, 'syncAllUpcomingOverlay').includes('課題を集約しています。しばらくお待ちください。'), 'Dedicated overlay should show explicit wait copy.');
 assert(extractFunction(source, 'shouldSuppressCourseTraversalSideEffects').includes('shouldSuppressAllUpcomingSideEffects(courseHref)'), 'Course traversal side-effect suppression should cover the all-upcoming workflow.');
@@ -105,7 +107,8 @@ const dueSoon = new Date(now + 2 * 86400000);
 const dueLater = new Date(now + 7 * 86400000);
 assert(sandbox.isUpcomingDueWithinDays({ dueDate: dueSoon }, 5) === true, 'Five-day filter should include due-soon items.');
 assert(sandbox.isUpcomingDueWithinDays({ dueDate: dueLater }, 5) === false, 'Five-day filter should exclude items beyond five days.');
-assert(sandbox.isUpcomingDueSoonUnused({ dueDate: dueSoon, hasUsage: true, usageKnown: true }) === false, 'The homepage unused filter must continue to reject used assignments even though the all-course page retains them.');
+const localDate = time => { const date = new Date(time); return `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`; };
+assert(sandbox.isUpcomingDueSoonUnused({ dueDate: dueSoon, availability: `${localDate(now-3600000)} - ${localDate(now+3*86400000)}`, hasUsage: true, usageKnown: true }) === true, 'Both home and all-course candidate lists retain used assignments; home applies manual completion separately.');
 
 const targets = sandbox.getAllUpcomingCollectionTargets(
   [

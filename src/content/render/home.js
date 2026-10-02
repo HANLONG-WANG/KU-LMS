@@ -1,30 +1,10 @@
 /* src/content/render/home.js */
 
 function renderHome(view) {
-    const now = Date.now();
     const allUpcomingHref = buildAllUpcomingUrl(state.currentContext.links.home || window.location.href);
-    const displayOtherCourseUpcoming = typeof loadDisplayUpcomingFromOtherCourses === 'function'
-      ? loadDisplayUpcomingFromOtherCourses(view.otherCourses, view.schedule.entries)
-      : [];
-    const displayUpcoming = mergeUpcomingSources(
-      view.upcoming.items,
-      displayOtherCourseUpcoming.map((item) => ({
-        ...item,
-        daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate.getTime() - now) / 86400000)) : null
-      }))
-    ).sort(compareUpcomingItems).slice(0, 5);
-    const unreadReminderCourses = uniqueBy([...view.schedule.entries, ...view.otherCourses.flatMap((group) => group.items)]
-      .filter((entry) => entry.hasNativeDueReminder || isDueFlagNote(entry.note)), (entry) => buildCourseCacheKey(entry.href) || entry.href);
     const refreshState = readHomeRefreshState();
     const refreshActive = isHomeRefreshActive(refreshState);
-    const upcomingHtml = view.upcoming.loading
-      ? `<div class="ku-loading"><div class="ku-spinner"></div><div>課題を集約中…</div></div>`
-      : (view.upcoming.error ? `<div class="ku-empty">締切情報を読み込めませんでした。対象コースで確認してください。</div>` : displayUpcoming.length ? renderPanelList(displayUpcoming.map((item) => ({
-          badge: `<span class="ku-chip ${materialTypeTone(item.type)}">${escapeHtml(item.type || '教材')}</span>`,
-          title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
-          subtitle: escapeHtml(buildUpcomingSubtitle(item)),
-          trailing: item.dueDate ? `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${Math.max(0, Math.ceil((item.dueDate.getTime() - now) / 86400000))}日）</strong></div>` : ''
-        }))) : `<div class="ku-empty">${unreadReminderCourses.length ? '締切が近い課題があります。コースを開いて詳細を確認してください。' : '読み取り済みの情報に近い締切はありません。'}${unreadReminderCourses.map((entry) => `<div><a class="ku-title-link" href="${escapeAttr(entry.href)}">${escapeHtml(shortenCourseTitle(entry.title))}</a></div>`).join('')}</div>`);
+    const upcomingHtml = renderHomeUpcoming(view);
     const announcementSource = view.announcements.items.length ? view.announcements.items : normalizeHomeAnnouncementItems(view.homeNotices);
     const announcementsHtml = announcementSource.length ? renderPanelList(announcementSource.map((item) => ({
           marker: `<span class="ku-badge-dot"></span>`,
@@ -69,12 +49,38 @@ function renderHome(view) {
           </section>
         </div>
         <aside class="ku-side-stack">
-          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><button type="button" class="ku-button ghost" data-action="refresh-upcoming" title="対象コースを順に開いて締切情報を更新" ${refreshActive ? 'disabled aria-disabled=\"true\"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(allUpcomingHref)}" data-action="open-all-upcoming">すべて見る</a></div></div>${upcomingHtml}</section>
+          <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">期限が近い課題</h2><div class="ku-card-actions"><button type="button" class="ku-button ghost" data-action="refresh-upcoming" title="対象コースを順に開いて締切情報を更新" ${refreshActive ? 'disabled aria-disabled=\"true\"' : ''}>${icon('refresh-cw')}${refreshActive ? ' 更新中…' : ' 更新'}</button><a class="ku-panel-title" href="${escapeAttr(allUpcomingHref)}" data-action="open-all-upcoming">すべて見る</a></div></div><div data-completion-upcoming>${upcomingHtml}</div></section>
           <section class="ku-card" data-todo-summary><div class="ku-card-header"><h2 class="ku-card-title">TODO</h2><button type="button" class="ku-button ghost" data-todo-open="">すべて見る</button></div><div class="ku-empty" data-todo-summary-body>読み込み中…</div></section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">最新のお知らせ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.notifications)}">すべて見る</a></div>${announcementsHtml}</section>
           <section class="ku-card"><div class="ku-card-header"><h2 class="ku-card-title">メッセージ</h2><a class="ku-panel-title" href="${escapeAttr(state.currentContext.links.messages)}">すべて見る</a></div>${messagesHtml}</section>
         </aside>
       </div>`;
+  }
+
+function renderHomeUpcoming(view) {
+    if (view.upcoming.loading) return '<div class="ku-loading"><div class="ku-spinner"></div><div>課題を集約中…</div></div>';
+    if (view.upcoming.error) return '<div class="ku-empty">締切情報を読み込めませんでした。対象コースで確認してください。</div>';
+    if (typeof kuTaskCompletion !== 'undefined' && kuTaskCompletion.phase !== 'ready') {
+      return kuTaskCompletion.phase === 'error'
+        ? `<div class="ku-empty" role="status">${escapeHtml(kuTaskCompletion.error)} <button type="button" class="ku-button ghost" data-completion-retry>再読み込み</button></div>`
+        : '<div class="ku-loading"><div class="ku-spinner"></div><div>完了状態を読み込み中…</div></div>';
+    }
+    const now = Date.now();
+    const cached = typeof loadDisplayUpcomingFromOtherCourses === 'function' ? loadDisplayUpcomingFromOtherCourses(view.otherCourses, view.schedule.entries) : [];
+    const candidates = mergeUpcomingSources(view.upcoming.items, cached).filter(isUpcomingDueSoonUnused);
+    const displayUpcoming = candidates.filter(item => typeof kuIsAssignmentCompleted !== 'function' || !kuIsAssignmentCompleted(item, item.courseHref))
+      .sort(compareUpcomingItems).slice(0, 5);
+    if (displayUpcoming.length) return renderPanelList(displayUpcoming.map(item => ({
+      badge: `<span class="ku-chip ${materialTypeTone(item.type)}">${escapeHtml(item.type || '教材')}</span>`,
+      title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
+      subtitle: escapeHtml(buildUpcomingSubtitle(item)),
+      trailing: `<div class="ku-completion-trailing">${item.dueDate ? `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${Math.max(0, Math.ceil((item.dueDate.getTime() - now) / 86400000))}日）</strong></div>` : ''}${typeof kuRenderAssignmentBadge === 'function' ? kuRenderAssignmentBadge(item, item.courseHref, item.courseTitle) : ''}</div>`
+    })));
+    const known = new Set(candidates.map(item => buildCourseCacheKey(item.courseHref)));
+    const unread = uniqueBy([...view.schedule.entries, ...view.otherCourses.flatMap(group => group.items)]
+      .filter(entry => (entry.hasNativeDueReminder || isDueFlagNote(entry.note)) && !known.has(buildCourseCacheKey(entry.href))
+        && !getCourseUpcomingCacheCollectedAt(entry.href)), entry => buildCourseCacheKey(entry.href) || entry.href);
+    return `<div class="ku-empty">${unread.length ? '課題情報が未取得です。更新するか、コースを開いて確認してください。' : candidates.length ? '期限が近い未完了の課題はありません。' : '読み取り済みの情報に近い締切はありません。'}${unread.map(entry => `<div><a class="ku-title-link" href="${escapeAttr(entry.href)}">${escapeHtml(shortenCourseTitle(entry.title))}</a></div>`).join('')}</div>`;
   }
 
 function renderHomeOtherCourses(view) {
@@ -102,7 +108,7 @@ function renderAllUpcoming(view) {
           badge: `<span class="ku-chip ${materialTypeTone(item.type, item.title)}">${escapeHtml(item.type || '課題')}</span>`,
           title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
           subtitle: escapeHtml(buildUpcomingSubtitle(item)),
-          trailing: `<div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>`
+          trailing: `<div class="ku-completion-trailing"><div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>${typeof kuRenderAssignmentBadge === 'function' ? kuRenderAssignmentBadge(item, item.courseHref, item.courseTitle) : ''}</div>`
         })))
       : `<div class="ku-empty">${escapeHtml(view.emptyMessage)}</div>`;
     return `

@@ -809,8 +809,25 @@ html[data-ku-syllabus-redesign-state="ready"] body {
   min-width: 0;
   overflow-wrap: anywhere;
   overflow: auto;
+  scrollbar-width: none;
   line-height: 1.4;
 }
+
+.ku-class-title-link::-webkit-scrollbar { display: none; }
+
+.ku-completion-chip { font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.ku-chip.ku-completion-chip.is-completed { color: #187547; border-color: #b3dfc7; background: #edfaf2; }
+.ku-chip.ku-completion-chip.is-conflicted { border-color: #d7ac55; }
+.ku-completion-chip:disabled { cursor: default; opacity: .7; }
+.ku-completion-chip:focus-visible { outline: 2px solid var(--ku-blue); outline-offset: 2px; }
+.ku-completion-trailing { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.ku-completion-overlay { position: fixed; inset: 0; z-index: 1100; background: rgba(18,31,54,.3); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.ku-completion-dialog { width: min(440px,100%); max-height: calc(100vh - 40px); overflow-y: auto; border-radius: 18px; background: #fff; color: var(--ku-text, #202c43); padding: 24px; box-shadow: 0 18px 60px rgba(24,37,63,.2); }
+.ku-completion-dialog h2 { margin: 0 0 16px; font-size: 20px; }
+.ku-completion-dialog p { overflow-wrap: anywhere; line-height: 1.6; }
+.ku-completion-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.ku-completion-error { color: #b52a3d; }
+.ku-completion-progress { font-size: 13px; color: #65738e; }
 
 .ku-class-sub {
   min-width: 0;
@@ -1193,6 +1210,11 @@ button.ku-collapse-head {
   gap: 12px;
   padding: 14px 18px;
   border-top: 1px solid #eef2f8;
+}
+
+@media (max-width: 640px) {
+  .ku-section-item { grid-template-columns: 44px minmax(0, 1fr); }
+  .ku-section-item > .ku-inline { grid-column: 2; min-width: 0; justify-content: flex-start; flex-wrap: wrap; }
 }
 
 .ku-item-icon {

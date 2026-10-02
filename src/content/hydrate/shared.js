@@ -2,6 +2,7 @@
 
 function bindInteractiveHandlers(root, route, view) {
     if (typeof kuBindTodos === 'function') kuBindTodos(root, route, view);
+    if (typeof kuBindTaskCompletions === 'function') kuBindTaskCompletions(root, route, view);
     root.querySelectorAll('[data-action="home-search"]').forEach((input) => {
       input.addEventListener('input', (event) => {
         state.homeSearch = event.target.value;
@@ -195,6 +196,7 @@ function bindSectionNavigation(root) {
 
 function cleanupRouteHydration() {
     if (typeof kuCleanupTodos === 'function') kuCleanupTodos();
+    if (typeof kuCleanupTaskCompletions === 'function') kuCleanupTaskCompletions();
     state.routeRightNavCleanup?.();
     state.syllabusRightNavCleanup?.();
     state.lmsLinkNavigationCleanup?.();

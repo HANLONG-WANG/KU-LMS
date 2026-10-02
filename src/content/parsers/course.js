@@ -93,6 +93,8 @@ function parseUpcomingFromCourse(doc, courseHref = '', { scheduleEntry = null } 
         items.push({
           title: courseItem.title,
           type: courseItem.type,
+          rawType: courseItem.rawType,
+          ...(typeof kuAssignmentIdentity === 'function' ? kuAssignmentFields(courseItem, normalizedCourseHref) : {}),
           availability: courseItem.availability,
           dueDate,
           href: courseItem.detailHref || normalizedCourseHref || courseItem.href,
@@ -146,6 +148,7 @@ function extractCourseItem(item) {
       title: rawTitle || '項目',
       isNew: !!item.querySelector('.cl-contentsList_new') || /(^|\s)New(\s|$)/.test(titleSource?.textContent || ''),
       type,
+      rawType: categoryType,
       availability: availabilityData,
       href,
       titleLaunchHref,

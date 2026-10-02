@@ -38,7 +38,7 @@ for (const days of [0, 6, 7]) {
 for (const days of [-0.001, 7.001]) {
   assert.equal(sandbox.isUpcomingDueSoonUnused({ ...base, dueDate: new Date(now + days * day) }), false);
 }
-assert.equal(sandbox.isUpcomingDueSoonUnused({ ...base, usageKnown: true, hasUsage: true }), false);
+assert.equal(sandbox.isUpcomingDueSoonUnused({ ...base, usageKnown: true, hasUsage: true }), true, 'usage no longer removes deadline candidates');
 assert.equal(sandbox.isUpcomingDueSoonUnused({ ...base, availability: '2026/10/02 13:10 - 2026/10/06 13:00' }), false);
 assert.equal(sandbox.isUpcomingDueSoonUnused({ ...base, dueDate: new Date(NaN) }), false);
 console.log('PASS: unknown usage survives course collection, refresh preparation and cache reads without being labeled unused');

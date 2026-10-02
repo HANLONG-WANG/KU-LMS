@@ -19,7 +19,7 @@ assert.equal(sandbox.isUpcomingDueSoonUnused(item(6)), true);
 assert.equal(sandbox.isUpcomingDueSoonUnused(item(7)), true);
 assert.equal(sandbox.isUpcomingDueSoonUnused(item(7.001)), false);
 assert.equal(sandbox.isUpcomingDueSoonUnused(item(-1)), false);
-assert.equal(sandbox.isUpcomingDueSoonUnused({ ...item(6), hasUsage: true }), false);
+assert.equal(sandbox.isUpcomingDueSoonUnused({ ...item(6), hasUsage: true }), true, 'used assignments remain date candidates until manually completed');
 assert.equal(sandbox.isUpcomingDueSoonUnused({ ...item(6), usageKnown: false }), true);
 sandbox.parseUpcomingFromCourse = () => [item(-1), item(5), item(6), item(7), item(7.001)];
 assert.deepEqual(Array.from(sandbox.collectAllUpcomingCourseItems({}, {}), x => x.title), ['Due 5', 'Due 6', 'Due 7']);

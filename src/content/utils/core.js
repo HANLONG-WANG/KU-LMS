@@ -75,7 +75,6 @@ function formatDate(date) {
 
 function upcomingPriorityRank(item) {
     if (item?.hasCourseDueFlag) return 0;
-    if (item?.hasUsage) return 2;
     return 1;
   }
 
@@ -112,8 +111,8 @@ function extractPublishDate(text) {
 
 function isUpcomingDueSoonUnused(item) {
     const dueDate = item?.dueDate;
-    // Missing usage information must not hide a deadline or imply it was used.
-    if (!dueDate || Number.isNaN(dueDate.getTime()) || item?.hasUsage) return false;
+    // Legacy entry point name: this now selects date candidates only. Manual completion is filtered at display time.
+    if (!dueDate || Number.isNaN(dueDate.getTime())) return false;
     const range = parseAvailabilityRange(item?.availability || '');
     const now = Date.now();
     if (!range.start || !range.end || now < range.start.getTime() || now > range.end.getTime()) return false;

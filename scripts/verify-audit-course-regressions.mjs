@@ -80,6 +80,7 @@ runtime.readHomeRefreshState = () => null;
 runtime.isHomeRefreshActive = () => false;
 runtime.mergeUpcomingSources = (...sources) => sources.flat();
 runtime.loadDisplayUpcomingFromOtherCourses = () => [];
+runtime.getCourseUpcomingCacheCollectedAt = () => '';
 const checks = [];
 function check(name, run) { run(); checks.push(name); }
 
@@ -177,7 +178,7 @@ check('manual reads native main, retains all paragraphs, lists, direct links and
 check('home empty/error copy preserves uncertainty and icon buttons have names', () => {
   const view = { filters: { year: '2026', yearOptions: [], semesterOptions: [], label: '' }, schedule: { entries: [{ title: 'Flagged Course', href: '/webclass/course.php/Example/login', note: '締切が近い課題があります。', weekdayIndex: 0, period: '1限' }] }, otherCourses: [], week: runtime.getWeekDays(new Date(), 0), upcoming: { loading: false, items: [] }, messages: { loading: false, items: [] }, announcements: { items: [] }, homeNotices: [] };
   const html = runtime.renderHome(view);
-  assert.match(html, /コースを開いて詳細を確認/); assert.match(html, /aria-label="前の週"/); assert.match(html, /aria-label="次の週"/);
+  assert.match(html, /課題情報が未取得.*コースを開いて確認/); assert.match(html, /aria-label="前の週"/); assert.match(html, /aria-label="次の週"/);
   assert.doesNotMatch(html, /同一タブキャッシュ|fail-closed|週表示/);
   view.messages.error = true; view.upcoming.error = true;
   const failed = runtime.renderHome(view);

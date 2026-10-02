@@ -2,6 +2,8 @@ import { loadOfflineKulmsInto } from './lib/offline-content-vm.mjs';
 import { read, readKulmsSource, extractFunction, assert, writeArtifact } from './lib/content-source.mjs';
 
 const source = readKulmsSource();
+assert(!extractFunction(source, 'startHomeRefresh').includes('.slice(0, 5)'), 'Refresh must not truncate candidates before completion filtering.');
+assert(!extractFunction(source, 'enrichHomeAsync').includes('.slice(0, 5)'), 'Async enrichment retains every candidate for refill.');
 const cssSource = read('src/content/critical.css');
 const architectureDoc = read('docs/ku-lms-extension-architecture.md');
 const sessionSafetyDoc = read('docs/ku-lms-session-safety-analysis.md');

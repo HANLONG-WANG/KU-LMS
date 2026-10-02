@@ -22,7 +22,6 @@ async function startHomeRefresh(view) {
           loading: false,
           items: loadUpcomingFromCourseCache(view.schedule.entries)
             .sort(compareUpcomingItems)
-            .slice(0, 5)
             .map((item) => ({
               ...item,
               daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate.getTime() - Date.now()) / 86400000)) : null

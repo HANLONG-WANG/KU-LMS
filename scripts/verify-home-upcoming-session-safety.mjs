@@ -17,9 +17,10 @@ assert(!enrichHomeAsyncSource.includes('/course.php/'), 'Home enrich must not re
 assert(!enrichHomeAsyncSource.includes('parseUpcomingFromAnnouncements('), 'Home enrich should no longer build upcoming items from notice-title parsing.');
 
 const renderHomeSource = extractFunction(source, 'renderHome');
+const renderUpcomingSource = extractFunction(source, 'renderHomeUpcoming');
 assert(renderHomeSource.includes('data-action="refresh-upcoming"'), 'Home due card should expose an explicit refresh action.');
-assert(renderHomeSource.includes('loadDisplayUpcomingFromOtherCourses('), 'Home render should use a display-only other-course cache path.');
-assert(renderHomeSource.includes('unreadReminderCourses') && renderHomeSource.includes('コースを開いて詳細を確認してください。'), 'Home render should provide actionable native-reminder fallback links when course details are missing.');
+assert(renderHomeSource.includes('renderHomeUpcoming(view)') && renderUpcomingSource.includes('loadDisplayUpcomingFromOtherCourses('), 'Home render should use a display-only other-course cache path.');
+assert(renderUpcomingSource.includes('hasNativeDueReminder') && renderUpcomingSource.includes('コースを開いて確認してください。'), 'Home render should provide actionable native-reminder fallback links when course details are missing.');
 assert(!renderHomeSource.includes('同一タブキャッシュ'), 'Internal cache implementation details should not be placed in the homepage flow.');
 assert(extractFunction(source, 'parseSchedule').includes('periodText.match(/\\d+/)') && extractFunction(source, 'parseSchedule').includes('fallbackPeriod'), 'Schedule parsing should preserve native period labels with a row-order fallback.');
 assert(extractFunction(source, 'isDueFlagNote').includes('const canonical = dueSoonReminderText();'), 'Due-flag detection should key off the shared native red-flag reminder copy.');
@@ -118,12 +119,12 @@ sandbox.rememberCourseUpcoming(scheduleEntry.href, [
 ]);
 
 const prunedUpcoming = sandbox.loadUpcomingFromCourseCache([scheduleEntry]);
-assert(prunedUpcoming.length === 1, 'Cache-backed homepage upcoming should prune used and expired items.');
-assert(prunedUpcoming[0].title === '有効課題', 'Only valid unused due-soon cache entries should remain visible.');
+assert(prunedUpcoming.length === 2, 'Deadline cache keeps used candidates and prunes only expired items.');
+assert(prunedUpcoming.some(item => item.title === '既利用課題'), 'An existing usage count cannot remove a candidate.');
 
 const rawCache = sandbox.readCourseUpcomingCache();
 const cacheKey = sandbox.buildCourseCacheKey(scheduleEntry.href);
-assert(Array.isArray(rawCache[cacheKey]) && rawCache[cacheKey].length === 1, 'Cache pruning should persist the reduced cache entry set.');
+assert(Array.isArray(rawCache[cacheKey]) && rawCache[cacheKey].length === 2, 'Persisted candidates include used assignments for later completion filtering.');
 
 const refreshEntries = sandbox.getRefreshEntries([scheduleEntry]);
 assert(refreshEntries.length === 1, 'Explicit refresh should still target red-flag courses even when cache already has valid items.');
@@ -146,6 +147,7 @@ assert(refreshTargetsWithOtherCourse.length === 2, 'Refresh target collection sh
 assert(refreshTargetsWithOtherCourse.some((item) => item.href === otherCourseDomEntry.href), 'Refresh target collection should include the native-reminder other-course href.');
 assert(!refreshTargetsWithOtherCourse.some((item) => item.href === otherCourseEntry.href), 'Cache-only other-course detail items must not become refresh targets.');
 
+sandbox.kuAcceptCompletionData({ revision: 0, activeId: 'local', workspaces: [{ id: 'local', assignmentCompletions: [] }] });
 const renderedHome = sandbox.renderHome({
   upcoming: { loading: false, items: prunedUpcoming.map((item) => ({ ...item, daysLeft: 1 })) },
   announcements: { loading: false, items: [] },
@@ -182,7 +184,7 @@ const renderedHomeEmpty = sandbox.renderHome({
   schedule: { entries: [scheduleEntry] },
   otherCourses: [{ title: 'その他', items: [otherCourseDomEntry] }]
 });
-assert(renderedHomeEmpty.includes('締切が近い課題があります。コースを開いて詳細を確認してください。'), 'A native reminder without cached details must not be misreported as no deadline.');
+assert(renderedHomeEmpty.includes('課題情報が未取得です。更新するか、コースを開いて確認してください。'), 'A native reminder without cached details must not be misreported as no deadline.');
 assert(renderedHomeEmpty.includes(otherCourseDomEntry.href), 'Missing-detail fallback should preserve an actionable link to the reminder course.');
 
 const report = { ok: true, checks: ['home-enrich-retired-worker-fetch-path', 'home-upcoming-cache-first', 'home-display-only-other-course-details-separated-from-refresh-targeting', 'refresh-button-exposed-on-home-card', 'due-flag-contract-explicit-redflag-only', 'cache-pruning-persists-valid-items-only', 'refresh-targets-schedule-and-native-other-course-reminders', 'other-course-native-reminders-render-on-first-home-render', 'docs-point-to-native-reminder-parity-phase'] };

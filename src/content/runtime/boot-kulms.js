@@ -474,7 +474,7 @@ async function enrichHomeAsync(context, view, version = state.pageTaskVersion) {
     if (!active()) return;
     nextView.upcoming = {
       loading: false,
-      items: courseUpcoming.sort(compareUpcomingItems).slice(0, 5)
+      items: courseUpcoming.sort(compareUpcomingItems)
         .map((item) => ({ ...item, daysLeft: item.dueDate ? Math.max(0, Math.ceil((item.dueDate - now) / 86400000)) : null }))
     };
   } catch (error) {

@@ -16,6 +16,7 @@ var KuTodoSync = (() => {
         account: config.account || null, workspaceId: config.workspaceId || '', workspaceName: linked?.name || '',
         activeWorkspaceId: active.id, activeWorkspaceName: active.name, courseScope: active.courseScope || null,
         boundAccount: active.replica?.accountId || '', pending: linked?.replica?.outbox.length || 0,
+        pendingAssignments: linked?.replica?.events.filter(e => e.entity === 'assignment' && linked.replica.outbox.includes(e.id)).length || 0,
         conflicts: linked?.replica ? KuTodoReplica.conflicts(linked.replica) : [],
         lastCheck: config.lastCheck || null, lastUpload: config.lastUpload || null,
         error: config.error || '', errorCode: config.errorCode || '', retryAt: config.retryAt || 0
@@ -52,12 +53,15 @@ var KuTodoSync = (() => {
         const incoming = await pull(account, w);
         if (incoming.files.length) await local('__syncMerge', w.id, { accountId: account.id, ...incoming });
         w = await workspace(w.id);
-        const pending = new Set(w.replica.outbox), events = w.replica.events.filter(e => pending.has(e.id));
+        const pending = new Set(w.replica.outbox), queued = w.replica.events.filter(e => pending.has(e.id));
+        // Legacy clients must never see completion entities in the TODO v1 stream.
+        const events = [...queued.filter(e => e.entity !== 'assignment'), ...queued.filter(e => e.entity === 'assignment')];
         let offset = 0;
         while (offset < events.length) {
           const batch = []; let bytes = 0;
           while (offset < events.length) {
             const e = events[offset], length = new TextEncoder().encode(JSON.stringify(e)).length;
+            if (batch.length && (batch[0].entity === 'assignment') !== (e.entity === 'assignment')) break;
             if (batch.length && bytes + length > 384 * 1024) break;
             batch.push(e); bytes += length; offset++;
           }
@@ -87,13 +91,14 @@ var KuTodoSync = (() => {
         if (w.replica && w.replica.accountId !== account.id) fail('ACCOUNT', '此资料绑定了另一个 Google 账号。请新建本地资料后连接。');
         const incoming = await pull(account, w), candidate = JSON.parse(JSON.stringify(w));
         KuTodoReplica.attach(candidate, account.id, uuid); KuTodoReplica.merge(candidate, incoming.events, incoming.files);
-        preview = { ticket: uuid(), account, workspaceId: w.id, fingerprint: JSON.stringify([w.courses, w.todos]), incoming, expires: now() + 5 * 60 * 1000 };
-        return { ticket: preview.ticket, account, workspaceName: w.name, localCount: w.todos.length, mergedCount: candidate.todos.length, conflicts: KuTodoReplica.conflicts(candidate.replica).length };
+        preview = { ticket: uuid(), account, workspaceId: w.id, fingerprint: JSON.stringify([w.courses, w.todos, w.assignmentCompletions, w.replica?.events.map(e => e.id)]), incoming, expires: now() + 5 * 60 * 1000 };
+        return { ticket: preview.ticket, account, workspaceName: w.name, localCount: w.todos.length, mergedCount: candidate.todos.length,
+          localAssignments: w.assignmentCompletions.length, mergedAssignments: candidate.assignmentCompletions.length, conflicts: KuTodoReplica.conflicts(candidate.replica).length };
       }
       if (action === 'confirm') {
         if (!preview || preview.ticket !== payload.ticket || preview.expires < now()) fail('PREVIEW', '连接预览已过期，请重新连接。');
         const selected = preview, w = await workspace(selected.workspaceId);
-        if (JSON.stringify([w.courses, w.todos]) !== selected.fingerprint) fail('PREVIEW', '本地内容在预览后发生变化，请重新预览。');
+        if (JSON.stringify([w.courses, w.todos, w.assignmentCompletions, w.replica?.events.map(e => e.id)]) !== selected.fingerprint) fail('PREVIEW', '本地内容在预览后发生变化，请重新预览。');
         await drive.authorize(false);
         if ((await drive.account()).id !== selected.account.id) fail('ACCOUNT', 'Google 账号在预览后改变，请重新连接。');
         await local('__syncAttach', w.id, { accountId: selected.account.id });
@@ -110,7 +115,7 @@ var KuTodoSync = (() => {
       if (action === 'resolve') {
         const config = await getConfig();
         if (!config.workspaceId || !config.account) fail('ACCOUNT', '此设备还没有绑定同步资料。');
-        await local('__syncResolve', config.workspaceId, { accountId: config.account.id, id: payload.id, heads: payload.heads, eventId: payload.eventId });
+        await local('__syncResolve', config.workspaceId, { accountId: config.account.id, entity: payload.entity || 'todo', id: payload.id, heads: payload.heads, eventId: payload.eventId });
         return status();
       }
       fail('INVALID', '未知的同步操作。');

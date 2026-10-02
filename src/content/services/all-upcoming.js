@@ -170,6 +170,8 @@ function mergeAllUpcomingItems(existingItems = [], nextItems = []) {
   }
 
 function buildAllUpcomingIdentityKey(item) {
+    const assignment = typeof kuAssignmentIdentity === 'function' ? kuAssignmentIdentity(item, item?.courseHref) : null;
+    if (assignment) return assignment.key;
     const courseHref = buildCourseCacheKey(item?.courseHref || item?.href || '') || String(item?.courseHref || item?.href || '');
     const title = String(item?.title || '').replace(/\s+/g, ' ').trim();
     const dueDate = typeof item?.dueDate?.getTime === 'function' ? item.dueDate.getTime() : Date.parse(item?.dueDate || '');
@@ -192,6 +194,8 @@ function serializeAllUpcomingItem(item) {
     return {
       title: item.title,
       type: item.type,
+      rawType: item.rawType,
+      ...(typeof kuAssignmentFields === 'function' ? kuAssignmentFields(item, item.courseHref) : {}),
       availability: item.availability,
       dueDate: item.dueDate?.toISOString?.() || '',
       href: item.href,

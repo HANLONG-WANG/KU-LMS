@@ -24,11 +24,11 @@
     state = data;
     const keys = new Set(data.courseScope?.keys || []);
     const conflicts = data.workspaceId === data.activeWorkspaceId
-      ? (data.conflicts || []).filter(conflict => conflict.versions.some(version => version.value && keys.has(version.value.courseKey))) : [];
+      ? (data.conflicts || []).filter(conflict => conflict.entity === 'assignment' || conflict.versions.some(version => version.value && keys.has(version.value.courseKey))) : [];
     const label = !data.configured ? '尚未配置' : data.running ? '同步中' : !data.enabled ? '未连接' : data.error ? '需要处理' : conflicts.length ? `${conflicts.length} 条冲突` : data.pending ? '待上传' : '已检查';
     q('badge').textContent = label;
     q('account').textContent = data.enabled ? `${data.account?.email || data.account?.name || 'Google 账号'} · ${data.workspaceName}` : `当前本地资料：${data.activeWorkspaceName}`;
-    message(data.error || (!data.configured ? '先完成一次性 Google Cloud 配置。本地 TODO 可正常使用。' : !data.enabled ? '一个 Google 账号对应一个云端待办库。连接前会预览合并结果。' : conflicts.length ? `有 ${conflicts.length} 条 TODO 需要选择版本，所有分支已保留。` : data.pending ? `已保存到本机，${data.pending} 条变更待上传。` : '本机没有待上传变更；另一台电脑会在检查云端后更新。'), !!data.error);
+    message(data.error || (!data.configured ? '先完成一次性 Google Cloud 配置。本地 TODO 和课题状态可正常使用。' : !data.enabled ? '一个 Google 账号对应一个云端资料库。连接前会预览合并结果。' : conflicts.length ? `有 ${conflicts.length} 条记录需要选择版本，所有分支已保留。` : data.pending ? `已保存到本机，${data.pending} 条变更待上传（课题状态 ${data.pendingAssignments || 0} 条）。` : '本机没有待上传变更；另一台电脑会在检查云端后更新。'), !!data.error);
     const format = value => value ? new Date(value).toLocaleString() : '尚无';
     q('times').textContent = data.enabled ? `上次检查：${format(data.lastCheck)}；上次上传：${format(data.lastUpload)}` : '';
     q('connect').disabled = busy || !data.configured;
@@ -38,12 +38,13 @@
     q('conflicts').replaceChildren();
     for (const conflict of conflicts) {
       const section = document.createElement('section'); section.className = 'google-sync-conflict';
-      const title = document.createElement('h3'); title.textContent = '这条 TODO 有多个版本'; section.append(title);
+      const assignment = conflict.entity === 'assignment';
+      const title = document.createElement('h3'); title.textContent = assignment ? '这项课题的完成状态有冲突' : '这条 TODO 有多个版本'; section.append(title);
       for (const version of conflict.versions) {
         const row = document.createElement('div'), text = document.createElement('p'), choose = document.createElement('button');
-        text.textContent = version.value ? `${version.value.text}（${version.value.deletedAt ? '已删除' : version.value.completedAt ? '已完成' : '未完成'}）` : '永久删除的版本';
+        text.textContent = version.value ? (assignment ? `${version.value.title}（${version.value.completed ? '已完成' : '未完成'}）` : `${version.value.text}（${version.value.deletedAt ? '已删除' : version.value.completedAt ? '已完成' : '未完成'}）`) : '永久删除的版本';
         choose.type = 'button'; choose.textContent = '选择此版本'; choose.disabled = busy;
-        choose.addEventListener('click', () => void execute('resolve', { id: conflict.key, heads: conflict.heads, eventId: version.eventId }));
+        choose.addEventListener('click', () => void execute('resolve', { entity: conflict.entity || 'todo', id: conflict.key, heads: conflict.heads, eventId: version.eventId }));
         row.append(text, choose); section.append(row);
       }
       q('conflicts').append(section);
@@ -63,7 +64,7 @@
       succeeded = true;
       if (action === 'prepare') {
         ticket = data.ticket;
-        q('preview-text').textContent = `账号：${data.account.email || data.account.name}。资料「${data.workspaceName}」本地 ${data.localCount} 条，合并后 ${data.mergedCount} 条，${data.conflicts} 条冲突会保留版本供选择。课程目录、正式 TODO 和删除状态会同步；草稿仅保存在本机。`;
+        q('preview-text').textContent = `账号：${data.account.email || data.account.name}。资料「${data.workspaceName}」TODO 本地 ${data.localCount} 条，合并后 ${data.mergedCount} 条；课题状态本地 ${data.localAssignments || 0} 条，合并后 ${data.mergedAssignments || 0} 条。${data.conflicts} 条冲突会保留版本供选择。课程目录、正式 TODO、删除状态和课题完成状态会同步；草稿仅保存在本机。`;
         q('preview').hidden = false; message('请确认账号和合并范围。尚未上传本地内容。');
       } else { ticket = ''; q('preview').hidden = true; state = data; }
     } catch (error) { message(error.message, true); }

@@ -1,7 +1,8 @@
 /* src/content/services/cache.js */
 
 async function loadUpcomingFromDueCourses(scheduleEntries, year = '') {
-    return loadUpcomingFromCourseCache((scheduleEntries || []).filter((entry) => isDueFlagNote(entry.note) && entry.href));
+    // Native reminder flags are not manual completion states. Read all visible course caches.
+    return loadUpcomingFromCourseCache((scheduleEntries || []).filter((entry) => entry.href));
   }
 
 function loadDisplayUpcomingFromCourses(courseEntries = []) {
@@ -60,6 +61,8 @@ function mergeUpcomingSources(primaryItems, secondaryItems) {
   }
 
 function buildUpcomingIdentityKey(item) {
+    const assignment = typeof kuAssignmentIdentity === 'function' ? kuAssignmentIdentity(item, item?.courseHref) : null;
+    if (assignment) return assignment.key;
     const courseHref = buildCourseCacheKey(item?.courseHref || '') || item?.courseHref || '';
     const title = String(item?.title || '').replace(/\s+/g, ' ').trim();
     const due = item?.dueDate && typeof item.dueDate.getTime === 'function' ? item.dueDate.getTime() : '';
@@ -71,7 +74,8 @@ function readCourseUpcomingCache() {
     try {
       const stored = JSON.parse(window.sessionStorage?.getItem(COURSE_UPCOMING_CACHE_KEY) || '{}');
       const identity = courseUpcomingCacheIdentity || stored.identity || '';
-      if (stored.version !== 2 || !identity || stored.identity !== identity) return {};
+      // v2 caches already discarded used assignments and cannot be treated as complete.
+      if (stored.version !== 3 || !identity || stored.identity !== identity) return {};
       const cache = {};
       const now = Date.now();
       for (const [key, entry] of Object.entries(stored.entries || {})) {
@@ -98,7 +102,7 @@ function writeCourseUpcomingCache(cache) {
         entries[key] = { collectedAt, items };
       }
       window.sessionStorage?.setItem(COURSE_UPCOMING_CACHE_KEY, JSON.stringify({
-        version: 2,
+        version: 3,
         identity: courseUpcomingCacheIdentity,
         entries
       }));
@@ -132,7 +136,7 @@ function syncCourseUpcomingCacheIdentity(userName = '', options = {}) {
     let storedIdentity = '';
     try {
       const stored = JSON.parse(window.sessionStorage?.getItem(COURSE_UPCOMING_CACHE_KEY) || '{}');
-      storedIdentity = stored.version === 2 ? String(stored.identity || '') : '';
+      storedIdentity = [2, 3].includes(stored.version) ? String(stored.identity || '') : '';
     } catch (error) {
       // Invalid legacy caches are discarded when a current identity is known.
     }
@@ -170,6 +174,7 @@ function hydrateCourseUpcomingItem(item, scheduleEntry, cacheKey = '') {
     if (!dueDate || Number.isNaN(dueDate.getTime())) return null;
     return {
       ...item,
+      ...(typeof kuAssignmentFields === 'function' ? kuAssignmentFields(item, cacheKey || item?.courseHref || scheduleEntry?.href || '') : {}),
       dueDate,
       courseHref: cacheKey || buildCourseCacheKey(item?.courseHref || scheduleEntry?.href || ''),
       courseTitle: shortenCourseTitle(scheduleEntry?.title || item?.courseTitle || ''),
@@ -183,6 +188,8 @@ function serializeCourseUpcomingItem(item) {
     return {
       title: item.title,
       type: item.type,
+      rawType: item.rawType,
+      ...(typeof kuAssignmentFields === 'function' ? kuAssignmentFields(item, item.courseHref) : {}),
       availability: item.availability,
       dueDate: item.dueDate?.toISOString?.() || '',
       href: item.href,

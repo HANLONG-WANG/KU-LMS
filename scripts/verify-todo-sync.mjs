@@ -86,6 +86,71 @@ const versions=(await f.status()).conflicts.flatMap(c=>c.versions.map(v=>v.value
 const allExported=(await f.local('export')).todos.map(t=>t.text);
 assert.ok(versions.every(text=>allExported.includes(text)),'external backup must not omit an unresolved text version');
 console.log('PASS: external export preserves unresolved text versions');
-assert.equal((await f.local('read')).schemaVersion,2,'enabling replication protects history from old schema-1 writers');
+assert.equal((await f.local('read')).schemaVersion,3,'completion-aware replication protects history from old schema-1/2 writers');
 assert.equal((await device('unused').local('read')).schemaVersion,1,'legacy local-only stores remain readable without migration');
 console.log('PASS: schema migration protects replication metadata from accidental downgrade');
+
+const ca = device('completion A'), cb = device('completion B');
+ca.state.account = cb.state.account = 'completion_account';
+const assignmentKey = `${course}contents/completion_1/`;
+const completionPayload = async (dev, completed) => {
+  const w = (await dev.local('read')).workspaces[0], t = w.assignmentCompletions.find(t => t.key === assignmentKey);
+  return { course: { key: course, title: 'Completion course' }, contentId: 'completion_1', title: '課題', assignmentType: '試験', completed,
+    expectedRevision: t?.revision || 0, expectedHeads: w.replica ? [...dev.context.KuTodoReplica.headsFor(w.replica, 'assignment', assignmentKey)] : [] };
+};
+await ca.local('setAssignment', await completionPayload(ca, false));
+await connect(ca); await connect(cb);
+assert.equal((await cb.local('read')).workspaces[0].assignmentCompletions[0].completed, false);
+const legacyCloudBatches = [...cloud.values()].filter(f => f.account === 'completion_account');
+assert.ok(legacyCloudBatches.every(f => f.events.every(e => e.entity === 'assignment') || f.events.every(e => e.entity !== 'assignment')), 'completion events never share a TODO batch');
+// Same-state concurrent writes converge without inventing a conflict from timestamps.
+ca.state.offline = cb.state.offline = true;
+await ca.local('setAssignment', await completionPayload(ca, true));
+await cb.local('setAssignment', await completionPayload(cb, true));
+await ca.sync('now'); assert.ok((await ca.status()).pendingAssignments > 0);
+ca.boot(); assert.ok((await ca.status()).pendingAssignments > 0);
+ca.state.offline = cb.state.offline = false;
+await ca.sync('now'); await cb.sync('now'); await ca.sync('now');
+assert.equal((await ca.status()).conflicts.length, 0);
+assert.equal((await ca.local('read')).workspaces[0].assignmentCompletions[0].completed, true);
+// Opposite branches stay visible as unfinished until explicitly confirmed.
+await ca.local('setAssignment', await completionPayload(ca, false));
+const staleCompletion = await completionPayload(cb, true);
+await cb.local('setAssignment', staleCompletion);
+await ca.sync('now'); await cb.sync('now'); await ca.sync('now');
+const completionConflict = (await ca.status()).conflicts.find(c => c.entity === 'assignment');
+assert.equal(completionConflict.versions.length, 2);
+assert.equal((await ca.local('read')).workspaces[0].assignmentCompletions[0].completed, false);
+const conflictBackup = await ca.local('export');
+assert.equal(conflictBackup.todos.length, 0, 'completion conflicts never become TODO backup copies');
+assert.equal(conflictBackup.assignmentConflicts[0].versions.length, 2, 'external backup retains every completion alternative');
+await assert.rejects(cb.local('setAssignment', staleCompletion), { code: 'CONFLICT' });
+await ca.local('setAssignment', await completionPayload(ca, true));
+await ca.sync('now'); await cb.sync('now');
+assert.equal((await cb.status()).conflicts.length, 0);
+assert.equal((await cb.local('read')).workspaces[0].assignmentCompletions[0].completed, true);
+// Undo, lost upload acknowledgement and account mismatch retain the explicit false event.
+await cb.local('setAssignment', await completionPayload(cb, false)); cb.state.loseResponse = true;
+await cb.sync('now'); assert.ok((await cb.status()).pendingAssignments > 0);
+cb.boot(); await cb.sync('now'); await ca.sync('now');
+assert.equal((await ca.local('read')).workspaces[0].assignmentCompletions[0].completed, false);
+assert.equal((await cb.status()).pending, 0);
+const completionEvents = (await ca.local('read')).workspaces[0].replica.events.filter(e => e.entity === 'assignment');
+assert.equal(new Set(completionEvents.map(e => e.id)).size, completionEvents.length);
+await cb.local('setAssignment', await completionPayload(cb, true));
+cb.state.account = 'wrong_completion_account'; const beforeWrongAccount = cloud.size;
+await cb.sync('now'); assert.equal((await cb.status()).errorCode, 'ACCOUNT'); assert.equal(cloud.size, beforeWrongAccount);
+cb.state.account = 'completion_account';
+const changedPreviewDevice = device('completion preview'); changedPreviewDevice.state.account = 'preview_completion';
+const completionPreview = await changedPreviewDevice.sync('prepare', { workspaceId: 'local' });
+await changedPreviewDevice.local('setAssignment', await completionPayload(changedPreviewDevice, true));
+await assert.rejects(changedPreviewDevice.sync('confirm', { ticket: completionPreview.ticket }), { code: 'PREVIEW' });
+// Existing v2 replicas migrate without losing their event graph or pending uploads.
+const oldSyncDb = copy(ca.state.data.kuLmsTodosV1);
+oldSyncDb.schemaVersion = 2;
+for (const w of oldSyncDb.workspaces) { delete w.assignmentCompletions; w.replica.schemaVersion = 1; w.replica.events = w.replica.events.filter(e => e.entity !== 'assignment'); w.replica.outbox = []; }
+const migratedDevice = device('v2 migration'); migratedDevice.state.data.kuLmsTodosV1 = copy(oldSyncDb); migratedDevice.boot();
+await migratedDevice.local('setAssignment', await completionPayload(migratedDevice, true));
+assert.deepEqual(migratedDevice.state.data.kuLmsTodosBeforeCompletionV3, oldSyncDb);
+assert.ok(oldSyncDb.workspaces[0].replica.events.every(e => migratedDevice.state.data.kuLmsTodosV1.workspaces[0].replica.events.some(v => v.id === e.id)));
+console.log('PASS: completion batch isolation, offline/restart convergence, causal conflict confirmation, undo, lost ACK, account isolation and v2 migration');
