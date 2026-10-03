@@ -28,13 +28,25 @@ function mapTimelineRecord(record, courseId) {
     const fallbackBodyText = plainMessage || normalizeTimelineBodyText(record?.message_info?.text || '');
     const contentTitle = primaryContent?.text || sanitizeCourseItemTitle(fallbackBodyText || '');
     const contentType = mapTimelineContentType(primaryContent?.type || '');
+    const attachmentName = String(record?.attache_name || '').trim();
+    const attachmentUrl = String(record?.attache_download_url || '').trim();
+    let attachmentHref = '';
+    if (attachmentName && attachmentUrl) {
+      try {
+        const url = new URL(absoluteUrl(attachmentUrl));
+        if (url.origin === window.location.origin && /^https?:$/.test(url.protocol) && /^\/webclass\/download\.php(?:\/|$)/.test(url.pathname)) {
+          attachmentHref = url.href;
+        }
+      } catch { /* Keep the filename visible when the download URL is invalid. */ }
+    }
     return {
-      title: contentTitle || record?.realname || 'タイムライン',
+      title: contentTitle || attachmentName || record?.realname || 'タイムライン',
       bodyText: primaryContent ? '' : fallbackBodyText,
       subtitle: primaryContent ? (contentType || '教材更新') : (record?.realname || '投稿'),
       label: primaryContent ? (contentType || '更新') : '投稿',
       recency: formatTimelineTimestamp(record?.datetime),
-      href: primaryContent ? buildTimelineContentHref(primaryContent, courseId) : ''
+      href: primaryContent ? buildTimelineContentHref(primaryContent, courseId) : '',
+      attachment: attachmentName ? { name: attachmentName, href: attachmentHref } : null
     };
   }
 

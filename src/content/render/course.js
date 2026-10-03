@@ -47,13 +47,21 @@ function renderCourseMaterials(view) {
 
 function renderTimelineBody(item) {
     const bodyText = String(item?.bodyText || '').replace(/\r\n/g, '\n').trim();
+    let body = '';
     if (bodyText) {
-      return `<div>${escapeHtml(bodyText).replace(/\n/g, '<br>')}</div>`;
+      body = `<div>${escapeHtml(bodyText).replace(/\n/g, '<br>')}</div>`;
+    } else if (item?.href) {
+      body = `<a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`;
+    } else if (!item?.attachment) {
+      body = `<div>${escapeHtml(item?.title || '')}</div>`;
     }
-    if (item?.href) {
-      return `<a class="ku-title-link" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`;
+    if (item?.attachment) {
+      const name = escapeHtml(item.attachment.name);
+      body += item.attachment.href
+        ? `<div><a class="ku-title-link" href="${escapeAttr(item.attachment.href)}" download>${name}</a></div>`
+        : `<div>${name}</div>`;
     }
-    return `<div>${escapeHtml(item?.title || '')}</div>`;
+    return body;
   }
 
 function renderMyReports(view) {
