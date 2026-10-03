@@ -124,7 +124,7 @@ async function continueAllUpcomingOnCourse(view, payload) {
       return;
     }
     const mergedItems = mergeAllUpcomingItems(payload.items, collectAllUpcomingCourseItems(view, target))
-      .filter((item) => isUpcomingDueWithinDays(item, ALL_UPCOMING_WINDOW_DAYS))
+      .filter(isAllUpcomingCandidate)
       .map(serializeAllUpcomingItem);
     const nextIndex = payload.currentIndex + 1;
     if (nextIndex < payload.targets.length) {
@@ -154,7 +154,12 @@ async function continueAllUpcomingOnCourse(view, payload) {
 
 function collectAllUpcomingCourseItems(view, target) {
     const items = parseUpcomingFromCourse(document, view?.course?.course?.links?.materials || target?.courseHref || target?.href || '');
-    return items.filter((item) => isUpcomingDueWithinDays(item, ALL_UPCOMING_WINDOW_DAYS));
+    return items.filter(isAllUpcomingCandidate);
+  }
+
+function isAllUpcomingCandidate(item) {
+    const dueTime = item?.dueDate?.getTime?.();
+    return Number.isFinite(dueTime) && dueTime >= Date.now();
   }
 
 function mergeAllUpcomingItems(existingItems = [], nextItems = []) {
@@ -326,7 +331,8 @@ function abortAllUpcoming(payload, reason = 'aborted') {
 
 function presentAllUpcomingResults(payload) {
     const now = new Date().toISOString();
-    const resultUrl = payload?.resultUrl || buildAllUpcomingUrl(payload?.homeUrl || window.location.href);
+    const homeUrl = normalizeAllUpcomingHomeUrl(window.location.href);
+    const resultUrl = buildAllUpcomingUrl(homeUrl);
     if (window.history?.replaceState) {
       window.history.replaceState(null, '', resultUrl);
     } else {
@@ -338,6 +344,7 @@ function presentAllUpcomingResults(payload) {
       lastProgressAt: now,
       collectedAt: payload?.collectedAt || now,
       completedAt: now,
+      homeUrl,
       resultUrl
     });
     syncAllUpcomingOverlay(null);
@@ -353,8 +360,11 @@ function doesAllUpcomingMatchCurrentView(view, payload) {
     if (!view || !payload) return false;
     const currentUrl = new URL(normalizeAllUpcomingHomeUrl(window.location.href), window.location.origin);
     const targetUrl = new URL(normalizeAllUpcomingHomeUrl(payload.homeUrl || absoluteUrl('/webclass/')), window.location.origin);
-    return currentUrl.pathname === targetUrl.pathname
-      && currentUrl.search === targetUrl.search
+    const isHomeRoute = (url) => ['home', 'home-all-upcoming'].includes(detectRoute(url).name);
+    // LMS can change both the home entrypoint and acs_ when leaving a course.
+    // The native filter values identify the scope we must restore.
+    return currentUrl.origin === targetUrl.origin
+      && isHomeRoute(currentUrl) && isHomeRoute(targetUrl)
       && String(view.filters?.year || '') === String(payload.homeYear || '')
       && String(view.filters?.semester || '') === String(payload.homeSemester || '');
   }

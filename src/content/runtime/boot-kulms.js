@@ -416,7 +416,7 @@ function buildHomeAllUpcomingView(doc, context) {
     const filters = parseHomeFilters(doc);
     const payload = readAllUpcomingState();
     const items = hydrateAllUpcomingItems(payload?.items || [])
-      .filter((item) => isUpcomingDueWithinDays(item, ALL_UPCOMING_WINDOW_DAYS))
+      .filter(isAllUpcomingCandidate)
       .sort(compareAllUpcomingResults)
       .map((item) => ({
         ...item,
@@ -426,13 +426,14 @@ function buildHomeAllUpcomingView(doc, context) {
     return {
       filters,
       items,
+      typeFilter: 'all',
       courseCount: payload?.targets?.length || new Set(items.map((item) => buildCourseCacheKey(item.courseHref || item.href) || item.courseTitle)).size,
       collectedAt,
       collectedAtLabel: formatAllUpcomingCollectedAt(collectedAt),
       homeHref: state.currentContext?.links?.home || absoluteUrl('/webclass/'),
-      subtitle: `現在のホーム対象（${filters.label || '全期間'}）から、${ALL_UPCOMING_WINDOW_DAYS}日以内に締切の課題をコース詳細ページ経由で集約しました。`,
+      subtitle: `現在のホーム対象（${filters.label || '全期間'}）から、締切までの日数を制限せずに課題・教材を集約しました。`,
       emptyMessage: payload?.phase === 'completed'
-        ? `${ALL_UPCOMING_WINDOW_DAYS}日以内に締切の課題はありません。`
+        ? '締切前の課題・教材はありません。'
         : 'ホームの「すべて見る」から集約を開始してください。'
     };
   }

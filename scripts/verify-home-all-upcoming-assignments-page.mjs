@@ -31,8 +31,8 @@ assert(extractFunction(source, 'continueAllUpcomingIfNeeded').includes("route.na
 assert(extractFunction(source, 'presentAllUpcomingResults').includes('window.history?.replaceState'), 'All-upcoming completion should switch to the dedicated hash route without relying on a full reload.');
 assert(extractFunction(source, 'presentAllUpcomingResults').includes('state.currentRoute = detectRoute(window.location);'), 'All-upcoming completion should refresh the in-memory route before rerendering the dedicated page.');
 assert(extractFunction(source, 'collectAllUpcomingCourseItems').includes('parseUpcomingFromCourse'), 'All-upcoming workflow should source course items from current course-detail parsing.');
-assert(extractFunction(source, 'collectAllUpcomingCourseItems').includes('isUpcomingDueWithinDays(item, ALL_UPCOMING_WINDOW_DAYS)'), 'All-upcoming workflow should apply the five-day window filter.');
-assert(extractFunction(source, 'isUpcomingDueWithinDays').includes('remaining >= 0'), 'Five-day helper should only include future-due items.');
+assert(extractFunction(source, 'collectAllUpcomingCourseItems').includes('items.filter(isAllUpcomingCandidate)'), 'All-course collection should retain future deadlines without a day limit.');
+assert(!extractFunction(source, 'isAllUpcomingCandidate').includes('ALL_UPCOMING_WINDOW_DAYS'), 'All-course eligibility must not depend on the homepage deadline window.');
 assert(!extractFunction(source, 'isUpcomingDueSoonUnused').includes('item?.hasUsage'), 'Homepage date candidates are independent of usage counts.');
 assert(renderUpcomingSource.includes('kuIsAssignmentCompleted'), 'Only manual completion should exclude a homepage assignment.');
 assert(extractFunction(source, 'syncAllUpcomingOverlay').includes("overlay.id = 'ku-all-upcoming-overlay';"), 'Dedicated overlay should use its own DOM id.');
@@ -44,10 +44,10 @@ assert(cssSource.includes(':not(#ku-all-upcoming-overlay)'), 'Critical CSS shoul
 assert(cssSource.includes('#ku-all-upcoming-overlay'), 'Critical CSS should style the dedicated all-upcoming overlay.');
 
 assert(extractFunction(source, 'buildHomeAllUpcomingView').includes('hydrateAllUpcomingItems(payload?.items || [])'), 'Dedicated page view should build from collected stored results.');
-assert(extractFunction(source, 'renderAllUpcoming').includes('全コースの期限が近い課題'), 'Dedicated page renderer should expose the expected title.');
+assert(extractFunction(source, 'renderAllUpcoming').includes('全コースの課題・教材'), 'Dedicated page renderer should describe all deadlines and material types.');
 assert(extractFunction(source, 'renderPage').includes("case 'home-all-upcoming': return renderAllUpcoming(view);"), 'Shared render dispatch should route the dedicated page.');
 assert(architectureDoc.includes('/webclass/#ku-all-upcoming'), 'Architecture doc should describe the dedicated all-upcoming route variant.');
-assert(architectureDoc.includes('all assignments due within five days across all visible home-scope courses'), 'Architecture doc should describe the five-day all-course aggregation scope.');
+assert(architectureDoc.includes('without an upper deadline window across all visible home-scope courses'), 'Architecture doc should describe all-course aggregation without a day limit.');
 assert(subsystemDoc.includes('services/all-upcoming.js'), 'Subsystem map should list the dedicated all-upcoming service.');
 assert(subsystemDoc.includes('all-course upcoming aggregation traversal'), 'Subsystem map should describe service ownership for the new traversal.');
 assert(entrypointDoc.includes('prd-ku-lms-home-all-upcoming-assignments-page.md'), 'Docs entrypoint should reference the new PRD.');

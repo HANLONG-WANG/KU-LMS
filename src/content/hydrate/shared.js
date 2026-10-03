@@ -43,6 +43,10 @@ function bindInteractiveHandlers(root, route, view) {
       event.preventDefault();
       void startAllUpcomingCollection(view);
     }));
+    root.querySelectorAll('[data-action="filter-all-upcoming-type"]').forEach((select) => select.addEventListener('change', (event) => {
+      view.typeFilter = event.target.value;
+      rerender();
+    }));
     root.querySelectorAll('[data-action="toggle-settings"]').forEach((button) => button.addEventListener('click', () => { state.showSettings = !state.showSettings; rerender(); }));
     root.querySelectorAll('[data-setting-key]').forEach((checkbox) => checkbox.addEventListener('change', (event) => {
       state.myReportColumns[event.target.dataset.settingKey] = event.target.checked;

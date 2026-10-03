@@ -95,27 +95,46 @@ function renderHomeOtherCourses(view) {
   }
 
 function renderAllUpcoming(view) {
+    const typeOptions = [
+      { key: 'all', label: 'すべて' },
+      { key: 'exam', label: '試験' },
+      { key: 'report', label: 'レポート・課題' },
+      { key: 'material', label: '資料' },
+      { key: 'survey', label: 'アンケート' },
+      { key: 'lti', label: 'LTIツール' },
+      { key: 'selfstudy', label: '自習' },
+      { key: 'generic', label: 'その他' }
+    ];
+    const typeCounts = new Map();
+    view.items.forEach((item) => {
+      const key = materialTypeToken(item.type, item.title).key;
+      typeCounts.set(key, (typeCounts.get(key) || 0) + 1);
+    });
+    const selectedType = typeOptions.some((option) => option.key === view.typeFilter) ? view.typeFilter : 'all';
+    const displayItems = selectedType === 'all'
+      ? view.items
+      : view.items.filter((item) => materialTypeToken(item.type, item.title).key === selectedType);
     const summaryMeta = [
-      `<span class="ku-chip blue">${ALL_UPCOMING_WINDOW_DAYS}日以内</span>`,
+      '<span class="ku-chip blue">期限の上限なし</span>',
       `<span class="ku-chip neutral">${escapeHtml(`${view.courseCount} コース`)}</span>`,
-      `<span class="ku-chip neutral">${escapeHtml(`${view.items.length} 件`)}</span>`
+      `<span class="ku-chip neutral">${escapeHtml(`表示 ${displayItems.length} / 全 ${view.items.length} 件`)}</span>`
     ];
     if (view.collectedAtLabel) {
       summaryMeta.push(`<span class="ku-mini-meta">更新: ${escapeHtml(view.collectedAtLabel)}</span>`);
     }
-    const itemsHtml = view.items.length
-      ? renderPanelList(view.items.map((item) => ({
+    const itemsHtml = displayItems.length
+      ? renderPanelList(displayItems.map((item) => ({
           badge: `<span class="ku-chip ${materialTypeTone(item.type, item.title)}">${escapeHtml(item.type || '課題')}</span>`,
           title: `<a class="ku-panel-title" href="${escapeAttr(item.href)}">${escapeHtml(item.title)}</a>`,
           subtitle: escapeHtml(buildUpcomingSubtitle(item)),
           trailing: `<div class="ku-completion-trailing"><div class="ku-deadline">${formatDate(item.dueDate)}<br><strong>（あと${item.daysLeft}日）</strong></div>${typeof kuRenderAssignmentBadge === 'function' ? kuRenderAssignmentBadge(item, item.courseHref, item.courseTitle) : ''}</div>`
         })))
-      : `<div class="ku-empty">${escapeHtml(view.emptyMessage)}</div>`;
+      : `<div class="ku-empty">${escapeHtml(selectedType === 'all' ? view.emptyMessage : 'この種類の課題・教材はありません。')}</div>`;
     return `
       <section class="ku-card ku-main-card">
         <div class="ku-main-card-header">
           <div>
-            <h1 class="ku-page-title">全コースの期限が近い課題</h1>
+            <h1 class="ku-page-title">全コースの課題・教材</h1>
             <div class="ku-page-subtitle">${escapeHtml(view.subtitle)}</div>
           </div>
           <div class="ku-card-actions">
@@ -124,6 +143,12 @@ function renderAllUpcoming(view) {
         </div>
         <div style="padding:0 20px 20px">
           <div class="ku-inline">${summaryMeta.join('')}</div>
+          <label class="ku-inline" style="margin-top:12px">
+            <span class="ku-mini-meta">種類</span>
+            <select class="ku-select" data-action="filter-all-upcoming-type" aria-label="課題・教材の種類">
+              ${typeOptions.map((option) => `<option value="${option.key}" ${option.key === selectedType ? 'selected' : ''}>${escapeHtml(option.label)}（${option.key === 'all' ? view.items.length : typeCounts.get(option.key) || 0}）</option>`).join('')}
+            </select>
+          </label>
         </div>
         ${itemsHtml}
       </section>`;
