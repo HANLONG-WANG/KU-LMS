@@ -100,6 +100,7 @@ function kuPaintHomeTodos() {
     const row = document.createElement('div'); row.className = 'ku-todo-home-row';
     const check = document.createElement('input'); check.type = 'checkbox'; check.setAttribute('aria-label', `完了：${t.text}`);
     check.addEventListener('change', async () => {
+      if (check.checked && !window.confirm(`将此 TODO 标记为已完成？\n\n${t.text}`)) { check.checked = false; return; }
       check.disabled = true;
       try { await KuTodoClient.request('update', { workspaceId: w.id, operationId: KuTodoClient.uuid(), id: t.id, expectedRevision: t.revision, completed: check.checked }); await kuLoadHomeTodos(); }
       catch (error) { check.checked = false; check.disabled = false; meta.textContent = error.message; }

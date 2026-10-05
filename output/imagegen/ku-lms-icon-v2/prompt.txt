@@ -1,0 +1,12 @@
+Generation mode: built-in image_gen
+Status: approved by the user and installed in assets/icons on 2026-10-05.
+
+Use case: logo-brand
+Asset type: a new production-ready raster icon for the KU-LMS Chrome browser extension, a university learning portal with courses and personal TODOs.
+Primary request: create one distinctive, beautifully simple icon that feels at home in the existing blue-and-yellow KU-LMS interface.
+Subject: a single bold white open-book symbol, with a small yellow bookmark integrated into the book. Use a clean geometric silhouette that subtly suggests a K through the book's folded pages; clarity as a book takes priority.
+Style/medium: flat graphic brand mark, precise vector-like edges rendered as a PNG, restrained and contemporary, friendly academic character.
+Color palette: existing project blue #2F6BFF for the rounded-square tile, pure white for the book, and existing yellow #F4C51D for one small bookmark accent.
+Composition/framing: one square icon, front-facing, perfectly centered, the blue rounded square fills about 88 percent of the image width, consistent transparent margin around it. The white book fills around 60 percent of the tile and has broad confident shapes and open negative space. Legible when reduced to 16x16 or 32x32 pixels.
+Scene/backdrop: genuinely transparent outside the rounded blue tile.
+Constraints: exactly one icon only; no words, letters, numerals, captions, watermark, frame, mockup, or presentation sheet. No thin decorative lines, tiny details, shadows outside the tile, 3D perspective, metallic textures, or gradients. Preserve actual alpha transparency.

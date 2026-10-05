@@ -113,7 +113,14 @@ var KuTodoUI = {
       const entries = w.todos.filter(t => courseKeys.has(t.courseKey) && (!selected || t.courseKey === selected) && (filter === 'trash' ? t.deletedAt : !t.deletedAt && (filter === 'done' ? t.completedAt : !t.completedAt)) && (!search || `${t.text} ${w.courses.find(c => c.key === t.courseKey)?.title}`.toLocaleLowerCase().includes(search)));
       entries.sort((a,b) => (filter === 'active' ? (a.dueAt || '9999').localeCompare(b.dueAt || '9999') : 0) || b.createdAt.localeCompare(a.createdAt)).forEach(t => {
         const row = el('div', 'ku-todo-row'); row.dataset.todoId = t.id;
-        if (!t.deletedAt) { const c = el('input'); c.type = 'checkbox'; c.checked = !!t.completedAt; c.disabled = readOnly; c.setAttribute('aria-label', `完成：${t.text}`); c.addEventListener('change', () => void action('update', { id:t.id, expectedRevision:t.revision, completed:c.checked })); row.append(c); }
+        if (!t.deletedAt) {
+          const c = el('input'); c.type = 'checkbox'; c.checked = !!t.completedAt; c.disabled = readOnly; c.setAttribute('aria-label', `完成：${t.text}`);
+          c.addEventListener('change', () => {
+            if (c.checked && !window.confirm(`将此 TODO 标记为已完成？\n\n${t.text}`)) { c.checked = !!t.completedAt; return; }
+            void action('update', { id:t.id, expectedRevision:t.revision, completed:c.checked });
+          });
+          row.append(c);
+        }
         const content = el('div', 'ku-todo-row-content'); const title = button(t.text, () => start(t), `ku-todo-text${t.completedAt ? ' is-done' : ''}`); title.disabled = !!t.deletedAt || readOnly; content.append(title);
         if (t.dueAt) {
           const overdue = !t.completedAt && !t.deletedAt && Date.parse(t.dueAt) <= Date.now();
