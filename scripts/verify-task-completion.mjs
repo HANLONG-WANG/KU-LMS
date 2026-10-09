@@ -187,6 +187,41 @@ many.ctx.rememberCourseUpcoming(course,[exam]);
 assert.equal(JSON.parse(many.window.sessionStorage.getItem(many.ctx.COURSE_UPCOMING_CACHE_KEY)).version,3);
 assert.equal((await workspace()).assignmentCompletions.find(t=>t.key.endsWith('/candidate_0/')).completed,true);
 
+// Reports with hidden grades use the same completion workflow as ordinary reports.
+const hiddenReport = item('hidden-report', 'レポート(成績非公開)', '第1回振り返り');
+const hiddenCourse = page('course-materials', [hiddenReport]);
+const hiddenAll = page('home-all-upcoming', [hiddenReport]);
+const hiddenHome = page('home', [hiddenReport], { ...homeView, upcoming: { loading: false, items: [hiddenReport] } });
+await tick();
+for (const field of ['rawType', 'type', 'assignmentType']) {
+  assert.equal(hiddenCourse.ctx.kuAssignmentType({ [field]: hiddenReport.rawType, title: hiddenReport.title }), 'レポート');
+}
+assert.equal(hiddenCourse.ctx.kuAssignmentIdentity(hiddenReport).type, 'レポート');
+assert.equal(hiddenCourse.ctx.serializeCourseUpcomingItem(hiddenReport).assignmentType, 'レポート');
+assert.equal(hiddenCourse.ctx.serializeAllUpcomingItem(hiddenReport).assignmentType, 'レポート');
+assert.equal(hiddenCourse.badge('hidden-report').textContent, '未完了');
+assert.match(hiddenCourse.root.textContent, /レポート\(成績非公開\)/, 'the displayed material type remains intact');
+assert.equal(hiddenHome.badge('hidden-report').textContent, '未完了');
+hiddenCourse.click(hiddenCourse.badge('hidden-report'));
+assert.match(hiddenCourse.q('question').textContent, /未完了 → 完了/);
+hiddenCourse.click(hiddenCourse.q('confirm')); await tick();
+assert.equal(hiddenCourse.badge('hidden-report').textContent, '完了');
+assert.equal(hiddenAll.badge('hidden-report').textContent, '完了');
+assert.equal(hiddenHome.badge('hidden-report'), undefined, 'a completed hidden-grade report disappears from home');
+const hiddenSaved = (await workspace()).assignmentCompletions.find(v => v.contentId === 'hidden-report');
+assert.equal(hiddenSaved.type, 'レポート');
+assert.equal(hiddenSaved.completed, true);
+store = model.KuTodoStore.create(storage);
+const hiddenReopened = page('course-materials', [hiddenReport]); await tick();
+assert.equal(hiddenReopened.badge('hidden-report').textContent, '完了', 'hidden-grade report completion survives a restart');
+hiddenAll.click(hiddenAll.badge('hidden-report'));
+assert.match(hiddenAll.q('question').textContent, /完了 → 未完了/);
+hiddenAll.click(hiddenAll.q('confirm')); await tick();
+assert.equal(hiddenCourse.badge('hidden-report').textContent, '未完了');
+assert.equal(hiddenReopened.badge('hidden-report').textContent, '未完了');
+assert.equal(hiddenHome.badge('hidden-report').textContent, '未完了', 'undo restores a hidden-grade report on home');
+hiddenCourse.destroy(); hiddenAll.destroy(); hiddenHome.destroy(); hiddenReopened.destroy();
+
 let releaseRead; pauseRead = release => { releaseRead = release; };
 const closing = page('course-materials'); await tick(); assert.ok(releaseRead);
 closing.destroy(); const closingPhase = closing.ctx.kuTaskCompletion.phase; releaseRead(); await tick();
@@ -194,4 +229,4 @@ assert.equal(closing.ctx.kuTaskCompletion.phase,closingPhase,'late read cannot r
 assert.equal(closing.ctx.kuTaskCompletion.root,null);
 coursePage.destroy(); home.destroy(); all.destroy(); many.destroy();
 assert.equal(observers.size,0,'page cleanup removes every subscription');
-console.log('PASS: four assignment types, stable identity, safe rendering, confirmation/cancel, multi-page updates, undo, restart, save failures, conflicts, workspace changes, candidate refill and lifecycle cleanup');
+console.log('PASS: four assignment types including hidden-grade reports, stable identity, safe rendering, confirmation/cancel, multi-page updates, undo, restart, save failures, conflicts, workspace changes, candidate refill and lifecycle cleanup');

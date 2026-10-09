@@ -5,7 +5,7 @@ var kuTaskCompletion = { db: null, phase: 'loading', error: '', records: new Map
 function kuAssignmentType(item) {
   const raw = String(item?.rawType || item?.type || item?.assignmentType || '').trim();
   if (/^(試験|小テスト|テスト)$/.test(raw)) return '試験';
-  if (/^(レポート|課題)$/.test(raw)) return 'レポート';
+  if (/^(レポート(?:\(成績非公開\))?|課題)$/.test(raw)) return 'レポート';
   if (raw === 'アンケート' || raw === '自習') return raw;
   if (raw) return ''; // An explicit 資料/LTI category must not be overridden by its title.
   const title = String(item?.title || '');
