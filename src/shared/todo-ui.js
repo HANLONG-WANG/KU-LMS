@@ -111,7 +111,7 @@ var KuTodoUI = {
       const search = q('search').value.trim().toLocaleLowerCase();
       const list = q('list'); list.replaceChildren();
       const entries = w.todos.filter(t => courseKeys.has(t.courseKey) && (!selected || t.courseKey === selected) && (filter === 'trash' ? t.deletedAt : !t.deletedAt && (filter === 'done' ? t.completedAt : !t.completedAt)) && (!search || `${t.text} ${w.courses.find(c => c.key === t.courseKey)?.title}`.toLocaleLowerCase().includes(search)));
-      entries.sort((a,b) => (filter === 'active' ? (a.dueAt || '9999').localeCompare(b.dueAt || '9999') : 0) || b.createdAt.localeCompare(a.createdAt)).forEach(t => {
+      entries.sort(filter === 'active' ? KuTodoDeadline.compare : KuTodoDeadline.compareCreated).forEach(t => {
         const row = el('div', 'ku-todo-row'); row.dataset.todoId = t.id;
         if (!t.deletedAt) {
           const c = el('input'); c.type = 'checkbox'; c.checked = !!t.completedAt; c.disabled = readOnly; c.setAttribute('aria-label', `完成：${t.text}`);
@@ -123,8 +123,8 @@ var KuTodoUI = {
         }
         const content = el('div', 'ku-todo-row-content'); const title = button(t.text, () => start(t), `ku-todo-text${t.completedAt ? ' is-done' : ''}`); title.disabled = !!t.deletedAt || readOnly; content.append(title);
         if (t.dueAt) {
-          const overdue = !t.completedAt && !t.deletedAt && Date.parse(t.dueAt) <= Date.now();
-          const due = el('time', `ku-todo-due${overdue ? ' is-overdue' : ''}`, `${overdue ? '已逾期 · ' : '截止：'}${formatDue(t.dueAt)}`);
+          const urgency = KuTodoDeadline.urgency(t);
+          const due = el('time', `ku-todo-due is-${urgency}`, `${urgency === 'overdue' ? '已逾期 · ' : '截止：'}${formatDue(t.dueAt)}`);
           due.dateTime = t.dueAt; content.append(due);
         }
         if (!fixedCourseKey) content.append(button(w.courses.find(c => c.key === t.courseKey)?.title || '课程', () => { selected = t.courseKey; render(); }, 'ku-todo-course-link'));

@@ -36,7 +36,7 @@ function environment() {
   document.hasFocus = () => active;
   const focusListeners = new Set();
   const context = vm.createContext({ document, window: { confirm: () => true, addEventListener(type, fn) { if (type === 'focus') focusListeners.add(fn); }, removeEventListener(type, fn) { if (type === 'focus') focusListeners.delete(fn); } }, URL, Blob, setTimeout, console, KuTodoClient: client });
-  vm.runInContext(read('src/shared/todo-ui.js'), context);
+  vm.runInContext(read('src/shared/todo-deadline.js') + '\n' + read('src/shared/todo-ui.js'), context);
   const host = document.querySelector('#host');
   return { context, document, window, host, active(value) { active = value; }, focus() { active = true; focusListeners.forEach(fn => fn()); }, q: name => host.querySelector(`[data-${name}]`) };
 }

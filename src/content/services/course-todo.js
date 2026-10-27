@@ -17,10 +17,12 @@ function kuPaintCourseTodoCount() {
   const s = kuCourseTodoPanel, badge = s.root?.querySelector('[data-course-todo-count]');
   if (!badge) return;
   const w = s.db?.workspaces.find(w => w.id === s.db.activeId);
+  badge.classList.remove('red', 'orange'); badge.classList.add('blue');
   if (!w || !w.courses.some(c => c.key === s.course?.key)) {
     badge.textContent = s.error ? '!' : '…'; badge.setAttribute('aria-label', s.error ? 'TODO 读取失败' : 'TODO 读取中'); return;
   }
-  const count = w.todos.filter(t => t.courseKey === s.course.key && !t.completedAt && !t.deletedAt).length;
+  const summary = KuTodoDeadline.summary(w.todos.filter(t => t.courseKey === s.course.key)), count = summary.count;
+  for (const tone of ['red', 'orange', 'blue']) badge.classList.toggle(tone, kuTodoChipTone(summary) === tone);
   badge.textContent = count > 99 ? '99+' : String(count);
   badge.setAttribute('aria-label', `未完成 TODO：${count}`);
 }

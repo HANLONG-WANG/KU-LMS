@@ -18,7 +18,7 @@ function ui(){
   const proto=Object.getPrototypeOf(document.createElement('select'));
   Object.defineProperty(proto,'value',{configurable:true,get(){return [...this.options].find(o=>o.selected)?.value??this.options[0]?.value??'';},set(v){for(const o of this.options)o.selected=o.value===v;}});
   const ctx=vm.createContext({document,window:{confirm:()=>true},URL,Blob,setTimeout,KuTodoClient:client,console});
-  vm.runInContext(read('src/shared/todo-ui.js'),ctx);
+  vm.runInContext(read('src/shared/todo-deadline.js') + '\n' + read('src/shared/todo-ui.js'),ctx);
   const host=document.querySelector('#host');const instance=ctx.KuTodoUI.mount(host,{client});
   return {document,window,ctx,host,instance,q:n=>host.querySelector(`[data-${n}]`),click:n=>host.querySelector(`[data-${n}]`).click(),input(n,value){const e=this.q(n);e.value=value;e.dispatchEvent(new window.Event('input'));},submit(){this.q('editor').dispatchEvent(new window.Event('submit',{cancelable:true}));}};
 }

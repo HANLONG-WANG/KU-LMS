@@ -48,3 +48,7 @@
 .ku-todo-import p { margin-bottom: 8px; }
 .ku-todo-backup > button { margin-top: 12px; }
 @media (pointer: coarse) { .ku-todo-ui .ku-todo-button { min-height: 44px; } .ku-todo-ui input, .ku-todo-ui select, .ku-todo-ui textarea { font-size: 16px; } }
+
+.ku-todo-due.is-soon { color: #9a4b00; font-weight: 600; }
+.ku-todo-due.is-near { color: #776000; font-weight: 600; }
+.ku-todo-summary-chip { margin-left: 8px; font-size: 12px; font-weight: 600; vertical-align: middle; }

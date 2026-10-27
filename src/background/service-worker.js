@@ -1,4 +1,4 @@
-if (typeof importScripts === 'function') importScripts('todo-replica.js', 'todo-drive.js', 'todo-sync.js', 'todo-store.js');
+if (typeof importScripts === 'function') importScripts('../shared/todo-deadline.js', 'todo-replica.js', 'todo-drive.js', 'todo-sync.js', 'todo-store.js', 'todo-reminders.js');
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[KU-LMS Redesign] service worker installed');

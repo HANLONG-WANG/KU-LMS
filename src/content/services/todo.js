@@ -1,12 +1,20 @@
 /* Home integration. Retain the editor DOM across unrelated home rerenders. */
-var kuTodoHome = { db: null, root: null, view: null, unsubscribe: null, dialog: null, editor: null, trigger: null, catalogSignature: '', request: 0, click: null };
+var kuTodoHome = { db: null, root: null, view: null, unsubscribe: null, dialog: null, editor: null, trigger: null, catalogSignature: '', request: 0, click: null, timer: null };
 
 function kuRenderTodoChip(entry) {
   const key = KuTodoClient.courseKey(entry.href);
   if (!key) return '';
   const w = kuTodoHome.db?.workspaces.find(w => w.id === kuTodoHome.db.activeId);
-  const count = w?.todos.filter(t => t.courseKey === key && !t.completedAt && !t.deletedAt).length;
-  return `<button type="button" class="ku-chip blue ku-todo-chip" data-todo-open="${escapeAttr(key)}" title="TODO" aria-label="${escapeAttr(shortenCourseTitle(entry.title))} のTODO"><span aria-hidden="true">☑</span> <span data-todo-count>${count === undefined ? '…' : count ? Math.min(count, 99) + (count > 99 ? '+' : '') : '+'}</span></button>`;
+  const summary = w ? KuTodoDeadline.summary(w.todos.filter(t => t.courseKey === key)) : null;
+  return `<button type="button" class="ku-chip ${kuTodoChipTone(summary)} ku-todo-chip" data-todo-open="${escapeAttr(key)}" title="${escapeAttr(kuTodoChipTitle(summary))}" aria-label="${escapeAttr(shortenCourseTitle(entry.title))} のTODO"><span aria-hidden="true">☑</span> <span data-todo-count>${summary ? summary.count ? (summary.count > 99 ? '99+' : String(summary.count)) : '+' : '…'}</span></button>`;
+}
+
+function kuTodoChipTone(summary) {
+  return { overdue: 'red', soon: 'orange' }[summary?.state] || 'blue';
+}
+
+function kuTodoChipTitle(summary) {
+  return summary ? `TODO · ${summary.count} 件未完了${summary.next ? ` · 最近截止 ${KuTodoDeadline.format(summary.next)}` : ''}` : 'TODO';
 }
 
 function kuBindTodos(root, route, view) {
@@ -35,6 +43,7 @@ function kuBindTodos(root, route, view) {
       document.removeEventListener('visibilitychange', capture);
     };
   }
+  if (!kuTodoHome.timer) kuTodoHome.timer = globalThis.setInterval?.(kuPaintHomeTodos, 60000);
   kuPaintHomeTodos();
   void kuLoadHomeTodos({ captureScope: true });
 }
@@ -85,16 +94,26 @@ function kuPaintHomeTodos() {
   const { root, db, view } = kuTodoHome;
   const w = db?.workspaces.find(w => w.id === db.activeId);
   if (!root || !w) return;
+  const now = Date.now();
   root.querySelectorAll('.ku-todo-chip').forEach(button => {
-    const count = w.todos.filter(t => t.courseKey === button.dataset.todoOpen && !t.completedAt && !t.deletedAt).length;
+    const summary = KuTodoDeadline.summary(w.todos.filter(t => t.courseKey === button.dataset.todoOpen), now), count = summary.count;
+    for (const tone of ['red', 'orange', 'blue']) button.classList.toggle(tone, kuTodoChipTone(summary) === tone);
     const badge = button.querySelector('[data-todo-count]');
     if (badge) badge.textContent = count ? (count > 99 ? '99+' : String(count)) : '+';
-    button.title = `TODO · ${count} 件未完了`;
+    button.title = kuTodoChipTitle(summary);
   });
   const body = root.querySelector('[data-todo-summary-body]'); if (!body) return;
   body.className = 'ku-todo-home-list'; body.replaceChildren();
   const visible = new Set([...view.schedule.entries, ...view.otherCourses.flatMap(g => g.items)].map(c => KuTodoClient.courseKey(c.href)));
-  const todos = w.todos.filter(t => !t.deletedAt && !t.completedAt), scoped = todos.filter(t => visible.has(t.courseKey));
+  const todos = w.todos.filter(t => !t.deletedAt && !t.completedAt), scoped = todos.filter(t => visible.has(t.courseKey)).sort(KuTodoDeadline.compare);
+  const summary = KuTodoDeadline.summary(scoped, now), heading = root.querySelector('[data-todo-summary] .ku-card-title');
+  if (heading) {
+    heading.textContent = 'TODO';
+    for (const [count, label, color] of [[summary.overdue, '期限切れ', 'red'], [summary.soon, '24時間以内', 'orange']]) {
+      if (!count) continue;
+      const chip = document.createElement('span'); chip.className = `ku-chip ${color} ku-todo-summary-chip`; chip.textContent = `${label} ${count}`; heading.append(chip);
+    }
+  }
   const meta = document.createElement('p'); meta.className = 'ku-todo-home-meta'; meta.textContent = `${w.name} · ${scoped.length} 件`; body.append(meta);
   scoped.slice(0, 5).forEach(t => {
     const row = document.createElement('div'); row.className = 'ku-todo-home-row';
@@ -108,7 +127,12 @@ function kuPaintHomeTodos() {
     const button = document.createElement('button'); button.type = 'button'; button.dataset.todoOpen = t.courseKey; button.className = 'ku-todo-home-item';
     const title = document.createElement('span'); title.textContent = t.text;
     const course = document.createElement('small'); course.textContent = w.courses.find(c => c.key === t.courseKey)?.title || '';
-    button.append(title, course); row.append(check, button); body.append(row);
+    button.append(title, course);
+    if (t.dueAt) {
+      const due = document.createElement('time'); due.className = `ku-todo-due is-${KuTodoDeadline.urgency(t, now)}`; due.dateTime = t.dueAt;
+      due.textContent = `${KuTodoDeadline.format(t.dueAt)}（${KuTodoDeadline.remaining(t, now)}）`; button.append(due);
+    }
+    row.append(check, button); body.append(row);
   });
   if (!scoped.length) { const empty = document.createElement('p'); empty.className = 'ku-todo-home-meta'; empty.textContent = '表示中の学期にTODOはありません。カードの ☑ から追加できます。'; body.append(empty); }
   if (scoped.length > 5) { const more = document.createElement('button'); more.type = 'button'; more.className = 'ku-button ghost'; more.dataset.todoOpen = ''; more.textContent = `残り ${scoped.length - 5} 件を見る`; body.append(more); }
@@ -148,6 +172,7 @@ function kuCloseTodoDialog() {
 
 function kuCleanupTodos() {
   kuCloseTodoDialog(); kuTodoHome.request += 1;
+  globalThis.clearInterval?.(kuTodoHome.timer); kuTodoHome.timer = null;
   kuTodoHome.unsubscribe?.(); kuTodoHome.unsubscribe = null;
   kuTodoHome.scopeCleanup?.(); kuTodoHome.scopeCleanup = null;
   if (kuTodoHome.root && kuTodoHome.click) kuTodoHome.root.removeEventListener('click', kuTodoHome.click);

@@ -23,7 +23,8 @@
   "permissions": [
     "storage",
     "identity",
-    "alarms"
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "https://kulms.tl.kansai-u.ac.jp/webclass/*",
@@ -49,6 +50,7 @@
       "js": [
         "src/shared/settings.js",
         "src/shared/todo-client.js",
+        "src/shared/todo-deadline.js",
         "src/shared/todo-ui.js",
         "src/content/runtime/constants.js",
         "src/content/runtime/state.js",
