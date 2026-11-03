@@ -102,7 +102,7 @@ const syncDom = parseHTML('<html><body><section id="google-sync-panel"></section
 const syncState = { configured: true, enabled: true, activeWorkspaceId: 'local', activeWorkspaceName: 'local', workspaceId: 'local', workspaceName: 'local', courseScope: { keys: [fall], label: '秋学期' }, pending: 0,
   conflicts: [{ key: 'a', heads: ['a1'], versions: [{ eventId: 'a1', value: { courseKey: fall, text: '秋の競合' } }] }, { key: 'b', heads: ['b1'], versions: [{ eventId: 'b1', value: { courseKey: spring, text: '春の競合' } }] }] };
 const chrome = { runtime: { sendMessage(_message, callback) { callback({ ok: true, data: syncState }); } }, storage: { onChanged: { addListener(fn) { chrome.changed = fn; } } } };
-vm.runInNewContext(read('src/popup/google-sync.js'), { document: syncDom.document, window: { confirm: () => true }, chrome }); await tick();
+vm.runInNewContext(read('src/popup/google-sync.js'), { document: syncDom.document, window: { confirm: () => true }, chrome, setTimeout, clearTimeout }); await tick();
 assert.match(syncDom.document.querySelector('[data-sync-conflicts]').textContent, /秋の競合/);
 assert.doesNotMatch(syncDom.document.querySelector('[data-sync-conflicts]').textContent, /春の競合/);
 syncState.courseScope = { keys: [spring], label: '春学期' }; chrome.changed({ kuLmsTodosV1: {} }, 'local'); await tick();

@@ -2,17 +2,24 @@
 var KuTodoSync = (() => {
   const KEY = 'kuLmsGoogleSyncV1', ALARM = 'ku-lms-todo-sync';
   function fail(code, message) { const e = new Error(message); e.code = code; throw e; }
-  function create({ store, storage, drive, configured = () => true, uuid = () => crypto.randomUUID(), now = () => Date.now() }) {
-    let queue = Promise.resolve(), preview = null, running = false;
+  function create({ store, storage, drive, configured = () => true, uuid = () => crypto.randomUUID(), now = () => Date.now(), sleep = ms => new Promise(r => setTimeout(r, ms)) }) {
+    let queue = Promise.resolve(), preview = null, running = false, preparing = false, progress = null;
+    const batches = new Map();
     const getConfig = async () => (await storage.get(KEY))[KEY] || { enabled: false };
     const saveConfig = config => storage.set({ [KEY]: config });
     const workspace = async workspaceId => store.dispatch({ action: '__syncRead', workspaceId });
     const local = (action, workspaceId, payload = {}) => store.dispatch({ action, workspaceId, operationId: uuid(), ...payload });
+    function previewSummary() {
+      if (!preview || preview.expires < now()) return null;
+      const { ticket, account, workspaceName, localCount, mergedCount, localAssignments, mergedAssignments, conflicts } = preview;
+      return { ticket, account, workspaceName, localCount, mergedCount, localAssignments, mergedAssignments, conflicts };
+    }
     async function status() {
       const config = await getConfig(), db = await store.dispatch({ action: 'read' });
       const active = db.workspaces.find(w => w.id === db.activeId), linked = db.workspaces.find(w => w.id === config.workspaceId);
       return {
-        configured: configured(), enabled: config.enabled === true, running,
+        configured: configured(), enabled: config.enabled === true, running, preparing, progress, preview: previewSummary(),
+        storageBytes: new TextEncoder().encode(JSON.stringify(db)).length, storageLimit: KuTodoStore.MAX_BYTES,
         account: config.account || null, workspaceId: config.workspaceId || '', workspaceName: linked?.name || '',
         activeWorkspaceId: active.id, activeWorkspaceName: active.name, courseScope: active.courseScope || null,
         boundAccount: active.replica?.accountId || '', pending: linked?.replica?.outbox.length || 0,
@@ -23,15 +30,39 @@ var KuTodoSync = (() => {
       };
     }
     async function pull(account, w) {
-      const files = await drive.list(), known = new Set(w.replica?.files || []), events = [], downloaded = [];
-      let size = 0;
-      for (const file of files) {
-        if (known.has(file.id)) continue;
-        const batch = await drive.download(file.id, account.id);
-        size += new TextEncoder().encode(JSON.stringify(batch)).length;
-        if (size > 4 * 1024 * 1024) fail('QUOTA', '首次同步数据超过本地安全容量。请保留现有数据并导出备份。');
-        events.push(...batch); downloaded.push(file.id);
+      progress = { phase: 'list', done: 0, total: 0 };
+      const listed = await drive.list(), known = new Set(w.replica?.files || []), events = [], downloaded = [];
+      const files = listed.filter(file => !known.has(file.id));
+      const checkSize = size => { if (size > KuTodoStore.MAX_BYTES) fail('QUOTA', '首次同步数据超过本地安全容量。请保留现有数据并导出备份。'); };
+      checkSize(files.reduce((sum, file) => sum + Number(file.size || 0), 0));
+      progress = { phase: 'download', done: 0, total: files.length };
+      let size = 0, next = 0, failure = null;
+      async function worker() {
+        while (!failure && next < files.length) {
+          const file = files[next++], key = JSON.stringify([account.id, file.id]);
+          try {
+            let batch = batches.get(key);
+            if (!batch) {
+              for (let attempt = 0; ; attempt++) {
+                if (failure) return;
+                try { batch = await drive.download(file.id, account.id); break; }
+                catch (error) {
+                  if (error.retryable !== true || attempt === 3) throw error;
+                  if (failure) return;
+                  await sleep(1000 * 2 ** attempt);
+                }
+              }
+              batches.set(key, batch);
+            }
+            size += new TextEncoder().encode(JSON.stringify(batch)).length;
+            checkSize(size);
+            events.push(...batch); downloaded.push(file.id);
+            progress = { phase: 'download', done: downloaded.length, total: files.length };
+          } catch (error) { failure ||= error; }
+        }
       }
+      await Promise.all(Array.from({ length: Math.min(8, files.length) }, () => worker()));
+      if (failure) throw failure;
       return { events, files: downloaded };
     }
     async function synchronize(manual = false) {
@@ -45,13 +76,16 @@ var KuTodoSync = (() => {
       }
       running = true;
       try {
+        progress = { phase: 'auth', done: 0, total: 0 };
         await drive.authorize(false);
         const account = await drive.account();
         if (account.id !== config.account?.id) fail('ACCOUNT', '当前 Google 账号与绑定账号不同，已暂停上传。请切回原账号或在新的本地资料中连接。');
         let w = await workspace(config.workspaceId);
         if (w.replica?.accountId !== account.id) fail('ACCOUNT', '资料与 Google 账号不匹配，未上传。');
         const incoming = await pull(account, w);
+        progress = { phase: 'merge', done: 0, total: 0 };
         if (incoming.files.length) await local('__syncMerge', w.id, { accountId: account.id, ...incoming });
+        progress = null; batches.clear();
         w = await workspace(w.id);
         const pending = new Set(w.replica.outbox), queued = w.replica.events.filter(e => pending.has(e.id));
         // Legacy clients must never see completion entities in the TODO v1 stream.
@@ -76,24 +110,30 @@ var KuTodoSync = (() => {
         config.failures = Math.min((config.failures || 0) + 1, 8);
         config.retryAt = now() + Math.min(60 * 60 * 1000, 60000 * 2 ** (config.failures - 1));
         await saveConfig(config);
-      } finally { running = false; }
+      } finally { running = false; progress = null; }
       return status();
     }
     async function perform(action, payload = {}) {
       if (action === 'now') return synchronize(true);
       if (action === 'tick') return synchronize(false);
       if (action === 'prepare') {
-        if (!configured()) fail('CONFIG', '请先按配置指南设置 Google OAuth 客户端。');
-        const db = await store.dispatch({ action: 'read' }), w = db.workspaces.find(w => w.id === payload.workspaceId);
-        if (!w) fail('INVALID', '请选择要同步的本地资料。');
-        await drive.authorize(true);
-        const account = await drive.account();
-        if (w.replica && w.replica.accountId !== account.id) fail('ACCOUNT', '此资料绑定了另一个 Google 账号。请新建本地资料后连接。');
-        const incoming = await pull(account, w), candidate = JSON.parse(JSON.stringify(w));
-        KuTodoReplica.attach(candidate, account.id, uuid); KuTodoReplica.merge(candidate, incoming.events, incoming.files);
-        preview = { ticket: uuid(), account, workspaceId: w.id, fingerprint: JSON.stringify([w.courses, w.todos, w.assignmentCompletions, w.replica?.events.map(e => e.id)]), incoming, expires: now() + 5 * 60 * 1000 };
-        return { ticket: preview.ticket, account, workspaceName: w.name, localCount: w.todos.length, mergedCount: candidate.todos.length,
-          localAssignments: w.assignmentCompletions.length, mergedAssignments: candidate.assignmentCompletions.length, conflicts: KuTodoReplica.conflicts(candidate.replica).length };
+        preparing = true; preview = null;
+        progress = { phase: 'auth', done: 0, total: 0 };
+        try {
+          if (!configured()) fail('CONFIG', '请先按配置指南设置 Google OAuth 客户端。');
+          const db = await store.dispatch({ action: 'read' }), w = db.workspaces.find(w => w.id === payload.workspaceId);
+          if (!w) fail('INVALID', '请选择要同步的本地资料。');
+          await drive.authorize(true);
+          const account = await drive.account();
+          if (w.replica && w.replica.accountId !== account.id) fail('ACCOUNT', '此资料绑定了另一个 Google 账号。请新建本地资料后连接。');
+          const incoming = await pull(account, w), candidate = JSON.parse(JSON.stringify(w));
+          progress = { phase: 'merge', done: 0, total: 0 };
+          KuTodoReplica.attach(candidate, account.id, uuid); KuTodoReplica.merge(candidate, incoming.events, incoming.files);
+          preview = { ticket: uuid(), account, workspaceId: w.id, fingerprint: JSON.stringify([w.courses, w.todos, w.assignmentCompletions, w.replica?.events.map(e => e.id)]), incoming, expires: now() + 5 * 60 * 1000,
+            workspaceName: w.name, localCount: w.todos.length, mergedCount: candidate.todos.length,
+            localAssignments: w.assignmentCompletions.length, mergedAssignments: candidate.assignmentCompletions.length, conflicts: KuTodoReplica.conflicts(candidate.replica).length };
+          return previewSummary();
+        } finally { preparing = false; progress = null; }
       }
       if (action === 'confirm') {
         if (!preview || preview.ticket !== payload.ticket || preview.expires < now()) fail('PREVIEW', '连接预览已过期，请重新连接。');
@@ -104,11 +144,16 @@ var KuTodoSync = (() => {
         await local('__syncAttach', w.id, { accountId: selected.account.id });
         await local('__syncMerge', w.id, { accountId: selected.account.id, ...selected.incoming });
         await saveConfig({ enabled: true, account: selected.account, workspaceId: w.id, error: '', retryAt: 0 });
-        preview = null;
+        preview = null; batches.clear();
         return synchronize(true);
+      }
+      if (action === 'cancel') {
+        preview = null; batches.clear();
+        return status();
       }
       if (action === 'disconnect') {
         const config = await getConfig(); config.enabled = false; config.error = ''; config.errorCode = ''; preview = null;
+        batches.clear();
         await saveConfig(config);
         return status();
       }

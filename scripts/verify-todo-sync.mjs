@@ -8,7 +8,7 @@ const cloud = new Map(); let fileSequence = 0;
 const course = 'https://kulms.tl.kansai-u.ac.jp/webclass/course.php/26170478/';
 function device(name) {
   const context = vm.createContext({ URL, TextEncoder, crypto: webcrypto, console }); vm.runInContext(sources, context);
-  const state = { data: {}, account: 'account_a', offline: false, failWrite: false, loseResponse: false, network: 0 };
+  const state = { data: {}, account: 'account_a', offline: false, failWrite: false, loseResponse: false, network: 0, sleeps: [] };
   const storage = {
     async get(k) { return copy(k in state.data ? { [k]: state.data[k] } : {}); },
     async set(v) { if (state.failWrite) throw Error('disk full'); Object.assign(state.data, copy(v)); }
@@ -21,7 +21,7 @@ function device(name) {
     async upload(events, account) { assert.equal(account, state.account); const id = `file_${++fileSequence}`; cloud.set(id, { account, events: copy(events) }); if (state.loseResponse) { state.loseResponse = false; throw Error('response lost'); } return id; }
   };
   let store = context.KuTodoStore.create(storage), service;
-  const boot = () => { store = context.KuTodoStore.create(storage); service = context.KuTodoSync.create({ store, storage, drive }); };
+  const boot = () => { store = context.KuTodoStore.create(storage); service = context.KuTodoSync.create({ store, storage, drive, sleep: async ms => { state.sleeps.push(ms); } }); };
   boot();
   return { state, context, storage, drive, boot, local(action, payload = {}) { return store.dispatch({ action, workspaceId: 'local', operationId: webcrypto.randomUUID(), ...payload }); }, sync(action, payload) { return service.handle(action, payload); }, status() { return service.status(); } };
 }
@@ -154,3 +154,105 @@ await migratedDevice.local('setAssignment', await completionPayload(migratedDevi
 assert.deepEqual(migratedDevice.state.data.kuLmsTodosBeforeCompletionV3, oldSyncDb);
 assert.ok(oldSyncDb.workspaces[0].replica.events.every(e => migratedDevice.state.data.kuLmsTodosV1.workspaces[0].replica.events.some(v => v.id === e.id)));
 console.log('PASS: completion batch isolation, offline/restart convergence, causal conflict confirmation, undo, lost ACK, account isolation and v2 migration');
+
+// Many immutable files: bounded concurrency, per-file retries and recoverable previews.
+const turn = () => new Promise(resolve => setImmediate(resolve));
+const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
+const stamp = '2026-11-01T00:00:00.000Z';
+const batchFiles = Array.from({ length: 20 }, (_, i) => ({ id: `batch_${i}`, events: [
+  { id: `course_${i}`, device: 'remote', entity: 'course', key: course, parents: i ? [`course_${i - 1}`] : [], value: { key: course, title: `Course ${i}`, term: '' } },
+  { id: `event_${i}`, device: 'remote', entity: 'todo', key: `todo_${i}`, parents: [], value: { id: `todo_${i}`, courseKey: course, text: `TODO ${i}`, createdAt: stamp, updatedAt: stamp, completedAt: null, deletedAt: null, dueAt: null } }
+] }));
+function batchDevice(name) {
+  const dev = device(name), calls = new Map();
+  dev.drive.list = async () => batchFiles.map(f => ({ id: f.id, size: JSON.stringify(f.events).length }));
+  dev.drive.download = async id => { calls.set(id, (calls.get(id) || 0) + 1); return copy(batchFiles.find(f => f.id === id).events); };
+  return { dev, calls };
+}
+const { dev: parallel, calls: parallelCalls } = batchDevice('parallel');
+const authGate = deferred(), listGate = deferred(), downloadsGate = deferred();
+parallel.drive.authorize = () => authGate.promise;
+const listBatches = parallel.drive.list, downloadBatch = parallel.drive.download;
+parallel.drive.list = async () => { await listGate.promise; return listBatches(); };
+let inFlight = 0, peak = 0;
+parallel.drive.download = async id => {
+  inFlight++; peak = Math.max(peak, inFlight);
+  await downloadsGate.promise; await turn();
+  const result = await downloadBatch(id); inFlight--;
+  if (id === 'batch_0' && parallelCalls.get(id) === 1) throw Object.assign(Error('retry this file'), { code: 'RETRY', retryable: true });
+  return result;
+};
+const preparing = parallel.sync('prepare', { workspaceId: 'local' });
+await turn();
+assert.equal((await parallel.status()).preparing, true);
+assert.equal((await parallel.status()).progress.phase, 'auth');
+authGate.resolve(); await turn(); assert.equal((await parallel.status()).progress.phase, 'list');
+listGate.resolve(); await turn();
+assert.deepEqual(copy((await parallel.status()).progress), { phase: 'download', done: 0, total: 20 });
+assert.ok(peak > 1 && peak <= 8);
+downloadsGate.resolve(); const ready = await preparing;
+assert.equal(inFlight, 0); assert.equal(ready.mergedCount, 20);
+assert.deepEqual(parallel.state.sleeps, [1000]);
+assert.equal(parallelCalls.get('batch_0'), 2);
+assert.ok([...parallelCalls].every(([id, count]) => count === (id === 'batch_0' ? 2 : 1)));
+let syncStatus = await parallel.status();
+assert.equal(syncStatus.preparing, false); assert.equal(syncStatus.progress, null);
+assert.deepEqual(copy(syncStatus.preview), copy(ready));
+assert.equal(syncStatus.storageLimit, parallel.context.KuTodoStore.MAX_BYTES);
+assert.equal(syncStatus.storageBytes, new TextEncoder().encode(JSON.stringify(await parallel.local('read'))).length);
+await parallel.sync('confirm', { ticket: ready.ticket });
+assert.equal((await parallel.status()).preview, null);
+const merged = (await parallel.local('read')).workspaces[0];
+assert.equal(merged.replica.events.length, 40); assert.equal(merged.todos.length, 20);
+assert.equal(merged.courses[0].title, 'Course 19', 'causal parents may arrive after children');
+// Ordinary sync reports progress too, and skips previously merged files.
+const syncGate = deferred(); parallel.drive.list = async () => { await syncGate.promise; return listBatches(); };
+const syncing = parallel.sync('now'); await turn();
+assert.equal((await parallel.status()).running, true); assert.equal((await parallel.status()).progress.phase, 'list');
+syncGate.resolve(); await syncing;
+assert.equal((await parallel.status()).progress, null);
+assert.equal([...parallelCalls.values()].reduce((a, b) => a + b), 21);
+
+// A fatal file stops new work; completed downloads survive a failed prepare.
+const { dev: retryPreview, calls: retryCalls } = batchDevice('retry preview');
+const savedDownload = retryPreview.drive.download;
+const fatal = Object.assign(Error('bad batch'), { code: 'SYNC_DATA' });
+retryPreview.drive.download = async id => {
+  const batch = await savedDownload(id);
+  if (id === 'batch_1') throw fatal;
+  await turn(); return batch;
+};
+const beforePull = copy(await retryPreview.local('read'));
+await assert.rejects(retryPreview.sync('prepare', { workspaceId: 'local' }), error => error === fatal);
+assert.equal(retryCalls.size, 8, 'workers stop taking files after failure');
+assert.deepEqual(copy(await retryPreview.local('read')), beforePull, 'failed pull never merges partial data');
+assert.equal((await retryPreview.status()).progress, null); assert.equal((await retryPreview.status()).preview, null);
+retryPreview.drive.download = savedDownload;
+await retryPreview.sync('prepare', { workspaceId: 'local' });
+assert.equal(retryCalls.get('batch_0'), 1, 'completed batch is reused after failure');
+assert.equal(retryCalls.get('batch_1'), 2, 'only failed and unstarted files download again');
+assert.equal((await retryPreview.sync('cancel')).preview, null);
+await retryPreview.sync('prepare', { workspaceId: 'local' });
+assert.equal(retryCalls.get('batch_0'), 2, 'cancel clears the cache');
+await retryPreview.sync('disconnect');
+assert.equal((await retryPreview.status()).preview, null);
+await retryPreview.sync('prepare', { workspaceId: 'local' });
+assert.equal(retryCalls.get('batch_0'), 3, 'disconnect clears the cache');
+
+// Size metadata rejects the whole pull before downloading; actual bytes stay guarded.
+const { dev: quota, calls: quotaCalls } = batchDevice('quota');
+const limit = quota.context.KuTodoStore.MAX_BYTES;
+quota.drive.list = async () => Array.from({ length: 9 }, (_, i) => ({ id: `big_${i}`, size: String(limit / 8) }));
+await assert.rejects(quota.sync('prepare', { workspaceId: 'local' }), { code: 'QUOTA' });
+assert.equal(quotaCalls.size, 0);
+quota.drive.list = async () => [{ id: 'underreported', size: 1 }];
+quota.drive.download = async () => ['x'.repeat(limit)];
+await assert.rejects(quota.sync('prepare', { workspaceId: 'local' }), { code: 'QUOTA' });
+const exhausted = device('exhausted'); let attempts = 0;
+exhausted.drive.list = async () => [{ id: 'retry', size: 1 }];
+const networkError = Object.assign(Error('still offline'), { code: 'NETWORK', retryable: true });
+exhausted.drive.download = async () => { attempts++; throw networkError; };
+await assert.rejects(exhausted.sync('prepare', { workspaceId: 'local' }), error => error === networkError);
+assert.equal(attempts, 4); assert.deepEqual(exhausted.state.sleeps, [1000, 2000, 4000]);
+assert.equal((await exhausted.status()).preparing, false);
+console.log('PASS: bounded parallel pull, per-file backoff, atomic failure, retry cache, recoverable preview, progress and quota checks');

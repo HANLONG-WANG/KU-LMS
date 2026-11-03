@@ -270,7 +270,7 @@ var KuTodoStore = (() => {
     }
     return { dispatch(message) { const result = queue.then(() => perform(message)); queue = result.catch(() => {}); return result; } };
   }
-  return { KEY, BACKUP_KEY, MIGRATION_KEY, DEADLINE_MIGRATION_KEY, create, courseKey, database };
+  return { KEY, BACKUP_KEY, MIGRATION_KEY, DEADLINE_MIGRATION_KEY, MAX_BYTES, create, courseKey, database };
 })();
 
 if (globalThis.chrome?.runtime?.onMessage && globalThis.chrome?.storage?.local) {
